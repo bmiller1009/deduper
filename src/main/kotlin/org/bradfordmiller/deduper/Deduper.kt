@@ -5,7 +5,8 @@ import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.slf4j.LoggerFactory
 import java.sql.ResultSet
 
-data class DedupeReport(val recordCount: Long, val dupeCount: Long)
+data class DedupeReport(val recordCount: Long, val dupeCount: Long, var dupes: MutableMap<Long, Dupe>)
+data class Dupe(val rowNumber: Long, val firstFoundRowNumber: Long, val dupeValues: String)
 
 class Deduper() {
 
@@ -25,7 +26,8 @@ class Deduper() {
 
             var recordCount = 0L
             var dupeCount = 0L
-            var seenHashes = mutableMapOf<String, String>()
+            var seenHashes = mutableMapOf<String, Long>()
+            var dupeHashes = mutableMapOf<Long, Dupe>()
 
             //Get source connection from JNDI
             val ds = JNDIUtils.getDataSource(sourceJndi, context)!!
@@ -33,19 +35,24 @@ class Deduper() {
                 val sql = "SELECT * FROM $sourceName"
                 conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
                     stmt.executeQuery().use { rs ->
-                        //val colCount = stmt.getMetaData().getColumnCount()
 
+                        val colCount = rs.metaData.columnCount
                         while (rs.next()) {
 
-                            val hashColumns = keyOn.map {
-                                rs.getString(it)
-                            }.joinToString()
+                            val hashColumns =
+                                if(!keyOn.isEmpty())
+                                    keyOn.map {rs.getString(it)}.joinToString()
+                                else
+                                    (1 to colCount).toList().map{rs.getString(it)}.joinToString()
 
                             val hash = DigestUtils.md5Hex(hashColumns).toUpperCase()
 
                             if (!seenHashes.containsKey(hash)) {
-                                seenHashes.put(hash, hashColumns)
+                                seenHashes.put(hash, recordCount)
                             } else {
+                                val firstSeenRow = seenHashes.get(hash)!!
+                                val dupe = Dupe(recordCount, firstSeenRow, hashColumns)
+                                dupeHashes.put(recordCount, dupe)
                                 dupeCount += 1
                             }
 
@@ -54,7 +61,7 @@ class Deduper() {
                     }
                 }
             }
-            return DedupeReport(recordCount, dupeCount)
+            return DedupeReport(recordCount, dupeCount, dupeHashes)
         }
     }
 }
