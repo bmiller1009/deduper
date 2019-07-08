@@ -6,7 +6,7 @@
 
 plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
-    id("org.jetbrains.kotlin.jvm").version("1.3.21")
+    id("org.jetbrains.kotlin.jvm").version("1.3.41")
 
     // Apply the application plugin to add support for building a CLI application.
     application
@@ -22,9 +22,7 @@ dependencies {
     // Use the Kotlin JDK 8 standard library.
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("net.sourceforge.csvjdbc:csvjdbc:1.0.35")
-    implementation("org.apache.avro:avro:1.9.0")
     implementation("com.fasterxml.jackson.core:jackson-core:2.9.4")
-    implementation("org.jgrapht", "jgrapht-core", "1.3.1")
     implementation("org.apache.logging.log4j",  "log4j-core",  "2.11.2")
     implementation("commons-cli", "commons-cli","1.4")
     implementation("com.github.h-thurow", "simple-jndi","0.18.1")
