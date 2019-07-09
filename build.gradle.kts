@@ -38,6 +38,7 @@ dependencies {
     implementation("commons-cli", "commons-cli","1.4")
     implementation("com.github.h-thurow", "simple-jndi","0.18.1")
     implementation("commons-codec", "commons-codec","1.12")
+    implementation("org.apache.ddlutils", "ddlutils" ,"1.0")
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 
