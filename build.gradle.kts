@@ -34,11 +34,13 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("net.sourceforge.csvjdbc:csvjdbc:1.0.35")
     implementation("com.fasterxml.jackson.core:jackson-core:2.9.4")
-    implementation("org.apache.logging.log4j",  "log4j-core",  "2.11.2")
+    implementation("org.apache.logging.log4j",  "log4j-core",  "2.12.0")
+    implementation("org.apache.logging.log4j",  "log4j-api",  "2.12.0")
+    implementation("org.apache.logging.log4j",  "log4j-to-slf4j",  "2.12.0")
     implementation("commons-cli", "commons-cli","1.4")
     implementation("com.github.h-thurow", "simple-jndi","0.18.1")
     implementation("commons-codec", "commons-codec","1.12")
-    implementation("org.apache.ddlutils", "ddlutils" ,"1.0")
+    implementation("org.slf4j", "slf4j-simple", "1.7.26")
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 

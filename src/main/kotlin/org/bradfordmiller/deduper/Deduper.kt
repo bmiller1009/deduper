@@ -4,16 +4,18 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.sql.SqlUtils
 import org.slf4j.LoggerFactory
+import java.sql.JDBCType
 import java.sql.ResultSet
+import java.sql.SQLType
 
 data class DedupeReport(val recordCount: Long, val columnsFound: Set<String>, val dupeCount: Long, var dupes: MutableMap<Long, Dupe>)
 data class Dupe(val rowNumber: Long, val firstFoundRowNumber: Long, val dupeValues: String)
 
 class Deduper() {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
-
     companion object {
+
+        private val logger = LoggerFactory.getLogger(javaClass)
 
         fun dedupe(
             sourceJndi: String,
@@ -60,7 +62,7 @@ class Deduper() {
                         val colCount = rsmd.columnCount
 
                         rsColumns = SqlUtils.getColumnsFromRs(rsmd)
-
+                        
                         if(!rsColumns.containsAll(keyOn))
                             throw IllegalArgumentException("One or more provided keys $keyOn not contained in resultset: $rsColumns")
 
