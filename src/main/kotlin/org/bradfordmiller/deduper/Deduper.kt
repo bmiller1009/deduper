@@ -62,7 +62,7 @@ class Deduper() {
                         val colCount = rsmd.columnCount
 
                         rsColumns = SqlUtils.getColumnsFromRs(rsmd)
-                        
+
                         if(!rsColumns.containsAll(keyOn))
                             throw IllegalArgumentException("One or more provided keys $keyOn not contained in resultset: $rsColumns")
 
