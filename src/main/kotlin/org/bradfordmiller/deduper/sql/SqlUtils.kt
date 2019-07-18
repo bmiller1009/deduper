@@ -1,14 +1,11 @@
 package org.bradfordmiller.deduper.sql
 
-
-import org.bradfordmiller.deduper.Deduper
-import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.sql.JDBCType
-import java.sql.ResultSet
 import java.sql.ResultSetMetaData
-import javax.sql.DataSource
+
+data class SqlDDL(val createStatement: String, val insertStatement: String)
 
 class SqlUtils {
     companion object {
@@ -26,13 +23,15 @@ class SqlUtils {
             return rsColumns
         }
 
-        fun generateDDL(tableName: String, rsmd: ResultSetMetaData): String {
+        fun generateDDL(tableName: String, rsmd: ResultSetMetaData): SqlDDL {
 
             val ctasClause = "CREATE TABLE $tableName AS "
+            val insertClause = "INSERT INTO $tableName "
 
             val colCount = rsmd.columnCount
+            val wildcards = (1 until colCount).map {"?"}.joinToString(",")
 
-            val columns = (1 until colCount).map { c ->
+            val columnsComma = (1 until colCount).map { c ->
 
                 val colName = rsmd.getColumnName(c)
                 val type = rsmd.getColumnType(c)
@@ -45,15 +44,22 @@ class SqlUtils {
                         } else {
                             typeName
                         }
-            }
+            }.joinToString(",")
 
-            return ctasClause + columns.joinToString(",")
+            val ctasFinal = ctasClause + columnsComma
+            val insertFinal = "$insertClause ($columnsComma) VALUES ($wildcards)"
+
+            return SqlDDL(ctasFinal, insertFinal)
         }
 
         fun executeDDL(conn: Connection, ddl: String) {
             conn.createStatement().use {stmt ->
                 stmt.executeUpdate(ddl)
             }
+        }
+
+        fun writeDataToTarget(conn: Connection, insertSql: String, data: Array<Map<String, Object>>) {
+
         }
     }
 }

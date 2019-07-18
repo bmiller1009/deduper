@@ -9,7 +9,6 @@ import javax.naming.InitialContext
 import javax.naming.NamingException
 import javax.sql.DataSource
 
-
 class JNDIUtils {
 
     companion object {
@@ -17,7 +16,9 @@ class JNDIUtils {
         private val logger = LoggerFactory.getLogger(javaClass)
 
         fun getDataSource(jndi: String, context: String): DataSource? {
-            val ctx = InitialContext() as Context
+            val ctx = InitialContext()
+            val mc = (ctx.lookup(context) as MemoryContext)
+
             val ds: DataSource? = try {
                 (ctx.lookup(context) as MemoryContext).lookup(jndi) as DataSource
             } catch (nex: NamingException) {

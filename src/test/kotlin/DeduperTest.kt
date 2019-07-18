@@ -1,11 +1,13 @@
-import org.bradfordmiller.deduper.Deduper
+import org.bradfordmiller.deduper.CsvDeduper
 import org.junit.Test
+import java.nio.file.Paths
+import java.nio.file.Files
 
 class DeduperTest {
     @Test fun DedupeTest() {
 
         val rpt =
-            Deduper.dedupe(
+                CsvDeduper().dedupe(
                 "RealEstate",
                 "Sacramentorealestatetransactions",
                 "default_ds",
@@ -18,18 +20,25 @@ class DeduperTest {
         println(rpt)
     }
 
-    @Test fun KeysMissing() {
-        val rpt =
-                Deduper.dedupe(
-                        "RealEstate",
-                        "Sacramentorealestatetransactions",
-                        "default_ds",
-                        "RealEstate",
-                        "targetName",
-                        "dupesName",
-                        mutableSetOf("street","city", "state", "zip", "price")
-                )
+    @Test fun testCsvTargetCreation() {
 
-        println(rpt)
+        val hash = "7328393ce354e4b1b574d2d532ea3625".toUpperCase()
+        val tgtName = "/tmp/targetName.txt"
+
+        CsvDeduper().dedupe(
+                "RealEstateIn",
+                "Sacramentorealestatetransactions",
+                "default_ds",
+                "RealEstateOut",
+                tgtName,
+                "dupesName",
+                mutableSetOf("street", "city", "state", "zip", "price")
+        )
+
+        val md5 = Files.newInputStream(Paths.get(tgtName)).use {
+            org.apache.commons.codec.digest.DigestUtils.md5Hex(it)
+        }.toUpperCase()
+
+        assert(md5 == hash)
     }
 }
