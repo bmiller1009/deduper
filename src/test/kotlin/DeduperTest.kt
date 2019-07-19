@@ -1,4 +1,4 @@
-import org.bradfordmiller.deduper.CsvDeduper
+import org.bradfordmiller.deduper.Deduper
 import org.junit.Test
 import java.nio.file.Paths
 import java.nio.file.Files
@@ -7,13 +7,12 @@ class DeduperTest {
     @Test fun DedupeTest() {
 
         val rpt =
-                CsvDeduper().dedupe(
+                Deduper().dedupe(
                 "RealEstate",
                 "Sacramentorealestatetransactions",
                 "default_ds",
                 "RealEstate",
                 "targetName",
-                "dupesName",
                 mutableSetOf("street","city", "state", "zip", "price")
             )
 
@@ -25,13 +24,12 @@ class DeduperTest {
         val hash = "7328393ce354e4b1b574d2d532ea3625".toUpperCase()
         val tgtName = "/tmp/targetName.txt"
 
-        CsvDeduper().dedupe(
+        Deduper().dedupe(
                 "RealEstateIn",
                 "Sacramentorealestatetransactions",
                 "default_ds",
                 "RealEstateOut",
-                tgtName,
-                "dupesName",
+                "RealEstateOutDupes",
                 mutableSetOf("street", "city", "state", "zip", "price")
         )
 
