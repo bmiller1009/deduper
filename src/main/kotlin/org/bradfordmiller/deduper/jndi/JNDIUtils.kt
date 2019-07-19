@@ -30,7 +30,7 @@ class JNDIUtils {
                 is DataSource -> Left(lookup)
                 is Map<*, *> -> Right(lookup)
                 else -> {
-                    throw UnknownObjectException("jndi entry $jndi for context $context is neither an DataSource or a String")
+                    throw UnknownObjectException("jndi entry $jndi for context $context is neither an DataSource or a Map<String, String>")
                 }
             }
         }

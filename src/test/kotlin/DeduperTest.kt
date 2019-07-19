@@ -8,13 +8,14 @@ class DeduperTest {
 
         val rpt =
                 Deduper().dedupe(
-                "RealEstate",
+                "RealEstateIn",
                 "Sacramentorealestatetransactions",
                 "default_ds",
-                "RealEstate",
+                "RealEstateOut",
                 "targetName",
-                mutableSetOf("street","city", "state", "zip", "price")
-            )
+                    "RealEstateDupes",
+                    mutableSetOf("street","city", "state", "zip", "price")
+                )
 
         println(rpt)
     }
@@ -22,18 +23,19 @@ class DeduperTest {
     @Test fun testCsvTargetCreation() {
 
         val hash = "7328393ce354e4b1b574d2d532ea3625".toUpperCase()
-        val tgtName = "/tmp/targetName.txt"
+        val tgtName = "/tmp/targetName"
 
         Deduper().dedupe(
                 "RealEstateIn",
                 "Sacramentorealestatetransactions",
                 "default_ds",
                 "RealEstateOut",
-                "RealEstateOutDupes",
+                tgtName,
+            "RealEstateOutDupes",
                 mutableSetOf("street", "city", "state", "zip", "price")
         )
 
-        val md5 = Files.newInputStream(Paths.get(tgtName)).use {
+        val md5 = Files.newInputStream(Paths.get("$tgtName.txt")).use {
             org.apache.commons.codec.digest.DigestUtils.md5Hex(it)
         }.toUpperCase()
 
