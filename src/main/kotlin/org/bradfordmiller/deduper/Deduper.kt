@@ -22,41 +22,46 @@ import javax.sql.DataSource
 data class DedupeReport(val recordCount: Long, val columnsFound: Set<String>, val dupeCount: Long, var dupes: MutableMap<Long, Dupe>)
 data class Dupe(val rowNumber: Long, val firstFoundRowNumber: Long, val dupeValues: String)
 
-abstract class TargetPersistor(val targetName: String) {
-    abstract fun createTarget(columnContainer: Either<ResultSetMetaData, Set<String>>)
-}
-
-open class CsvTargetPersistor(open val config: Map<String, String>): TargetPersistor(config["targetName"]!!) {
-
+class CsvConfigParser(config: Map<String, String>) {
     val extension = config["ext"]!!
     val delimiter = config["delimiter"]!!
+    val targetName = config["targetname"]!!
+}
 
-    override fun createTarget(columnContainer: Either<ResultSetMetaData, Set<String>>) {
-        val columns =
-            when(columnContainer) {
-                is Left -> SqlUtils.getColumnsFromRs(columnContainer.left)
-                is Right -> columnContainer.right
-            }
+interface TargetPersistor {
+    fun createTarget(rsmd: ResultSetMetaData)
+}
 
-        FileUtils.prepFile(targetName, columns, extension, delimiter)
+interface DupePersistor {
+    fun createDupe()
+}
+
+abstract class CsvPersistor(config: Map<String, String>) {
+    val ccp = CsvConfigParser(config)
+}
+
+class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), TargetPersistor {
+    override fun createTarget(rsmd: ResultSetMetaData) {
+        val columns = SqlUtils.getColumnsFromRs(rsmd)
+        FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter)
     }
 }
 
-class CsvDupePersistor(override val config: Map<String, String>): CsvTargetPersistor(config) {
-
-    override fun createTarget(columnContainer: Either<ResultSetMetaData, Set<String>>) {
+class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupePersistor {
+    override fun createDupe() {
         val columns = setOf("row_id, dupe_values")
-
+        FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter)
     }
 }
 
-class SqlTargetPersistor(targetName: String, val conn: Connection): TargetPersistor(targetName) {
-
-    override fun createTarget(columnContainer: Either<ResultSetMetaData, Set<String>>) {
-        val ddl = SqlUtils.generateDDL(targetName, (columnContainer as Left).left)
+class SqlTargetPersistor(val targetName: String, val conn: Connection): TargetPersistor {
+    override fun createTarget(rsmd: ResultSetMetaData) {
+        val ddl = SqlUtils.generateDDL(targetName, rsmd)
         SqlUtils.executeDDL(conn, ddl.createStatement)
     }
+}
 
+class SqlDupePersistor(val conn: Connection): DupePersistor {
     override fun createDupe() {
         val sql = "CREATE TABLE dupes(row_id BIGINT NOT NULL, dupe_values VARCHAR(MAX) NOT NULL)"
         SqlUtils.executeDDL(conn, sql)
@@ -107,11 +112,11 @@ class Deduper() {
 
                     val rsmd = rs.metaData
                     val colCount = rsmd.columnCount
-                    val targetPersistor = getTargetPersistors(tgtJndi, context, rsmd)
-                    val dupesPersistor = getTargetPersistors(dupesJndi, context, rsmd)
+                    val targetPersistor = getTargetPersistors(tgtJndi, context, tgtName)
+                    val dupesPersistor = getTargetPersistors(dupesJndi, context, tgtName)
 
-                    targetPersistor.createTarget(Either<Left, Right>(rsmd))
-                    dupesPersistor.createDupe()
+                    targetPersistor.createTarget(rsmd)
+                    //dupesPersistor.createDupe()
 
                     rsColumns = SqlUtils.getColumnsFromRs(rsmd)
 
