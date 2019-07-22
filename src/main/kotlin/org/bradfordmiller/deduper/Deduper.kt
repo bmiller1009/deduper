@@ -4,6 +4,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.sql.SqlUtils
 import org.bradfordmiller.deduper.utils.Either
+import org.bradfordmiller.deduper.utils.FileUtils
 import org.bradfordmiller.deduper.utils.Left
 import org.bradfordmiller.deduper.utils.Right
 import org.slf4j.LoggerFactory
@@ -25,23 +26,10 @@ abstract class TargetPersistor(val targetName: String) {
     abstract fun createTarget(columnContainer: Either<ResultSetMetaData, Set<String>>)
 }
 
-abstract class CsvTargetPersistor(val config: Map<String, String>): TargetPersistor(config["targetName"]!!) {
+open class CsvTargetPersistor(open val config: Map<String, String>): TargetPersistor(config["targetName"]!!) {
 
-    val extension = config["ext"]
+    val extension = config["ext"]!!
     val delimiter = config["delimiter"]!!
-
-    fun prepFile(targetName: String, columns: Set<String>) {
-        val fileName = targetName + "." + extension
-
-        val f = File("$fileName")
-
-        if(f.exists() && !f.isFile)
-            throw FileSystemException("tgt name $fileName is not a file")
-
-        BufferedWriter(OutputStreamWriter(FileOutputStream(fileName), "utf-8")).use {bw ->
-            bw.write(columns.joinToString(delimiter))
-        }
-    }
 
     override fun createTarget(columnContainer: Either<ResultSetMetaData, Set<String>>) {
         val columns =
@@ -50,11 +38,19 @@ abstract class CsvTargetPersistor(val config: Map<String, String>): TargetPersis
                 is Right -> columnContainer.right
             }
 
-        prepFile(targetName, columns)
+        FileUtils.prepFile(targetName, columns, extension, delimiter)
     }
 }
 
-class SqlTargetPersistor(targetName: String, val conn: Connection): TargetPersistor() {
+class CsvDupePersistor(override val config: Map<String, String>): CsvTargetPersistor(config) {
+
+    override fun createTarget(columnContainer: Either<ResultSetMetaData, Set<String>>) {
+        val columns = setOf("row_id, dupe_values")
+
+    }
+}
+
+class SqlTargetPersistor(targetName: String, val conn: Connection): TargetPersistor(targetName) {
 
     override fun createTarget(columnContainer: Either<ResultSetMetaData, Set<String>>) {
         val ddl = SqlUtils.generateDDL(targetName, (columnContainer as Left).left)
@@ -114,7 +110,7 @@ class Deduper() {
                     val targetPersistor = getTargetPersistors(tgtJndi, context, rsmd)
                     val dupesPersistor = getTargetPersistors(dupesJndi, context, rsmd)
 
-                    targetPersistor.createTarget(rsmd)
+                    targetPersistor.createTarget(Either<Left, Right>(rsmd))
                     dupesPersistor.createDupe()
 
                     rsColumns = SqlUtils.getColumnsFromRs(rsmd)
