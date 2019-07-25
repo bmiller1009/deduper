@@ -22,10 +22,36 @@ import javax.sql.DataSource
 data class DedupeReport(val recordCount: Long, val columnsFound: Set<String>, val dupeCount: Long, var dupes: MutableMap<Long, Dupe>)
 data class Dupe(val rowNumber: Long, val firstFoundRowNumber: Long, val dupeValues: String)
 
+class Config(val srcJndi: String,
+             val srcName: String,
+             val context: String,
+             val tgtJndi: String,
+             val tgtTable: String,
+             val dupesJndi: String,
+             val keyOn: Set<String> = setOf()
+) {
+
+    constructor(srcJndi: String,
+                srcName: String,
+                context: String,
+                tgtJndi: String,
+                dupesJndi: String,
+                keyOn: Set<String> = setOf()
+    ):this(srcJndi, srcName, context, tgtJndi, CsvConfigParser.getCsvTarget(context, tgtJndi), dupesJndi, keyOn)
+}
+
+
+
 class CsvConfigParser(config: Map<String, String>) {
     val extension = config["ext"]!!
     val delimiter = config["delimiter"]!!
     val targetName = config["targetname"]!!
+    companion object {
+        fun getCsvTarget(jndi: String, context:String): String {
+            val ds = JNDIUtils.getDataSource(jndi, context) as Right
+            val map = ds.right as Map<String, String>
+            return map["targetname"]!!
+    }
 }
 
 interface TargetPersistor {
@@ -68,26 +94,17 @@ class SqlDupePersistor(val conn: Connection): DupePersistor {
     }
 }
 
-class Deduper() {
+class Deduper(
+        val config: Config
+) {
 
     //abstract fun processRs(rs: ResultSet)
 
+
+
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    private fun getTargetPersistors(jndi: String, context:String, targetName: String): TargetPersistor {
-        val ds = JNDIUtils.getDataSource(jndi, context)
-
-        return when(ds) {
-            is Left -> SqlTargetPersistor(targetName, ds.left!!.connection)
-            is Right -> CsvTargetPersistor(ds.right as Map<String, String>)
-        }
-    }
-
-    fun dedupe(srcJndi: String, srcName: String, context: String, tgtJndi: String, tgtName: String, dupesJndi: String): DedupeReport {
-        return dedupe(srcJndi, srcName, context, tgtJndi, tgtName, dupesJndi, setOf())
-    }
-
-    fun dedupe(srcJndi: String, srcName: String, context: String, tgtJndi: String, tgtName: String, dupesJndi: String, keyOn: Set<String>): DedupeReport {
+    fun dedupe(): DedupeReport {
 
         var recordCount = 0L
         var dupeCount = 0L
@@ -95,8 +112,10 @@ class Deduper() {
         var dupeHashes = mutableMapOf<Long, Dupe>()
         var rsColumns = setOf<String>()
 
+        val srcName = config.srcJndi
+        val keyOn = config.keyOn
         //Get src connection from JNDI - Note that this is always cast to a datasource
-        val dsSrc = (JNDIUtils.getDataSource(srcJndi, context) as Left<DataSource?, String>).left!!
+        val dsSrc = (JNDIUtils.getDataSource(srcName, config.context) as Left<DataSource?, String>).left!!
 
         JNDIUtils.getConnection(dsSrc)!!.use { conn ->
 
