@@ -6,6 +6,8 @@ import java.nio.file.Files
 class DeduperTest {
     @Test fun DedupeTest() {
 
+        val config =
+
         val rpt =
                 Deduper().dedupe(
                 "RealEstateIn",

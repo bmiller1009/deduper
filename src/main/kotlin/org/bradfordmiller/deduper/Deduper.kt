@@ -3,17 +3,12 @@ package org.bradfordmiller.deduper
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.sql.SqlUtils
-import org.bradfordmiller.deduper.utils.Either
+
 import org.bradfordmiller.deduper.utils.FileUtils
 import org.bradfordmiller.deduper.utils.Left
 import org.bradfordmiller.deduper.utils.Right
 import org.slf4j.LoggerFactory
-import java.io.BufferedWriter
-import java.io.File
-import java.io.FileOutputStream
-import java.io.OutputStreamWriter
-import java.nio.file.FileSystemException
-import java.rmi.activation.UnknownObjectException
+
 import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
@@ -71,40 +66,31 @@ abstract class Config(
         val dupesJndi: String,
         val keyOn: Set<String> = setOf()
 ) {
-    abstract fun getTarget(): String
     abstract fun getTargetPersistor(): TargetPersistor
     abstract fun getDupePersistor(): DupePersistor
-
-    fun getJndiConnection(): Connection {
-        val target = getTarget()
-        val jndi = (JNDIUtils.getDataSource(tgtJndi, context) as Left<DataSource?, String>).left!!
-        return jndi.connection
-    }
 }
 
 class SqlConfig(srcJndi: String,
              srcName: String,
              context: String,
              tgtJndi: String,
-             val tgtTable: String,
+             private val tgtTable: String,
              dupesJndi: String,
              keyOn: Set<String> = setOf()
 ): Config(srcJndi, srcName, context, tgtJndi, dupesJndi, keyOn) {
 
-    override fun getTarget(): String {
-        return tgtTable
+    private fun getJndiConnection(jndi: String): Connection {
+        val jndi = (JNDIUtils.getDataSource(jndi, context) as Left<DataSource?, String>).left!!
+        return jndi.connection
     }
 
     override fun getTargetPersistor(): TargetPersistor {
-
-        val target = getTarget()
-        val conn = getJndiConnection()
-
-        return SqlTargetPersistor(target, conn)
+        val conn = getJndiConnection(tgtJndi)
+        return SqlTargetPersistor(tgtTable, conn)
     }
 
     override fun getDupePersistor(): DupePersistor {
-        val conn = getJndiConnection()
+        val conn = getJndiConnection(dupesJndi)
         return SqlDupePersistor(conn)
     }
 }
@@ -116,15 +102,14 @@ class CsvConfig(srcJndi: String,
                 dupesJndi: String,
                 keyOn: Set<String> = setOf()): Config(srcJndi, srcName, context, tgtJndi, dupesJndi, keyOn) {
 
-    override fun getTarget(): String {
-        return CsvConfigParser.getCsvTarget(context, tgtJndi)
-    }
-    override fun getTargetPersistor(): TargetPersistor {
+    val configMap = CsvConfigParser.getCsvMap(context, tgtJndi)
 
+    override fun getTargetPersistor(): TargetPersistor {
+        return CsvTargetPersistor(configMap)
     }
 
     override fun getDupePersistor(): DupePersistor {
-
+        return CsvDupePersistor(configMap)
     }
 }
 
@@ -135,10 +120,10 @@ class CsvConfigParser(config: Map<String, String>) {
     val targetName = config["targetname"]!!
 
     companion object {
-        fun getCsvTarget(jndi: String, context: String): String {
+        fun getCsvMap(jndi: String, context: String): Map<String, String> {
             val ds = JNDIUtils.getDataSource(jndi, context) as Right
             val map = ds.right as Map<String, String>
-            return map["targetname"]!!
+            return map
         }
     }
 }
@@ -148,7 +133,7 @@ class Deduper(
 ) {
 
     //abstract fun processRs(rs: ResultSet)
-    
+
     private val logger = LoggerFactory.getLogger(javaClass)
 
     fun dedupe(): DedupeReport {
@@ -159,10 +144,11 @@ class Deduper(
         var dupeHashes = mutableMapOf<Long, Dupe>()
         var rsColumns = setOf<String>()
 
-        val srcName = config.srcJndi
+        val srcJndi = config.srcJndi
+        val srcName = config.srcName
         val keyOn = config.keyOn
         //Get src connection from JNDI - Note that this is always cast to a datasource
-        val dsSrc = (JNDIUtils.getDataSource(srcName, config.context) as Left<DataSource?, String>).left!!
+        val dsSrc = (JNDIUtils.getDataSource(srcJndi, config.context) as Left<DataSource?, String>).left!!
 
         JNDIUtils.getConnection(dsSrc)!!.use { conn ->
 
@@ -180,9 +166,6 @@ class Deduper(
                     val colCount = rsmd.columnCount
                     val targetPersistor = config.getTargetPersistor()
                     val dupePersistor = config.getDupePersistor()
-
-                    //val targetPersistor = getTargetPersistors(tgtJndi, context, tgtName)
-                    //val dupesPersistor = getTargetPersistors(dupesJndi, context, tgtName)
 
                     targetPersistor.createTarget(rsmd)
                     dupePersistor.createDupe()
