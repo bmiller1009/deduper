@@ -43,5 +43,10 @@ class JNDIUtils {
             }
             return conn
         }
+
+        fun getJndiConnection(jndi: String, context: String): Connection {
+            val jndi = (getDataSource(jndi, context) as Left<DataSource?, String>).left!!
+            return jndi.connection
+        }
     }
 }

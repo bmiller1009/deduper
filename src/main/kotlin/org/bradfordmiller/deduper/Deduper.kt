@@ -58,18 +58,36 @@ class SqlDupePersistor(val conn: Connection): DupePersistor {
 }
 
 
-abstract class Config(
+class Config(
         val srcJndi: String,
         val srcName: String,
         val context: String,
         val tgtJndi: String,
         val dupesJndi: String,
         val keyOn: Set<String> = setOf()
-) {
-    abstract fun getTargetPersistor(): TargetPersistor
-    abstract fun getDupePersistor(): DupePersistor
-}
+)
+    {
 
+    constructor(srcJndi: String,
+                srcName: String,
+                context: String,
+                tgtJndi: String,
+                tgtTable: String,
+                dupesJndi: String,
+                keyOn: Set<String> = setOf()): this(srcJndi, srcName, context, tgtJndi, dupesJndi, keyOn) {
+
+        targetPersistor =
+
+    }
+
+    var targetPersistor: TargetPersistor? = null
+    var dupePersistor: DupePersistor? = null
+
+
+    /*fun getTargetPersistor(): TargetPersistor
+    fun getDupePersistor(): DupePersistor*/
+}
+/*
 class SqlConfig(srcJndi: String,
              srcName: String,
              context: String,
@@ -113,6 +131,7 @@ class CsvConfig(srcJndi: String,
     }
 }
 
+*/
 
 class CsvConfigParser(config: Map<String, String>) {
     val extension = config["ext"]!!
