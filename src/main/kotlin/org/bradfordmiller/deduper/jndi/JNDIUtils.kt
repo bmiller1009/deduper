@@ -22,7 +22,7 @@ class JNDIUtils {
         private val logger = LoggerFactory.getLogger(javaClass)
 
         fun getDataSource(jndi: String, context: String): Either<DataSource?, Map<*, *>> {
-            val ctx = InitialContext()
+            val ctx = InitialContext() as Context
             val mc = (ctx.lookup(context) as MemoryContext)
             val lookup = mc.lookup(jndi)
 

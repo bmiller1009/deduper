@@ -58,15 +58,39 @@ class SqlDupePersistor(val conn: Connection): DupePersistor {
 }
 
 
-class Config(
-        val srcJndi: String,
-        val srcName: String,
-        val context: String,
-        val tgtJndi: String,
-        val dupesJndi: String,
-        val keyOn: Set<String> = setOf()
-)
-    {
+class Config() {
+
+    internal var targetPersistor: TargetPersistor? = null
+    internal var dupePersistor: DupePersistor? = null
+    internal var srcJndi: String = ""
+    internal var srcName: String = ""
+    internal var context: String = ""
+    internal var keyOn: Set<String> = setOf()
+
+    private constructor(srcJndi: String,
+                        srcName: String,
+                        context: String,
+                        keyOn: Set<String>): this() {
+
+        this.srcJndi = srcJndi
+        this.srcName = srcName
+        this.context = context
+        this.keyOn = keyOn
+    }
+
+    constructor(srcJndi: String,
+                srcName: String,
+                context: String,
+                tgtJndi: String,
+                dupesJndi: String,
+                keyOn: Set<String> = setOf()): this(srcJndi, srcName, context, keyOn) {
+
+        val tgtConfigMap = CsvConfigParser.getCsvMap(context, tgtJndi)
+        val dupesConfigMap = CsvConfigParser.getCsvMap(context, dupesJndi)
+        targetPersistor = CsvTargetPersistor(tgtConfigMap)
+        dupePersistor = CsvDupePersistor(dupesConfigMap)
+
+    }
 
     constructor(srcJndi: String,
                 srcName: String,
@@ -74,72 +98,22 @@ class Config(
                 tgtJndi: String,
                 tgtTable: String,
                 dupesJndi: String,
-                keyOn: Set<String> = setOf()): this(srcJndi, srcName, context, tgtJndi, dupesJndi, keyOn) {
+                keyOn: Set<String> = setOf()): this(srcJndi, srcName, context, keyOn) {
 
-        targetPersistor =
-
-    }
-
-    var targetPersistor: TargetPersistor? = null
-    var dupePersistor: DupePersistor? = null
-
-
-    /*fun getTargetPersistor(): TargetPersistor
-    fun getDupePersistor(): DupePersistor*/
-}
-/*
-class SqlConfig(srcJndi: String,
-             srcName: String,
-             context: String,
-             tgtJndi: String,
-             private val tgtTable: String,
-             dupesJndi: String,
-             keyOn: Set<String> = setOf()
-): Config(srcJndi, srcName, context, tgtJndi, dupesJndi, keyOn) {
-
-    private fun getJndiConnection(jndi: String): Connection {
-        val jndi = (JNDIUtils.getDataSource(jndi, context) as Left<DataSource?, String>).left!!
-        return jndi.connection
-    }
-
-    override fun getTargetPersistor(): TargetPersistor {
-        val conn = getJndiConnection(tgtJndi)
-        return SqlTargetPersistor(tgtTable, conn)
-    }
-
-    override fun getDupePersistor(): DupePersistor {
-        val conn = getJndiConnection(dupesJndi)
-        return SqlDupePersistor(conn)
+        val targetConn = JNDIUtils.getJndiConnection(tgtJndi, context)
+        val dupesConn = JNDIUtils.getJndiConnection(dupesJndi, context)
+        targetPersistor = SqlTargetPersistor(tgtTable, targetConn)
+        dupePersistor = SqlDupePersistor(dupesConn)
     }
 }
-
-class CsvConfig(srcJndi: String,
-                srcName: String,
-                context: String,
-                tgtJndi: String,
-                dupesJndi: String,
-                keyOn: Set<String> = setOf()): Config(srcJndi, srcName, context, tgtJndi, dupesJndi, keyOn) {
-
-    val configMap = CsvConfigParser.getCsvMap(context, tgtJndi)
-
-    override fun getTargetPersistor(): TargetPersistor {
-        return CsvTargetPersistor(configMap)
-    }
-
-    override fun getDupePersistor(): DupePersistor {
-        return CsvDupePersistor(configMap)
-    }
-}
-
-*/
 
 class CsvConfigParser(config: Map<String, String>) {
     val extension = config["ext"]!!
     val delimiter = config["delimiter"]!!
-    val targetName = config["targetname"]!!
+    val targetName = config["targetName"]!!
 
     companion object {
-        fun getCsvMap(jndi: String, context: String): Map<String, String> {
+        fun getCsvMap(context: String, jndi: String): Map<String, String> {
             val ds = JNDIUtils.getDataSource(jndi, context) as Right
             val map = ds.right as Map<String, String>
             return map
@@ -147,9 +121,7 @@ class CsvConfigParser(config: Map<String, String>) {
     }
 }
 
-class Deduper(
-        val config: Config
-) {
+class Deduper(val config: Config) {
 
     //abstract fun processRs(rs: ResultSet)
 
@@ -163,19 +135,16 @@ class Deduper(
         var dupeHashes = mutableMapOf<Long, Dupe>()
         var rsColumns = setOf<String>()
 
-        val srcJndi = config.srcJndi
-        val srcName = config.srcName
-        val keyOn = config.keyOn
         //Get src connection from JNDI - Note that this is always cast to a datasource
-        val dsSrc = (JNDIUtils.getDataSource(srcJndi, config.context) as Left<DataSource?, String>).left!!
+        val dsSrc = (JNDIUtils.getDataSource(config.srcJndi, config.context) as Left<DataSource?, String>).left!!
 
         JNDIUtils.getConnection(dsSrc)!!.use { conn ->
 
             val sql =
-                    if (srcName.startsWith("SELECT", true)) {
-                        srcName
+                    if (config.srcName.startsWith("SELECT", true)) {
+                        config.srcName
                     } else {
-                        "SELECT * FROM $srcName"
+                        "SELECT * FROM ${config.srcName}"
                     }
 
             conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
@@ -183,24 +152,22 @@ class Deduper(
 
                     val rsmd = rs.metaData
                     val colCount = rsmd.columnCount
-                    val targetPersistor = config.getTargetPersistor()
-                    val dupePersistor = config.getDupePersistor()
 
-                    targetPersistor.createTarget(rsmd)
-                    dupePersistor.createDupe()
+                    config.targetPersistor!!.createTarget(rsmd)
+                    config.dupePersistor!!.createDupe()
 
                     rsColumns = SqlUtils.getColumnsFromRs(rsmd)
 
-                    if (!rsColumns.containsAll(keyOn))
-                        throw IllegalArgumentException("One or more provided keys $keyOn not contained in resultset: $rsColumns")
+                    if (!rsColumns.containsAll(config.keyOn))
+                        throw IllegalArgumentException("One or more provided keys ${config.keyOn} not contained in resultset: $rsColumns")
 
-                    val keysPopulated = keyOn.isNotEmpty()
+                    val keysPopulated = config.keyOn.isNotEmpty()
 
                     while (rs.next()) {
 
                         val hashColumns =
                                 if (keysPopulated) {
-                                    keyOn.map { rs.getString(it) }.joinToString()
+                                    config.keyOn.map { rs.getString(it) }.joinToString()
                                 } else {
                                     (1 until colCount).toList().map { rs.getString(it) }.joinToString()
                                 }
