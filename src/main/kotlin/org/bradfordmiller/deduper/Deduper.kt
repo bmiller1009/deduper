@@ -38,7 +38,7 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
 
 class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupePersistor {
     override fun createDupe() {
-        val columns = setOf("row_id, dupe_values")
+        val columns = setOf("row_id","dupe_values")
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter)
     }
 }

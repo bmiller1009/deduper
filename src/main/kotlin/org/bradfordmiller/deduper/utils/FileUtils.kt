@@ -17,7 +17,7 @@ class FileUtils {
                 throw FileSystemException("tgt name $fileName is not a file")
 
             BufferedWriter(OutputStreamWriter(FileOutputStream(fileName), "utf-8")).use { bw ->
-                bw.write(columns.joinToString(delimiter))
+                bw.write(columns.joinToString(separator=delimiter))
             }
         }
     }
