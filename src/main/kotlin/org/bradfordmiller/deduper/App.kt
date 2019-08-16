@@ -1,4 +1,6 @@
-package org.bradfordmiller.deduper
+package org.bradfordmiller.deduper.config
+
+import org.bradfordmiller.deduper.Deduper
 
 class App {
     val greeting: String
@@ -23,5 +25,4 @@ fun main(args: Array<String>) {
     val rpt = deduper.dedupe()
 
     println(rpt)
-    //println(App().greeting)
 }

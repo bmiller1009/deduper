@@ -1,5 +1,5 @@
-import org.bradfordmiller.deduper.Config
 import org.bradfordmiller.deduper.Deduper
+import org.bradfordmiller.deduper.config.Config
 import org.junit.Test
 import java.nio.file.Paths
 import java.nio.file.Files
