@@ -9,7 +9,8 @@ import java.sql.ResultSetMetaData
 
 interface TargetPersistor {
     fun createTarget(rsmd: ResultSetMetaData)
-    fun writeRow(rs: ResultSet, colCount: Int)
+    fun prepRow(rs: ResultSet, colCount: Int, colNames: Map<Int, String>): Map<String, Any>
+    fun writeRows(data: List<Map<String, Any>>)
 }
 
 interface DupePersistor {
@@ -26,6 +27,10 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
         val columns = SqlUtils.getColumnsFromRs(rsmd)
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter)
     }
+    override fun prepRow(rs: ResultSet, colCount: Int, colNames: Map<Int, String>): Map<String, Any> {
+
+        val dataMap = (1 until colCount).map{rsmd}
+    }
     override fun writeRow(rs: ResultSet, colCount: Int) {
         val row = (1 until colCount).map{rs.getObject(it).toString()}.joinToString(separator=ccp.delimiter)
         FileUtils.writeStringToFile(row, ccp.targetName, ccp.extension)
@@ -34,11 +39,11 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
 
 class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupePersistor {
     override fun createDupe() {
-        val columns = setOf("row_id","dupe_values")
+        val columns = setOf("row_id","hash_columns","dupe_values")
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter)
     }
     override fun writeDupe(rowId: Long, dupes: String) {
-        
+
     }
 }
 
@@ -54,7 +59,7 @@ class SqlTargetPersistor(val targetName: String, val conn: Connection): TargetPe
 
 class SqlDupePersistor(val conn: Connection): DupePersistor {
     override fun createDupe() {
-        val sql = "CREATE TABLE dupes(row_id BIGINT NOT NULL, dupe_values VARCHAR(MAX) NOT NULL)"
+        val sql = "CREATE TABLE dupes(row_id BIGINT NOT NULL, hash_columns VARCHAR(MAX), dupe_values VARCHAR(MAX) NOT NULL)"
         SqlUtils.executeDDL(conn, sql)
     }
 

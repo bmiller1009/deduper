@@ -20,7 +20,7 @@ class Deduper(val config: Config) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    fun dedupe(): DedupeReport {
+    fun dedupe(commitSize: Int = 500): DedupeReport {
 
         var recordCount = 0L
         var dupeCount = 0L
