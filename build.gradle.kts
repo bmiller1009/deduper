@@ -41,6 +41,7 @@ dependencies {
     implementation("com.github.h-thurow", "simple-jndi","0.18.1")
     implementation("commons-codec", "commons-codec","1.12")
     implementation("org.slf4j", "slf4j-simple", "1.7.26")
+    implementation("org.xerial", "sqlite-jdbc", "3.28.0")
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 

@@ -9,7 +9,7 @@ import java.sql.ResultSetMetaData
 
 interface TargetPersistor {
     fun createTarget(rsmd: ResultSetMetaData)
-    fun prepRow(rs: ResultSet, colCount: Int, colNames: Map<Int, String>): Map<String, Any>
+    fun prepRow(rs: ResultSet, colNames: Map<Int, String>): Map<String, Any>
     fun writeRows(data: List<Map<String, Any>>)
 }
 
@@ -25,15 +25,21 @@ abstract class CsvPersistor(config: Map<String, String>) {
 class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), TargetPersistor {
     override fun createTarget(rsmd: ResultSetMetaData) {
         val columns = SqlUtils.getColumnsFromRs(rsmd)
-        FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter)
+        FileUtils.prepFile(ccp.targetName, columns.values.toSet(), ccp.extension, ccp.delimiter)
     }
-    override fun prepRow(rs: ResultSet, colCount: Int, colNames: Map<Int, String>): Map<String, Any> {
+    override fun prepRow(rs: ResultSet, colNames: Map<Int, String>): Map<String, Any> {
+        val row = (1 until colNames.size).map{it ->
+            val column = colNames[it]!!
+            column to rs.getObject(column)
+        }.toMap()
 
-        val dataMap = (1 until colCount).map{rsmd}
+        return row
     }
-    override fun writeRow(rs: ResultSet, colCount: Int) {
-        val row = (1 until colCount).map{rs.getObject(it).toString()}.joinToString(separator=ccp.delimiter)
-        FileUtils.writeStringToFile(row, ccp.targetName, ccp.extension)
+    override fun writeRows(data: List<Map<String, Any>>) {
+        val stringData = data.map {strings ->
+            strings.values.map{it -> it.toString()}.joinToString(separator=ccp.delimiter)
+        }
+        FileUtils.writeStringsToFile(stringData, ccp.targetName, ccp.extension)
     }
 }
 
@@ -52,7 +58,10 @@ class SqlTargetPersistor(val targetName: String, val conn: Connection): TargetPe
         val ddl = SqlUtils.generateDDL(targetName, rsmd)
         SqlUtils.executeDDL(conn, ddl.createStatement)
     }
-    override fun writeRow(rs: ResultSet, colCount: Int) {
+    override fun prepRow(rs: ResultSet, colNames: Map<Int, String>): Map<String, Any> {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+    override fun writeRows(data: List<Map<String, Any>>) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }
@@ -62,7 +71,6 @@ class SqlDupePersistor(val conn: Connection): DupePersistor {
         val sql = "CREATE TABLE dupes(row_id BIGINT NOT NULL, hash_columns VARCHAR(MAX), dupe_values VARCHAR(MAX) NOT NULL)"
         SqlUtils.executeDDL(conn, sql)
     }
-
     override fun writeDupe(rowId: Long, dupes: String) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }

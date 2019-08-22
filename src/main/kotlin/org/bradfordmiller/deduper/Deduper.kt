@@ -20,13 +20,13 @@ class Deduper(val config: Config) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    fun dedupe(commitSize: Int = 500): DedupeReport {
+    fun dedupe(commitSize: Long = 500): DedupeReport {
 
         var recordCount = 0L
         var dupeCount = 0L
         var seenHashes = mutableMapOf<String, Long>()
         var dupeHashes = mutableMapOf<Long, Dupe>()
-        var rsColumns = setOf<String>()
+        var rsColumns = mapOf<Int, String>()
 
         //Get src connection from JNDI - Note that this is always cast to a datasource
         val dsSrc = (JNDIUtils.getDataSource(config.srcJndi, config.context) as Left<DataSource?, String>).left!!
@@ -45,13 +45,14 @@ class Deduper(val config: Config) {
 
                     val rsmd = rs.metaData
                     val colCount = rsmd.columnCount
+                    var data: MutableList<Map<String, Any>> = mutableListOf()
 
                     config.targetPersistor!!.createTarget(rsmd)
                     config.dupePersistor!!.createDupe()
 
                     rsColumns = SqlUtils.getColumnsFromRs(rsmd)
 
-                    if (!rsColumns.containsAll(config.keyOn))
+                    if (!rsColumns.values.containsAll(config.keyOn))
                         throw IllegalArgumentException("One or more provided keys ${config.keyOn} not contained in resultset: $rsColumns")
 
                     val keysPopulated = config.keyOn.isNotEmpty()
@@ -69,7 +70,12 @@ class Deduper(val config: Config) {
 
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
-                            config.targetPersistor!!.writeRow(rs, colCount)
+                            data.add(config.targetPersistor!!.prepRow(rs, rsColumns))
+
+                            if(recordCount % commitSize == 0L) {
+                                config.targetPersistor!!.writeRows(data)
+                                data.clear()
+                            }
                         } else {
                             val firstSeenRow = seenHashes.get(hash)!!
                             val dupe = Dupe(recordCount, firstSeenRow, hashColumns)
@@ -78,10 +84,14 @@ class Deduper(val config: Config) {
                         }
                         recordCount += 1
                     }
+
+                    //Flush target/dupe data that's in the buffer
+                    config.targetPersistor!!.writeRows(data)
+                    data.clear()
                 }
             }
         }
-        val ddReport = DedupeReport(recordCount, rsColumns, dupeCount, dupeHashes)
+        val ddReport = DedupeReport(recordCount, rsColumns.values.toSet(), dupeCount, dupeHashes)
         logger.info("Dedupe report: $ddReport")
         return ddReport
     }

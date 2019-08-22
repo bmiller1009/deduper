@@ -17,10 +17,12 @@ class FileUtils {
                 bw.write(columns.joinToString(separator=delimiter,postfix="\n"))
             }
         }
-        fun writeStringToFile(s: String, file: String, extension: String) {
+        fun writeStringsToFile(strings: List<String>, file: String, extension: String) {
             val fileName = file + "." + extension
             BufferedWriter(FileWriter(fileName, true)).use { bw ->
-                bw.write(s + "\n")
+                strings.forEach {
+                    bw.write(it + "\n")
+                }
             }
         }
     }

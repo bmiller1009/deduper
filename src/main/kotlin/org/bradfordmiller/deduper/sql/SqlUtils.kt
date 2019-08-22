@@ -12,13 +12,13 @@ class SqlUtils {
 
         private val logger = LoggerFactory.getLogger(javaClass)
 
-        fun getColumnsFromRs(rsmd: ResultSetMetaData): Set<String> {
+        fun getColumnsFromRs(rsmd: ResultSetMetaData): Map<Int, String> {
 
             val colCount = rsmd.columnCount
 
             val rsColumns = (1 until colCount).toList().map {i ->
-                rsmd.getColumnName(i)
-            }.toSet()
+                i to rsmd.getColumnName(i)
+            }.toMap()
 
             return rsColumns
         }
