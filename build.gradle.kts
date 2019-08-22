@@ -42,6 +42,7 @@ dependencies {
     implementation("commons-codec", "commons-codec","1.12")
     implementation("org.slf4j", "slf4j-simple", "1.7.26")
     implementation("org.xerial", "sqlite-jdbc", "3.28.0")
+    implementation("org.jetbrains.kotlinx", "kotlinx-serialization-runtime", "0.11.1")
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 

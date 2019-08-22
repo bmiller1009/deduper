@@ -7,6 +7,12 @@ import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
 
+import kotlinx.serialization.*
+import kotlinx.serialization.json.*
+
+@Serializable
+data class Dupe(val rowId: Long, val hashColumns: String, val dupes: String)
+
 interface TargetPersistor {
     fun createTarget(rsmd: ResultSetMetaData)
     fun prepRow(rs: ResultSet, colNames: Map<Int, String>): Map<String, Any>
@@ -15,7 +21,7 @@ interface TargetPersistor {
 
 interface DupePersistor {
     fun createDupe()
-    fun writeDupe(rowId: Long, dupes: String)
+    fun writeDupes(dupesList<Dupe>)
 }
 
 abstract class CsvPersistor(config: Map<String, String>) {
@@ -48,7 +54,7 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
         val columns = setOf("row_id","hash_columns","dupe_values")
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter)
     }
-    override fun writeDupe(rowId: Long, dupes: String) {
+    override fun writeDupes(dupes: List<Dupe>) {
 
     }
 }
