@@ -11,7 +11,14 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 
 @Serializable
-data class Dupe(val rowId: Long, val firstFoundRowNumber: Long, val hashColumns: String, val dupes: String)
+data class Dupe(val rowId: Long, val firstFoundRowNumber: Long, val hashColumns: String, val dupes: String) {
+    override fun toString(): String {
+        return rowId.toString() + "," +
+        firstFoundRowNumber.toString() + "," +
+        hashColumns + "," +
+        dupes
+    }
+}
 
 interface TargetPersistor {
     fun createTarget(rsmd: ResultSetMetaData)
@@ -26,6 +33,13 @@ interface DupePersistor {
 
 abstract class CsvPersistor(config: Map<String, String>) {
     val ccp = CsvConfigParser(config)
+
+    fun convertRowsToStrings(data: List<Map<String, Any>>): List<String> {
+        val convert = data.map {strings ->
+            strings.values.map{it -> it.toString()}.joinToString(separator=ccp.delimiter)
+        }
+        return convert
+    }
 }
 
 class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), TargetPersistor {
@@ -42,9 +56,7 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
         return row
     }
     override fun writeRows(data: List<Map<String, Any>>) {
-        val stringData = data.map {strings ->
-            strings.values.map{it -> it.toString()}.joinToString(separator=ccp.delimiter)
-        }
+        val stringData = convertRowsToStrings(data)
         FileUtils.writeStringsToFile(stringData, ccp.targetName, ccp.extension)
     }
 }
@@ -55,7 +67,8 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter)
     }
     override fun writeDupes(dupes: MutableList<Dupe>) {
-
+        val data = dupes.map {it.toString()}
+        FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension)
     }
 }
 

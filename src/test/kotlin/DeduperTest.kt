@@ -1,9 +1,9 @@
+import kotlinx.serialization.ImplicitReflectionSerializer
 import org.bradfordmiller.deduper.Deduper
 import org.bradfordmiller.deduper.config.Config
 import org.junit.Test
-import java.nio.file.Paths
-import java.nio.file.Files
 
+@ImplicitReflectionSerializer
 class DeduperTest {
     @Test fun DedupeTest() {
 

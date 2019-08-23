@@ -100,14 +100,17 @@ class Deduper(val config: Config) {
 
                             if(dupeCount % commitSize == 0L) {
                                 config.dupePersistor!!.writeDupes(dupesList)
+                                dupesList.clear()
                             }
-
                         }
                         recordCount += 1
                     }
                     //Flush target/dupe data that's in the buffer
                     config.targetPersistor!!.writeRows(data)
                     data.clear()
+
+                    config.dupePersistor!!.writeDupes(dupesList)
+                    dupesList.clear()
                 }
             }
         }
