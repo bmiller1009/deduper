@@ -11,7 +11,7 @@ import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 
 @Serializable
-data class Dupe(val rowId: Long, val hashColumns: String, val dupes: String)
+data class Dupe(val rowId: Long, val firstFoundRowNumber: Long, val hashColumns: String, val dupes: String)
 
 interface TargetPersistor {
     fun createTarget(rsmd: ResultSetMetaData)
@@ -21,7 +21,7 @@ interface TargetPersistor {
 
 interface DupePersistor {
     fun createDupe()
-    fun writeDupes(dupesList<Dupe>)
+    fun writeDupes(dupes: MutableList<Dupe>)
 }
 
 abstract class CsvPersistor(config: Map<String, String>) {
@@ -54,7 +54,7 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
         val columns = setOf("row_id","hash_columns","dupe_values")
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter)
     }
-    override fun writeDupes(dupes: List<Dupe>) {
+    override fun writeDupes(dupes: MutableList<Dupe>) {
 
     }
 }
@@ -77,7 +77,7 @@ class SqlDupePersistor(val conn: Connection): DupePersistor {
         val sql = "CREATE TABLE dupes(row_id BIGINT NOT NULL, hash_columns VARCHAR(MAX), dupe_values VARCHAR(MAX) NOT NULL)"
         SqlUtils.executeDDL(conn, sql)
     }
-    override fun writeDupe(rowId: Long, dupes: String) {
+    override fun writeDupes(dupes: MutableList<Dupe>) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 }
