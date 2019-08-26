@@ -3,12 +3,10 @@ package org.bradfordmiller.deduper.sql
 import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.sql.JDBCType
-import java.sql.ResultSet
 import java.sql.ResultSetMetaData
 
-data class SqlDDL(val createStatement: String, val insertStatement: String)
-
 class SqlUtils {
+
     companion object {
 
         private val logger = LoggerFactory.getLogger(javaClass)
@@ -24,14 +22,8 @@ class SqlUtils {
             return rsColumns
         }
 
-        fun generateDDL(tableName: String, rsmd: ResultSetMetaData): SqlDDL {
-
-            val ctasClause = "CREATE TABLE $tableName AS "
-            val insertClause = "INSERT INTO $tableName "
-
+        private fun getColumnsCommaDelimited(rsmd: ResultSetMetaData): String {
             val colCount = rsmd.columnCount
-            val wildcards = (1 until colCount).map {"?"}.joinToString(",")
-
             val columnsComma = (1 until colCount).map { c ->
 
                 val colName = rsmd.getColumnName(c)
@@ -47,20 +39,29 @@ class SqlUtils {
                         }
             }.joinToString(",")
 
-            val ctasFinal = ctasClause + columnsComma
-            val insertFinal = "$insertClause ($columnsComma) VALUES ($wildcards)"
+            return columnsComma
+        }
 
-            return SqlDDL(ctasFinal, insertFinal)
+        fun generateInsert(tableName: String, rsmd: ResultSetMetaData): String {
+            val colCount = rsmd.columnCount
+            val insertClause = "INSERT INTO $tableName "
+            val wildcards = (1 until colCount).map {"?"}.joinToString(",")
+            val columnsComma = getColumnsCommaDelimited(rsmd)
+            val insertFinal = "$insertClause ($columnsComma) VALUES ($wildcards)"
+            return insertFinal
+        }
+
+        fun generateDDL(tableName: String, rsmd: ResultSetMetaData): String {
+            val ctasClause = "CREATE TABLE $tableName AS "
+            val columnsComma = getColumnsCommaDelimited(rsmd)
+            val ctasFinal = ctasClause + columnsComma
+            return ctasFinal
         }
 
         fun executeDDL(conn: Connection, ddl: String) {
             conn.createStatement().use {stmt ->
                 stmt.executeUpdate(ddl)
             }
-        }
-
-        fun writeDataToTarget(conn: Connection, insertSql: String, data: Array<Map<String, Object>>) {
-
         }
     }
 }

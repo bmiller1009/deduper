@@ -17,8 +17,6 @@ data class DedupeReport(val recordCount: Long, val columnsFound: Set<String>, va
 
 class Deduper(val config: Config) {
 
-    //abstract fun processRs(rs: ResultSet)
-
     private val logger = LoggerFactory.getLogger(javaClass)
 
     fun dedupe(commitSize: Long = 500): DedupeReport {
