@@ -7,18 +7,7 @@ import java.sql.Connection
 import java.sql.ResultSet
 import java.sql.ResultSetMetaData
 
-import kotlinx.serialization.*
-import kotlinx.serialization.json.*
-
-@Serializable
-data class Dupe(val rowId: Long, val firstFoundRowNumber: Long, val hashColumns: String, val dupes: String) {
-    override fun toString(): String {
-        return rowId.toString() + "," +
-        firstFoundRowNumber.toString() + "," +
-        hashColumns + "," +
-        dupes
-    }
-}
+data class Dupe(val rowId: Long, val firstFoundRowNumber: Long, val dupes: String)
 
 interface TargetPersistor {
     fun createTarget(rsmd: ResultSetMetaData)
@@ -63,11 +52,15 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
 
 class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupePersistor {
     override fun createDupe() {
-        val columns = setOf("row_id","hash_columns","dupe_values")
+        val columns = setOf("row_id", "first_found_row_number", "dupe_values")
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter)
     }
     override fun writeDupes(dupes: MutableList<Dupe>) {
-        val data = dupes.map {it.toString()}
+        val data = dupes.map {it ->
+            it.rowId.toString() + ccp.delimiter +
+              it.firstFoundRowNumber.toString() + ccp.delimiter +
+              it.dupes
+        }
         FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension)
     }
 }
@@ -87,7 +80,7 @@ class SqlTargetPersistor(val targetName: String, val conn: Connection): TargetPe
 
 class SqlDupePersistor(val conn: Connection): DupePersistor {
     override fun createDupe() {
-        val sql = "CREATE TABLE dupes(row_id BIGINT NOT NULL, hash_columns VARCHAR(MAX), dupe_values VARCHAR(MAX) NOT NULL)"
+        val sql = "CREATE TABLE dupes(row_id BIGINT NOT NULL, first_found_row_number BIGINT NOT NULL, dupe_values VARCHAR(MAX) NOT NULL)"
         SqlUtils.executeDDL(conn, sql)
     }
     override fun writeDupes(dupes: MutableList<Dupe>) {

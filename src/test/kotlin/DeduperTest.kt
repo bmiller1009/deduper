@@ -1,9 +1,7 @@
-import kotlinx.serialization.ImplicitReflectionSerializer
 import org.bradfordmiller.deduper.Deduper
 import org.bradfordmiller.deduper.config.Config
 import org.junit.Test
 
-@ImplicitReflectionSerializer
 class DeduperTest {
     @Test fun DedupeTest() {
 

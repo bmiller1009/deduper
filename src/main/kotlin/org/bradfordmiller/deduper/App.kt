@@ -1,6 +1,5 @@
 package org.bradfordmiller.deduper.config
 
-import kotlinx.serialization.ImplicitReflectionSerializer
 import org.bradfordmiller.deduper.Deduper
 
 class App {
@@ -10,7 +9,6 @@ class App {
         }
 }
 
-@ImplicitReflectionSerializer
 fun main(args: Array<String>) {
     val config = Config(
             "RealEstateIn",

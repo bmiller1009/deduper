@@ -1,8 +1,5 @@
 package org.bradfordmiller.deduper
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.jndi.JNDIUtils
@@ -10,19 +7,13 @@ import org.bradfordmiller.deduper.persistors.Dupe
 import org.bradfordmiller.deduper.sql.SqlUtils
 
 import org.bradfordmiller.deduper.utils.Left
+import org.json.JSONObject
 import org.slf4j.LoggerFactory
 
 import java.sql.ResultSet
 import javax.sql.DataSource
 
-import kotlinx.serialization.*
-import kotlinx.serialization.json.*
-
-@Serializable
 data class DedupeReport(val recordCount: Long, val columnsFound: Set<String>, val dupeCount: Long, var dupes: MutableMap<Long, Dupe>)
-
-@Serializable
-data class DupeData(val data: Map<String, Any>)
 
 class Deduper(val config: Config) {
 
@@ -30,7 +21,6 @@ class Deduper(val config: Config) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    @ImplicitReflectionSerializer
     fun dedupe(commitSize: Long = 500): DedupeReport {
 
         var recordCount = 0L
@@ -69,8 +59,6 @@ class Deduper(val config: Config) {
 
                     val keysPopulated = config.keyOn.isNotEmpty()
 
-                    val json = Json(JsonConfiguration.Stable)
-
                     while (rs.next()) {
 
                         val hashColumns =
@@ -92,8 +80,8 @@ class Deduper(val config: Config) {
                         } else {
                             val firstSeenRow = seenHashes.get(hash)!!
                             val dupeValues = config.targetPersistor!!.prepRow(rs, rsColumns)
-                            val dupeJson = json.stringify(DupeData::class.serializer(), DupeData(dupeValues))
-                            val dupe = Dupe(recordCount, firstSeenRow, hashColumns, dupeJson)
+                            val dupeJson = JSONObject(dupeValues).toString()
+                            val dupe = Dupe(recordCount, firstSeenRow, dupeJson)
                             dupesList.add(dupe)
                             dupeHashes.put(recordCount, dupe)
                             dupeCount += 1
