@@ -71,7 +71,7 @@ class Deduper(val config: Config) {
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
                             data.add(config.targetPersistor!!.prepRow(rs, rsColumns))
-                            if(recordCount % commitSize == 0L) {
+                            if(recordCount > 0 && data.size % commitSize == 0L) {
                                 config.targetPersistor!!.writeRows(data)
                                 data.clear()
                             }
@@ -84,7 +84,7 @@ class Deduper(val config: Config) {
                             dupeHashes.put(recordCount, dupe)
                             dupeCount += 1
 
-                            if(dupeCount % commitSize == 0L) {
+                            if(dupeCount > 0 && dupesList.size % commitSize == 0L) {
                                 config.dupePersistor!!.writeDupes(dupesList)
                                 dupesList.clear()
                             }

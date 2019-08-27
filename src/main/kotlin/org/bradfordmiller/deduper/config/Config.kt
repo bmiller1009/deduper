@@ -46,9 +46,9 @@ class Config() {
                 dupesJndi: String,
                 keyOn: Set<String> = setOf()): this(srcJndi, srcName, context, keyOn) {
 
-        val targetConn = JNDIUtils.getJndiConnection(tgtJndi, context)
-        val dupesConn = JNDIUtils.getJndiConnection(dupesJndi, context)
-        targetPersistor = SqlTargetPersistor(tgtTable, targetConn)
-        dupePersistor = SqlDupePersistor(dupesConn)
+        //val targetConn = JNDIUtils.getJndiConnection(tgtJndi, context)
+        //val dupesConn = JNDIUtils.getJndiConnection(dupesJndi, context)
+        targetPersistor = SqlTargetPersistor(tgtTable, tgtJndi, context)
+        dupePersistor = SqlDupePersistor(dupesJndi, context)
     }
 }

@@ -3,7 +3,7 @@ import org.bradfordmiller.deduper.config.Config
 import org.junit.Test
 
 class DeduperTest {
-    @Test fun DedupeTest() {
+    @Test fun dedupeCsvTest() {
 
         val config = Config(
                 "RealEstateIn",
@@ -12,6 +12,21 @@ class DeduperTest {
                 "RealEstateOut",
                 "RealEstateOutDupes",
                 mutableSetOf("street","city", "state", "zip", "price")
+        )
+
+        val deduper = Deduper(config)
+
+        deduper.dedupe()
+    }
+    @Test fun dedupeSqlTest() {
+        val config = Config(
+            "RealEstateIn",
+            "Sacramentorealestatetransactions",
+            "default_ds",
+            "SqlLiteTest",
+            "real_estate",
+            "SqlLiteTest",
+            mutableSetOf("street","city", "state", "zip", "price")
         )
 
         val deduper = Deduper(config)

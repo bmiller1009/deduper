@@ -1,13 +1,11 @@
 package org.bradfordmiller.deduper.persistors
 
 import org.bradfordmiller.deduper.csv.CsvConfigParser
+import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.sql.SqlUtils
 import org.bradfordmiller.deduper.utils.FileUtils
 import org.slf4j.LoggerFactory
-import java.sql.Connection
-import java.sql.ResultSet
-import java.sql.ResultSetMetaData
-import java.sql.SQLException
+import java.sql.*
 
 data class Dupe(val rowId: Long, val firstFoundRowNumber: Long, val dupes: String)
 
@@ -66,59 +64,86 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
     }
 }
 
-abstract class SqlPersistor(val conn: Connection) {
+class SqlTargetPersistor(val targetName: String, val targetJndi: String, val context: String): TargetPersistor {
 
-    internal val logger = LoggerFactory.getLogger(javaClass)
+    private val logger = LoggerFactory.getLogger(javaClass)
 
-    init {
-        conn.setAutoCommit(false)
+    private val dbInfo by lazy {
+        val sql = "SELECT * FROM $targetName"
+        JNDIUtils.getJndiConnection(targetJndi, context).use { conn ->
+            conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
+                stmt.executeQuery().use { rs ->
+                    val metadata = rs.metaData
+                    Pair(SqlUtils.generateInsert(targetName, metadata, conn.metaData.databaseProductName), SqlUtils.getColumnIdxFromRs(metadata))
+                }
+            }
+        }
     }
-}
-
-class SqlDDL(val rsmd: ResultSetMetaData, val targetName: String, conn: Connection) {
-    val createDDL = SqlUtils.generateDDL(targetName, rsmd)
-    private val insertDDL = SqlUtils.generateInsert(targetName, rsmd)
-    val pstmt = conn.prepareStatement(insertDDL)
-}
-
-class SqlTargetPersistor(val targetName: String, conn: Connection): SqlPersistor(conn), TargetPersistor {
-
-    lateinit var sqlDDL: SqlDDL
 
     override fun createTarget(rsmd: ResultSetMetaData) {
-        sqlDDL = SqlDDL(rsmd, targetName, conn)
-        val ddl = sqlDDL.createDDL
-        SqlUtils.executeDDL(conn, ddl)
+        JNDIUtils.getJndiConnection(targetJndi, context).use { conn ->
+            val vendor = conn.metaData.databaseProductName
+            val ddl = SqlUtils.generateDDL(targetName, rsmd, vendor)
+            SqlUtils.executeDDL(conn, ddl)
+        }
     }
+
     override fun writeRows(data: List<Map<String, Any>>) {
-        /*data.forEach {
-            sqlDDL.pstmt.
-        }*/
+        val sql = dbInfo.first
+        val columnMap = dbInfo.second
+        JNDIUtils.getJndiConnection(targetJndi, context).use { conn ->
+            conn.setAutoCommit(false)
+            conn.prepareStatement(sql).use {pstmt ->
+                try {
+                    data.forEach { kvp ->
+                        kvp.forEach {
+                            val idx = columnMap[it.key]!!
+                            pstmt.setObject(idx, it.value)
+                        }
+                        pstmt.execute()
+                    }
+                    conn.commit()
+                } catch (sqlEx: SQLException) {
+                    logger.error("Error while inserting data: ${sqlEx.message}")
+                } finally {
+                    conn.rollback()
+                }
+            }
+        }
     }
 }
 
-class SqlDupePersistor(conn: Connection): SqlPersistor(conn), DupePersistor {
+class SqlDupePersistor(val dupesJndi: String, val context: String): DupePersistor {
 
-    private val createStatement = "CREATE TABLE dupes(row_id BIGINT NOT NULL, first_found_row_number BIGINT NOT NULL, dupe_values VARCHAR(MAX) NOT NULL)"
-    private val insertStatement = "INSERT INTO TABLE dupes(row_id, first_found_row_number, dupe_values) VALUES (?,?,?)"
-    private val pstmt = conn.prepareStatement(insertStatement)
+    private val logger = LoggerFactory.getLogger(javaClass)
+    private val insertStatement = "INSERT INTO dupes(row_id, first_found_row_number, dupe_values) VALUES (?,?,?)"
 
     override fun createDupe() {
-        SqlUtils.executeDDL(conn, createStatement)
+        JNDIUtils.getJndiConnection(dupesJndi, context).use { conn ->
+            val vendor = conn.metaData.databaseProductName
+            val createStatement =
+                "CREATE TABLE dupes(row_id ${SqlUtils.getLongType(vendor)} NOT NULL, first_found_row_number ${SqlUtils.getLongType(vendor)} NOT NULL, dupe_values ${SqlUtils.getStringType(vendor)} ${SqlUtils.getStringMaxSize(vendor)} NOT NULL)"
+            SqlUtils.executeDDL(conn, createStatement)
+        }
     }
     override fun writeDupes(dupes: MutableList<Dupe>) {
-        try {
-            dupes.forEach {
-                pstmt.setLong(1, it.rowId)
-                pstmt.setLong(2, it.firstFoundRowNumber)
-                pstmt.setString(3, it.dupes)
-                pstmt.execute()
+        JNDIUtils.getJndiConnection(dupesJndi, context).use {conn ->
+            conn.setAutoCommit(false)
+            conn.prepareStatement(insertStatement).use {pstmt ->
+                try {
+                    dupes.forEach {
+                        pstmt.setLong(1, it.rowId)
+                        pstmt.setLong(2, it.firstFoundRowNumber)
+                        pstmt.setString(3, it.dupes)
+                        pstmt.execute()
+                    }
+                    conn.commit()
+                } catch (sqlEx: SQLException) {
+                    logger.error("Error while inserting duplicate values: ${sqlEx.message}")
+                } finally {
+                    conn.rollback()
+                }
             }
-            conn.commit()
-        } catch(sql: SQLException) {
-            logger.error("Error while inserting duplicate values: ${sql.message}")
-        } finally {
-            conn.rollback()
         }
     }
 }
