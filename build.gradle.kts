@@ -13,6 +13,7 @@ plugins {
     application
 }
 
+//Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
 release {
     failOnCommitNeeded = true
     failOnPublishNeeded = true
