@@ -1,8 +1,17 @@
+import org.apache.commons.io.FileUtils
 import org.bradfordmiller.deduper.Deduper
 import org.bradfordmiller.deduper.config.Config
 import org.junit.Test
+import org.junit.jupiter.api.BeforeAll;
+import java.io.File
 
 class DeduperTest {
+
+    @BeforeAll
+    fun cleanUp() {
+        FileUtils.cleanDirectory(File("src/test/resources/data/out"))
+    }
+
     @Test fun dedupeCsvTest() {
 
         val config = Config(
