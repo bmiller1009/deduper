@@ -63,7 +63,7 @@ class Deduper(val config: Config) {
                                 if (keysPopulated) {
                                     config.keyOn.map { rs.getString(it) }.joinToString()
                                 } else {
-                                    (1 until colCount).toList().map { rs.getString(it) }.joinToString()
+                                    (1..colCount).toList().map { rs.getString(it) }.joinToString()
                                 }
 
                         val hash = DigestUtils.md5Hex(hashColumns).toUpperCase()

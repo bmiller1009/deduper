@@ -55,7 +55,7 @@ class SqlUtils {
 
             val colCount = rsmd.columnCount
 
-            val rsColumns = (1 until colCount).toList().map {i ->
+            val rsColumns = (1..colCount).toList().map {i ->
                 i to rsmd.getColumnName(i)
             }.toMap()
 
@@ -65,7 +65,7 @@ class SqlUtils {
         fun getColumnIdxFromRs(rsmd: ResultSetMetaData): Map<String, Int> {
             val colCount = rsmd.columnCount
 
-            val rsColumns = (1 until colCount).toList().map {i ->
+            val rsColumns = (1..colCount).toList().map {i ->
                 rsmd.getColumnName(i) to i
             }.toMap()
 
@@ -86,7 +86,7 @@ class SqlUtils {
 
         private fun getColumnsCommaDelimited(rsmd: ResultSetMetaData, vendor: String, includeType: Boolean = false): String {
             val colCount = rsmd.columnCount
-            val columnsComma = (1 until colCount).map { c ->
+            val columnsComma = (1..colCount).map { c ->
 
                 val colName = rsmd.getColumnName(c)
                 val type = rsmd.getColumnType(c)
@@ -107,7 +107,7 @@ class SqlUtils {
         fun generateInsert(tableName: String, rsmd: ResultSetMetaData, vendor: String): String {
             val colCount = rsmd.columnCount
             val insertClause = "INSERT INTO $tableName "
-            val wildcards = (1 until colCount).map {"?"}.joinToString(",")
+            val wildcards = (1..colCount).map {"?"}.joinToString(",")
             val columnsComma = getColumnsCommaDelimited(rsmd, vendor)
             val insertFinal = "$insertClause ($columnsComma) VALUES ($wildcards)"
             return insertFinal

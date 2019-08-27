@@ -13,7 +13,7 @@ interface TargetPersistor {
     fun createTarget(rsmd: ResultSetMetaData)
     fun writeRows(data: List<Map<String, Any>>)
     fun prepRow(rs: ResultSet, colNames: Map<Int, String>): Map<String, Any> {
-        val row = (1 until colNames.size).map{it ->
+        val row = (1..colNames.size).map{it ->
             val column = colNames[it]!!
             column to rs.getObject(column)
         }.toMap()
