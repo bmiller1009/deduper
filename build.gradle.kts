@@ -6,10 +6,44 @@
 
 plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
-    id("org.jetbrains.kotlin.jvm").version("1.3.41")
+    id("org.jetbrains.kotlin.jvm").version("1.3.50")
     id ("distribution")
+    id ("net.researchgate.release").version("2.6.0")
     // Apply the application plugin to add support for building a CLI application.
     application
+}
+
+release {
+    failOnCommitNeeded = true
+    failOnPublishNeeded = true
+    failOnSnapshotDependencies = true
+    failOnUnversionedFiles = true
+    failOnUpdateNeeded = true
+    revertOnFail = true
+    preCommitText = ""
+    preTagCommitMessage = "[Gradle Release Plugin] - pre tag commit: "
+    tagCommitMessage = "[Gradle Release Plugin] - creating tag: "
+    newVersionCommitMessage = "[Gradle Release Plugin] - new version commit: "
+    tagTemplate = "${version}"
+    versionPropertyFile = "gradle.properties"
+    //versionProperties = []
+    //snapshotSuffix = "-SNAPSHOT"
+    //buildTasks = ["build"]
+    //ignoredSnapshotDependencies = []
+    /*versionPatterns = [
+    /(\d+)([^\d]*$)/: { Matcher m, Project p -> m.replaceAll("${(m[0][1] as int) + 1}${m[0][2]}") }
+    ]*/
+    //pushReleaseVersionBranch = false
+    /*scmAdapters = [
+        net.researchgate.release.GitAdapter
+    ]
+    git {
+        requireBranch = 'master'
+        pushToRemote = 'origin'
+        pushToBranchPrefix = ''
+        commitVersionFileOnly = false
+        signTag = false
+    }*/
 }
 
 distributions {
