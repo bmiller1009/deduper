@@ -100,8 +100,16 @@ class SqlTargetPersistor(val targetName: String, val targetJndi: String, val con
                             val idx = columnMap[it.key]!!
                             pstmt.setObject(idx, it.value)
                         }
-                        pstmt.execute()
+                        pstmt.addBatch()
                     }
+
+                    try {
+                        pstmt.executeBatch()
+                    } catch(sqlEx: SQLException) {
+                        logger.error("Error committing batch: ${sqlEx.message}")
+                        return
+                    }
+
                     conn.commit()
                 } catch (sqlEx: SQLException) {
                     logger.error("Error while inserting data: ${sqlEx.message}")
@@ -135,8 +143,16 @@ class SqlDupePersistor(val dupesJndi: String, val context: String): DupePersisto
                         pstmt.setLong(1, it.rowId)
                         pstmt.setLong(2, it.firstFoundRowNumber)
                         pstmt.setString(3, it.dupes)
-                        pstmt.execute()
+                        pstmt.addBatch()
                     }
+
+                    try {
+                        pstmt.executeBatch()
+                    } catch(sqlEx: SQLException) {
+                        logger.error("Error committing batch: ${sqlEx.message}")
+                        return
+                    }
+
                     conn.commit()
                 } catch (sqlEx: SQLException) {
                     logger.error("Error while inserting duplicate values: ${sqlEx.message}")

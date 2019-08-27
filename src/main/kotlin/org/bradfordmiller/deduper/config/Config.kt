@@ -1,7 +1,6 @@
 package org.bradfordmiller.deduper.config
 
 import org.bradfordmiller.deduper.csv.CsvConfigParser
-import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.persistors.*
 
 class Config() {
