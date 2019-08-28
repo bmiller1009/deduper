@@ -1,7 +1,7 @@
 package org.bradfordmiller.deduper.sql
 
 class SqlVendorTypes(vendor: String) {
-    val formattedVendor = vendor.toLowerCase()
+    private val formattedVendor = vendor.toLowerCase()
     fun getStringType(): String {
         return if(formattedVendor.contains("sqlite")) {
             "TEXT"

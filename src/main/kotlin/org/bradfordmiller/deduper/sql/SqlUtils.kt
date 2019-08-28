@@ -9,7 +9,7 @@ class SqlUtils {
 
     companion object {
 
-        private val logger = LoggerFactory.getLogger(this::class.java)
+        private val logger = LoggerFactory.getLogger(javaClass::class.java)
 
         fun getColumnsFromRs(rsmd: ResultSetMetaData): Map<Int, String> {
             val colCount = rsmd.columnCount

@@ -18,13 +18,20 @@ data class DedupeReport(
     val columnsFound: Set<String>,
     val dupeCount: Long,
     var dupes: MutableMap<Long, Dupe>
-)
+) {
+    override fun toString(): String {
+        return "recordCount=$recordCount, columnsFound=$columnsFound, dupeCount=$dupeCount"
+    }
+}
 
 class Deduper(private val config: Config) {
 
-    private val logger = LoggerFactory.getLogger(javaClass)
-
+    companion object {
+        val logger = LoggerFactory.getLogger(Deduper::class.java)
+    }
     fun dedupe(commitSize: Long = 500): DedupeReport {
+
+        logger.info("Beginning the deduping process.")
 
         fun <T> writeData(writePersistor: WritePersistor<T>, data: MutableList<T>) {
             writePersistor.writeRows(data)

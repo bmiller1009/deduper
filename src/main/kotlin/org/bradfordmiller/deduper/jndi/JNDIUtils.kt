@@ -16,7 +16,7 @@ class JNDIUtils {
 
     companion object {
 
-        private val logger = LoggerFactory.getLogger(this::class.java)
+        private val logger = LoggerFactory.getLogger(javaClass::class.java)
 
         fun getDataSource(jndi: String, context: String): Either<DataSource?, Map<*, *>> {
             val ctx = InitialContext() as Context

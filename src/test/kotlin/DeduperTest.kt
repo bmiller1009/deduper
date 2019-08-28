@@ -1,6 +1,6 @@
-import org.apache.commons.io.FileUtils
 import org.bradfordmiller.deduper.Deduper
 import org.bradfordmiller.deduper.config.Config
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
@@ -10,12 +10,10 @@ import java.nio.file.Files
 class DeduperTest {
 
     companion object {
-        private val logger = LoggerFactory.getLogger(this::class.java)
+        private val logger = LoggerFactory.getLogger(DeduperTest::class.java)
         private val dataDir = "src/test/resources/data/outputData"
 
-        @BeforeAll
-        @JvmStatic
-        fun cleanUp() {
+        fun clearDataDir() {
             logger.info("Cleaning the output directory $dataDir")
 
             val dir = File(dataDir)
@@ -24,6 +22,16 @@ class DeduperTest {
                 if(!it.isHidden)
                     Files.delete(it.toPath())
             }
+        }
+        @BeforeAll
+        @JvmStatic
+        fun cleanUpBefore() {
+            clearDataDir()
+        }
+        @AfterAll
+        @JvmStatic
+        fun cleanUpAfter() {
+            clearDataDir()
         }
     }
 
