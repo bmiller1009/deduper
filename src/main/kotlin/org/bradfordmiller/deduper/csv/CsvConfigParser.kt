@@ -4,15 +4,14 @@ import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.utils.Right
 
 class CsvConfigParser(config: Map<String, String>) {
-    val extension = config["ext"]!!
-    val delimiter = config["delimiter"]!!
-    val targetName = config["targetName"]!!
+    val extension = config["ext"] ?: error("File extension (ext) setting is missing")
+    val delimiter = config["delimiter"] ?: error("File delimiter (delimiter) setting is missing")
+    val targetName = config["targetName"] ?: error("Target csv file (targetName) setting is missing")
 
     companion object {
         fun getCsvMap(context: String, jndi: String): Map<String, String> {
             val ds = JNDIUtils.getDataSource(jndi, context) as Right
-            val map = ds.right as Map<String, String>
-            return map
+            return ds.right as Map<String, String>
         }
     }
 }

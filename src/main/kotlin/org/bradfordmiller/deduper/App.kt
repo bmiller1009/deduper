@@ -1,6 +1,6 @@
-package org.bradfordmiller.deduper.config
+package org.bradfordmiller.deduper
 
-import org.bradfordmiller.deduper.Deduper
+import org.bradfordmiller.deduper.config.Config
 
 class App {
     val greeting: String

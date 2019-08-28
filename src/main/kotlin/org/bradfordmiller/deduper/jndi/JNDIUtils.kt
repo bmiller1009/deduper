@@ -12,39 +12,36 @@ import javax.naming.Context
 import javax.naming.InitialContext
 import javax.sql.DataSource
 
-data class FileStore(val fileName: String, val ext: String, val delimiter: String)
-
 class JNDIUtils {
 
     companion object {
 
-        private val logger = LoggerFactory.getLogger(javaClass)
+        private val logger = LoggerFactory.getLogger(this::class.java)
 
         fun getDataSource(jndi: String, context: String): Either<DataSource?, Map<*, *>> {
             val ctx = InitialContext() as Context
             val mc = (ctx.lookup(context) as MemoryContext)
-            val lookup = mc.lookup(jndi)
 
-            return when (lookup) {
+            return when (val lookup = mc.lookup(jndi)) {
                 is DataSource -> Left(lookup)
                 is Map<*, *> -> Right(lookup)
                 else -> {
-                    throw UnknownObjectException("jndi entry $jndi for context $context is neither an DataSource or a Map<String, String>")
+                    throw UnknownObjectException(
+                        "jndi entry $jndi for context $context is neither an DataSource or a Map<String, String>"
+                    )
                 }
             }
         }
-
         fun getConnection(ds: DataSource): Connection? {
-            val conn = try {ds.connection}
-            catch(sqlEx: SQLException) {
+            return try {
+                ds.connection
+            } catch(sqlEx: SQLException) {
                 logger.error(sqlEx.message)
                 throw sqlEx
             }
-            return conn
         }
-
-        fun getJndiConnection(jndi: String, context: String): Connection {
-            val jndi = (getDataSource(jndi, context) as Left<DataSource?, String>).left!!
+        fun getJndiConnection(jndiString: String, context: String): Connection {
+            val jndi = (getDataSource(jndiString, context) as Left<DataSource?, String>).left!!
             return jndi.connection
         }
     }

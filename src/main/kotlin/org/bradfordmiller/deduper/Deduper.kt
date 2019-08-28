@@ -3,7 +3,7 @@ package org.bradfordmiller.deduper
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.jndi.JNDIUtils
-import org.bradfordmiller.deduper.persistors.Dupe
+import org.bradfordmiller.deduper.persistors.*
 import org.bradfordmiller.deduper.sql.SqlUtils
 
 import org.bradfordmiller.deduper.utils.Left
@@ -13,13 +13,28 @@ import org.slf4j.LoggerFactory
 import java.sql.ResultSet
 import javax.sql.DataSource
 
-data class DedupeReport(val recordCount: Long, val columnsFound: Set<String>, val dupeCount: Long, var dupes: MutableMap<Long, Dupe>)
+data class DedupeReport(
+    val recordCount: Long,
+    val columnsFound: Set<String>,
+    val dupeCount: Long,
+    var dupes: MutableMap<Long, Dupe>
+)
 
-class Deduper(val config: Config) {
+class Deduper(private val config: Config) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
 
     fun dedupe(commitSize: Long = 500): DedupeReport {
+
+        fun <T> writeData(writePersistor: WritePersistor<T>, data: MutableList<T>) {
+            writePersistor.writeRows(data)
+            data.clear()
+        }
+        fun <T> writeData(count: Long, writePersistor: WritePersistor<T>, data: MutableList<T>) {
+            if(count > 0 && data.size % commitSize == 0L) {
+                writeData(writePersistor, data)
+            }
+        }
 
         var recordCount = 0L
         var dupeCount = 0L
@@ -52,8 +67,9 @@ class Deduper(val config: Config) {
 
                     rsColumns = SqlUtils.getColumnsFromRs(rsmd)
 
-                    if (!rsColumns.values.containsAll(config.keyOn))
-                        throw IllegalArgumentException("One or more provided keys ${config.keyOn} not contained in resultset: $rsColumns")
+                    require(rsColumns.values.containsAll(config.keyOn)) {
+                        "One or more provided keys ${config.keyOn} not contained in resultset: $rsColumns"
+                    }
 
                     val keysPopulated = config.keyOn.isNotEmpty()
 
@@ -71,10 +87,7 @@ class Deduper(val config: Config) {
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
                             data.add(config.targetPersistor!!.prepRow(rs, rsColumns))
-                            if(recordCount > 0 && data.size % commitSize == 0L) {
-                                config.targetPersistor!!.writeRows(data)
-                                data.clear()
-                            }
+                            writeData(recordCount, config.targetPersistor!!, data)
                         } else {
                             val firstSeenRow = seenHashes.get(hash)!!
                             val dupeValues = config.targetPersistor!!.prepRow(rs, rsColumns)
@@ -83,20 +96,13 @@ class Deduper(val config: Config) {
                             dupesList.add(dupe)
                             dupeHashes.put(recordCount, dupe)
                             dupeCount += 1
-
-                            if(dupeCount > 0 && dupesList.size % commitSize == 0L) {
-                                config.dupePersistor!!.writeDupes(dupesList)
-                                dupesList.clear()
-                            }
+                            writeData(dupeCount, config.dupePersistor!!, dupesList)
                         }
                         recordCount += 1
                     }
                     //Flush target/dupe data that's in the buffer
-                    config.targetPersistor!!.writeRows(data)
-                    data.clear()
-
-                    config.dupePersistor!!.writeDupes(dupesList)
-                    dupesList.clear()
+                    writeData(config.targetPersistor!!, data)
+                    writeData(config.dupePersistor!!, dupesList)
                 }
             }
         }
