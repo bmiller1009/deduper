@@ -27,24 +27,6 @@ release {
     newVersionCommitMessage = "[Gradle Release Plugin] - new version commit: "
     tagTemplate = "${version}"
     versionPropertyFile = "gradle.properties"
-    //versionProperties = []
-    //snapshotSuffix = "-SNAPSHOT"
-    //buildTasks = ["build"]
-    //ignoredSnapshotDependencies = []
-    /*versionPatterns = [
-    /(\d+)([^\d]*$)/: { Matcher m, Project p -> m.replaceAll("${(m[0][1] as int) + 1}${m[0][2]}") }
-    ]*/
-    //pushReleaseVersionBranch = false
-    /*scmAdapters = [
-        net.researchgate.release.GitAdapter
-    ]
-    git {
-        requireBranch = 'master'
-        pushToRemote = 'origin'
-        pushToBranchPrefix = ''
-        commitVersionFileOnly = false
-        signTag = false
-    }*/
 }
 
 distributions {
