@@ -5,6 +5,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.nio.file.Files
 
 class DeduperTest {
 
@@ -16,7 +17,13 @@ class DeduperTest {
         @JvmStatic
         fun cleanUp() {
             logger.info("Cleaning the output directory $dataDir")
-            FileUtils.cleanDirectory(File(dataDir))
+
+            val dir = File(dataDir)
+            val files = dir.listFiles()
+            files.forEach {
+                if(!it.isHidden)
+                    Files.delete(it.toPath())
+            }
         }
     }
 
