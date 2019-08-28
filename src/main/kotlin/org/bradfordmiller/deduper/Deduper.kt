@@ -69,8 +69,8 @@ class Deduper(private val config: Config) {
                     var data: MutableList<Map<String, Any>> = mutableListOf()
                     var dupesList: MutableList<Dupe> = mutableListOf()
 
-                    config.targetPersistor!!.createTarget(rsmd)
-                    config.dupePersistor!!.createDupe()
+                    config.targetPersistor.createTarget(rsmd)
+                    config.dupePersistor.createDupe()
 
                     rsColumns = SqlUtils.getColumnsFromRs(rsmd)
 
@@ -93,23 +93,23 @@ class Deduper(private val config: Config) {
 
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
-                            data.add(config.targetPersistor!!.prepRow(rs, rsColumns))
-                            writeData(recordCount, config.targetPersistor!!, data)
+                            data.add(config.targetPersistor.prepRow(rs, rsColumns))
+                            writeData(recordCount, config.targetPersistor, data)
                         } else {
-                            val firstSeenRow = seenHashes.get(hash)!!
-                            val dupeValues = config.targetPersistor!!.prepRow(rs, rsColumns)
+                            val firstSeenRow = seenHashes[hash]!!
+                            val dupeValues = config.targetPersistor.prepRow(rs, rsColumns)
                             val dupeJson = JSONObject(dupeValues).toString()
                             val dupe = Dupe(recordCount, firstSeenRow, dupeJson)
                             dupesList.add(dupe)
                             dupeHashes.put(recordCount, dupe)
                             dupeCount += 1
-                            writeData(dupeCount, config.dupePersistor!!, dupesList)
+                            writeData(dupeCount, config.dupePersistor, dupesList)
                         }
                         recordCount += 1
                     }
                     //Flush target/dupe data that's in the buffer
-                    writeData(config.targetPersistor!!, data)
-                    writeData(config.dupePersistor!!, dupesList)
+                    writeData(config.targetPersistor, data)
+                    writeData(config.dupePersistor, dupesList)
                 }
             }
         }

@@ -67,7 +67,7 @@ class SqlTargetPersistor(
 ): TargetPersistor {
 
     companion object {
-        val logger = LoggerFactory.getLogger(javaClass::class.java)
+        val logger = LoggerFactory.getLogger(SqlTargetPersistor::class.java)
     }
     private val dbInfo by lazy {
         val sql = "SELECT * FROM $targetName"
@@ -123,7 +123,7 @@ class SqlTargetPersistor(
 class SqlDupePersistor(private val dupesJndi: String, private val context: String): DupePersistor {
 
     companion object {
-        val logger = LoggerFactory.getLogger(javaClass::class.java)
+        val logger = LoggerFactory.getLogger(SqlDupePersistor::class.java)
     }
     private val insertStatement = "INSERT INTO dupes(row_id, first_found_row_number, dupe_values) VALUES (?,?,?)"
 

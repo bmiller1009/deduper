@@ -1,22 +1,19 @@
 package org.bradfordmiller.deduper
 
 import org.bradfordmiller.deduper.config.Config
-
-class App {
-    val greeting: String
-        get() {
-            return "Hello world."
-        }
-}
+import org.slf4j.LoggerFactory
 
 fun main(args: Array<String>) {
+
+    val logger = LoggerFactory.getLogger("Main")
+
     val config = Config(
             "RealEstateIn",
             "Sacramentorealestatetransactions",
             "default_ds",
-            "RealEstateIn",
-            "tstTable",
-            "RealEstateIn",
+            "SqlLiteTest",
+            "real_estate",
+            "SqlLiteTest",
             mutableSetOf("street","city", "state", "zip", "price")
     )
 
@@ -24,5 +21,5 @@ fun main(args: Array<String>) {
 
     val rpt = deduper.dedupe()
 
-    println(rpt)
+    logger.info(rpt.toString())
 }

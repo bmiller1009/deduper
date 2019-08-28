@@ -5,8 +5,8 @@ import org.bradfordmiller.deduper.persistors.*
 
 class Config() {
 
-    internal var targetPersistor: TargetPersistor? = null
-    internal var dupePersistor: DupePersistor? = null
+    internal lateinit var targetPersistor: TargetPersistor
+    internal lateinit var dupePersistor: DupePersistor
     internal var srcJndi: String = ""
     internal var srcName: String = ""
     internal var context: String = ""
