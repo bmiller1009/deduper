@@ -1,15 +1,23 @@
 import org.apache.commons.io.FileUtils
 import org.bradfordmiller.deduper.Deduper
 import org.bradfordmiller.deduper.config.Config
-import org.junit.Test
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Test
+import org.slf4j.LoggerFactory
 import java.io.File
 
 class DeduperTest {
 
-    @BeforeAll
-    fun cleanUp() {
-        FileUtils.cleanDirectory(File("src/test/resources/data/out"))
+    companion object {
+        private val logger = LoggerFactory.getLogger(this::class.java)
+        private val dataDir = "src/test/resources/data/outputData"
+
+        @BeforeAll
+        @JvmStatic
+        fun cleanUp() {
+            logger.info("Cleaning the output directory $dataDir")
+            FileUtils.cleanDirectory(File(dataDir))
+        }
     }
 
     @Test fun dedupeCsvTest() {
