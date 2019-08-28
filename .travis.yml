@@ -4,5 +4,6 @@ jdk:
 before_install:
   - chmod +x gradlew
   - chmod +x gradle/wrapper/gradle-wrapper.jar
+  - chmod +rw src/test/resources/data/outputData
 script:
   - ./gradlew test build
