@@ -1,6 +1,7 @@
 package org.bradfordmiller.deduper
 
 import org.apache.commons.codec.digest.DigestUtils
+import org.apache.commons.lang.mutable.Mutable
 import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.persistors.*
@@ -66,8 +67,8 @@ class Deduper(private val config: Config) {
 
                     val rsmd = rs.metaData
                     val colCount = rsmd.columnCount
+                    var dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
                     var data: MutableList<Map<String, Any>> = mutableListOf()
-                    var dupesList: MutableList<Dupe> = mutableListOf()
 
                     config.targetPersistor.createTarget(rsmd)
                     config.dupePersistor.createDupe()
@@ -96,20 +97,24 @@ class Deduper(private val config: Config) {
                             data.add(config.targetPersistor.prepRow(rs, rsColumns))
                             writeData(recordCount, config.targetPersistor, data)
                         } else {
-                            val firstSeenRow = seenHashes[hash]!!
-                            val dupeValues = config.targetPersistor.prepRow(rs, rsColumns)
-                            val dupeJson = JSONObject(dupeValues).toString()
-                            val dupe = Dupe(recordCount, firstSeenRow, dupeJson)
-                            dupesList.add(dupe)
-                            dupeHashes.put(recordCount, dupe)
+                            if(dupeMap.containsKey(hash)) {
+                                dupeMap[hash]?.first?.add(recordCount)
+                            } else {
+                                val firstSeenRow = seenHashes[hash]!!
+                                val dupeValues = config.targetPersistor.prepRow(rs, rsColumns)
+                                val dupeJson = JSONObject(dupeValues).toString()
+                                val dupe = Dupe(firstSeenRow, dupeJson)
+                                dupeMap[hash] = Pair(mutableListOf(recordCount), dupe)
+                            }
+
                             dupeCount += 1
-                            writeData(dupeCount, config.dupePersistor, dupesList)
+                            writeData(dupeCount, config.dupePersistor, dupeMap.toList().toMutableList())
                         }
                         recordCount += 1
                     }
                     //Flush target/dupe data that's in the buffer
                     writeData(config.targetPersistor, data)
-                    writeData(config.dupePersistor, dupesList)
+                    writeData(config.dupePersistor, dupeMap.toList().toMutableList())
                 }
             }
         }

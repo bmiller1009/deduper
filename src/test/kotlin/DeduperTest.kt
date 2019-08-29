@@ -28,11 +28,11 @@ class DeduperTest {
         fun cleanUpBefore() {
             clearDataDir()
         }
-        @AfterAll
+        /*@AfterAll
         @JvmStatic
         fun cleanUpAfter() {
             clearDataDir()
-        }
+        }*/
     }
 
     @Test fun dedupeCsvTest() {

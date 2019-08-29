@@ -5,10 +5,12 @@ import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.sql.SqlUtils
 import org.bradfordmiller.deduper.sql.SqlVendorTypes
 import org.bradfordmiller.deduper.utils.FileUtils
+import org.json.JSONArray
+import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import java.sql.*
 
-data class Dupe(val rowId: Long, val firstFoundRowNumber: Long, val dupes: String)
+data class Dupe(val firstFoundRowNumber: Long, val dupes: String)
 
 interface WritePersistor<T> {
     fun writeRows(rows: MutableList<T>)
@@ -23,8 +25,8 @@ interface TargetPersistor: WritePersistor<Map<String, Any>> {
         }.toMap()
     }
 }
-interface DupePersistor: WritePersistor<Dupe> {
-    override fun writeRows(rows: MutableList<Dupe>)
+interface DupePersistor: WritePersistor<Pair<String, Pair<MutableList<Long>, Dupe>>> {
+    override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>)
     fun createDupe()
 }
 abstract class CsvPersistor(config: Map<String, String>) {
@@ -48,14 +50,17 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
 }
 class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupePersistor {
     override fun createDupe() {
-        val columns = setOf("row_id", "first_found_row_number", "dupe_values")
+        val columns = setOf("hash", "row_ids", "first_found_row_number", "dupe_values")
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter)
     }
-    override fun writeRows(rows: MutableList<Dupe>) {
+    override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>) {
         val data = rows.map {
-            it.rowId.toString() + ccp.delimiter +
-              it.firstFoundRowNumber.toString() + ccp.delimiter +
-              it.dupes
+            val list = it.second.first
+            val json = JSONArray(list).toString()
+            it.first + ccp.delimiter +
+              json + ccp.delimiter +
+              it.second.second.firstFoundRowNumber + ccp.delimiter +
+              it.second.second.dupes
         }
         FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension)
     }
@@ -125,7 +130,10 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
     companion object {
         val logger = LoggerFactory.getLogger(SqlDupePersistor::class.java)
     }
-    private val insertStatement = "INSERT INTO dupes(row_id, first_found_row_number, dupe_values) VALUES (?,?,?)"
+
+    //TODO: Make a list of dupe columns and then pass it to both the INSERT and CREATE statements
+
+    private val insertStatement = "INSERT INTO dupes(hash, row_ids, first_found_row_number, dupe_values) VALUES (?,?,?,?)"
 
     override fun createDupe() {
         JNDIUtils.getJndiConnection(dupesJndi, context).use { conn ->
@@ -133,22 +141,24 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
             val sqlVendorTypes = SqlVendorTypes(vendor)
             val createStatement =
                 "CREATE TABLE dupes(" +
-                 "row_id ${sqlVendorTypes.getLongType()} NOT NULL, " +
+                 "hash ${sqlVendorTypes.getStringType()} NOT NULL, " +
+                 "row_ids ${sqlVendorTypes.getLongType()} NOT NULL, " +
                  "first_found_row_number ${sqlVendorTypes.getLongType()} NOT NULL, " +
                  "dupe_values ${sqlVendorTypes.getStringType()} ${sqlVendorTypes.getStringMaxSize()} NOT NULL" +
                  ")"
             SqlUtils.executeDDL(conn, createStatement)
         }
     }
-    override fun writeRows(rows: MutableList<Dupe>) {
+    override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>) {
         JNDIUtils.getJndiConnection(dupesJndi, context).use {conn ->
             conn.autoCommit = false
             conn.prepareStatement(insertStatement).use {pstmt ->
                 try {
                     rows.forEach {
-                        pstmt.setLong(1, it.rowId)
-                        pstmt.setLong(2, it.firstFoundRowNumber)
-                        pstmt.setString(3, it.dupes)
+                        pstmt.setString(1, it.first)
+                        pstmt.setString(2, JSONArray(it.second.first).toString())
+                        pstmt.setLong(3, it.second.second.firstFoundRowNumber)
+                        pstmt.setString(4, it.second.second.dupes)
                         pstmt.addBatch()
                     }
                     try {
