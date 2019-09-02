@@ -44,6 +44,10 @@ class Deduper(private val config: Config) {
             }
         }
 
+        val targetPersistor = config.getTargetPersistor()
+        val duplicatePersistor = config.getDuplicatePersistor()
+        val hashColumns = config.hashColumns
+
         var recordCount = 0L
         var dupeCount = 0L
         var seenHashes = mutableMapOf<String, Long>()
@@ -51,16 +55,11 @@ class Deduper(private val config: Config) {
         var rsColumns = mapOf<Int, String>()
 
         //Get src connection from JNDI - Note that this is always cast to a datasource
-        val dsSrc = (JNDIUtils.getDataSource(config.srcJndi, config.context) as Left<DataSource?, String>).left!!
+        val dsSrc = config.sourceDataSource
 
         JNDIUtils.getConnection(dsSrc)!!.use { conn ->
 
-            val sql =
-                    if (config.srcName.startsWith("SELECT", true)) {
-                        config.srcName
-                    } else {
-                        "SELECT * FROM ${config.srcName}"
-                    }
+            val sql = config.sqlStatement
 
             conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
                 stmt.executeQuery().use { rs ->
@@ -70,22 +69,22 @@ class Deduper(private val config: Config) {
                     var dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
                     var data: MutableList<Map<String, Any>> = mutableListOf()
 
-                    config.targetPersistor.createTarget(rsmd)
-                    config.dupePersistor.createDupe()
+                    targetPersistor.createTarget(rsmd)
+                    duplicatePersistor.createDupe()
 
                     rsColumns = SqlUtils.getColumnsFromRs(rsmd)
 
-                    require(rsColumns.values.containsAll(config.keyOn)) {
-                        "One or more provided keys ${config.keyOn} not contained in resultset: $rsColumns"
+                    require(rsColumns.values.containsAll(hashColumns)) {
+                        "One or more provided keys $hashColumns not contained in resultset: $rsColumns"
                     }
 
-                    val keysPopulated = config.keyOn.isNotEmpty()
+                    val keysPopulated = hashColumns.isNotEmpty()
 
                     while (rs.next()) {
 
                         val hashColumns =
                                 if (keysPopulated) {
-                                    config.keyOn.map { rs.getString(it) }.joinToString()
+                                    hashColumns.map { rs.getString(it) }.joinToString()
                                 } else {
                                     (1..colCount).toList().map { rs.getString(it) }.joinToString()
                                 }
@@ -94,27 +93,27 @@ class Deduper(private val config: Config) {
 
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
-                            data.add(config.targetPersistor.prepRow(rs, rsColumns))
-                            writeData(recordCount, config.targetPersistor, data)
+                            data.add(targetPersistor.prepRow(rs, rsColumns))
+                            writeData(recordCount, targetPersistor, data)
                         } else {
                             if(dupeMap.containsKey(hash)) {
                                 dupeMap[hash]?.first?.add(recordCount)
                             } else {
                                 val firstSeenRow = seenHashes[hash]!!
-                                val dupeValues = config.targetPersistor.prepRow(rs, rsColumns)
+                                val dupeValues = targetPersistor.prepRow(rs, rsColumns)
                                 val dupeJson = JSONObject(dupeValues).toString()
                                 val dupe = Dupe(firstSeenRow, dupeJson)
                                 dupeMap[hash] = Pair(mutableListOf(recordCount), dupe)
                             }
 
                             dupeCount += 1
-                            writeData(dupeCount, config.dupePersistor, dupeMap.toList().toMutableList())
+                            writeData(dupeCount, duplicatePersistor, dupeMap.toList().toMutableList())
                         }
                         recordCount += 1
                     }
                     //Flush target/dupe data that's in the buffer
-                    writeData(config.targetPersistor, data)
-                    writeData(config.dupePersistor, dupeMap.toList().toMutableList())
+                    writeData(targetPersistor, data)
+                    writeData(duplicatePersistor, dupeMap.toList().toMutableList())
                 }
             }
         }

@@ -7,15 +7,14 @@ fun main(args: Array<String>) {
 
     val logger = LoggerFactory.getLogger("Main")
 
-    val config = Config(
-            "RealEstateIn",
-            "Sacramentorealestatetransactions",
-            "default_ds",
-            "SqlLiteTest",
-            "real_estate",
-            "SqlLiteTest",
-            mutableSetOf("street","city", "state", "zip", "price")
-    )
+    val config = Config.ConfigBuilder()
+        .sourceJndi("RealEstateIn")
+        .sourceName("Sacramentorealestatetransactions")
+        .jndiContext("default_ds")
+        .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+        .targetJndi("RealEstateOut")
+        .dupesJndi("RealEstateOutDupes")
+        .build()
 
     val deduper = Deduper(config)
 

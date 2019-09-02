@@ -37,29 +37,30 @@ class DeduperTest {
 
     @Test fun dedupeCsvTest() {
 
-        val config = Config(
-                "RealEstateIn",
-                "Sacramentorealestatetransactions",
-                "default_ds",
-                "RealEstateOut",
-                "RealEstateOutDupes",
-                mutableSetOf("street","city", "state", "zip", "price")
-        )
+        val config = Config.ConfigBuilder()
+            .sourceJndi("RealEstateIn")
+            .sourceName("Sacramentorealestatetransactions")
+            .jndiContext("default_ds")
+            .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+            .targetJndi("RealEstateOut")
+            .dupesJndi("RealEstateOutDupes")
+            .build()
 
         val deduper = Deduper(config)
 
         deduper.dedupe()
     }
     @Test fun dedupeSqlTest() {
-        val config = Config(
-            "RealEstateIn",
-            "Sacramentorealestatetransactions",
-            "default_ds",
-            "SqlLiteTest",
-            "real_estate",
-            "SqlLiteTest",
-            mutableSetOf("street","city", "state", "zip", "price")
-        )
+
+        val config = Config.ConfigBuilder()
+            .sourceJndi("RealEstateIn")
+            .sourceName("Sacramentorealestatetransactions")
+            .jndiContext("default_ds")
+            .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+            .targetJndi("SqlLiteTest")
+            .dupesJndi("SqlLiteTest")
+            .targetTable("real_estate")
+            .build()
 
         val deduper = Deduper(config)
 
