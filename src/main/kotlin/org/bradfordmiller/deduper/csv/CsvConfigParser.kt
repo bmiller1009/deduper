@@ -13,7 +13,7 @@ class CsvConfigParser(config: Map<String, String>) {
 
     companion object {
 
-        val logger = LoggerFactory.getLogger(Deduper::class.java)
+        val logger = LoggerFactory.getLogger(CsvConfigParser::class.java)
 
         fun getCsvMap(context: String, jndi: String): Map<String, String> {
             val ds = JNDIUtils.getDataSource(jndi, context) as Right
