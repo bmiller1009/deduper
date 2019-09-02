@@ -80,6 +80,8 @@ class Deduper(private val config: Config) {
 
                     val keysPopulated = hashColumns.isNotEmpty()
 
+                    logger.info("Using ${rsColumns.values.joinToString(",")} to calculate hashes")
+
                     while (rs.next()) {
 
                         val hashColumns =
@@ -88,6 +90,8 @@ class Deduper(private val config: Config) {
                                 } else {
                                     (1..colCount).toList().map { rs.getString(it) }.joinToString()
                                 }
+
+                        logger.trace("Using the following value(s): $hashColumns to calculate unique hash.")
 
                         val hash = DigestUtils.md5Hex(hashColumns).toUpperCase()
 
@@ -119,6 +123,7 @@ class Deduper(private val config: Config) {
         }
         val ddReport = DedupeReport(recordCount, rsColumns.values.toSet(), dupeCount, dupeHashes)
         logger.info("Dedupe report: $ddReport")
+        logger.info("Deduping process complete.")
         return ddReport
     }
 }

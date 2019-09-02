@@ -6,7 +6,6 @@ import org.bradfordmiller.deduper.sql.SqlUtils
 import org.bradfordmiller.deduper.sql.SqlVendorTypes
 import org.bradfordmiller.deduper.utils.FileUtils
 import org.json.JSONArray
-import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import java.sql.*
 
@@ -53,6 +52,7 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
         val columns = setOf("hash", "row_ids", "first_found_row_number", "dupe_values")
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter)
     }
+    //TODO: Clean this up.  The pair syntax second.second.blah is clunky and hard to read
     override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>) {
         val data = rows.map {
             val list = it.second.first
@@ -149,6 +149,7 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
             SqlUtils.executeDDL(conn, createStatement)
         }
     }
+    //TODO: Clean this up.  The pair syntax second.second.blah is clunky and hard to read
     override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>) {
         JNDIUtils.getJndiConnection(dupesJndi, context).use {conn ->
             conn.autoCommit = false

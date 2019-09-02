@@ -10,28 +10,28 @@ class SqlVendorTypes(vendor: String) {
         }
     }
     fun getStringMaxSize(): String {
-        return if(formattedVendor.toLowerCase().contains("sqlite")) {
+        return if(formattedVendor.contains("sqlite")) {
             ""
         } else {
             "MAX"
         }
     }
     fun getStringSize(size: Int): String {
-        return if(formattedVendor.toLowerCase().contains("sqlite")) {
+        return if(formattedVendor.contains("sqlite")) {
             ""
         } else {
             "(${size.toString()})"
         }
     }
     fun getLongType(): String {
-        return if(formattedVendor.toLowerCase().contains("sqlite")) {
+        return if(formattedVendor.contains("sqlite")) {
             "INTEGER"
         } else {
             "BIGINT"
         }
     }
     fun getDecimalType(type: String): String {
-        return if(formattedVendor.toLowerCase().contains("sqlite")) {
+        return if(formattedVendor.contains("sqlite")) {
             "REAL"
         } else {
             type
