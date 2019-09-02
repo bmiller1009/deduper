@@ -16,10 +16,11 @@ data class DedupeReport(
     val recordCount: Long,
     val columnsFound: Set<String>,
     val dupeCount: Long,
+    val distinctDupeCount: Long,
     var dupes: MutableMap<Long, Dupe>
 ) {
     override fun toString(): String {
-        return "recordCount=$recordCount, columnsFound=$columnsFound, dupeCount=$dupeCount"
+        return "recordCount=$recordCount, columnsFound=$columnsFound, dupeCount=$dupeCount, distinctDupeCount=$distinctDupeCount"
     }
 }
 
@@ -48,6 +49,7 @@ class Deduper(private val config: Config) {
 
         var recordCount = 0L
         var dupeCount = 0L
+        var distinctDupeCount = 0L
         var seenHashes = mutableMapOf<String, Long>()
         var dupeHashes = mutableMapOf<Long, Dupe>()
         var rsColumns = mapOf<Int, String>()
@@ -106,6 +108,7 @@ class Deduper(private val config: Config) {
                                 val dupeJson = JSONObject(dupeValues).toString()
                                 val dupe = Dupe(firstSeenRow, dupeJson)
                                 dupeMap[hash] = Pair(mutableListOf(recordCount), dupe)
+                                distinctDupeCount += 1
                             }
 
                             dupeCount += 1
@@ -119,7 +122,7 @@ class Deduper(private val config: Config) {
                 }
             }
         }
-        val ddReport = DedupeReport(recordCount, rsColumns.values.toSet(), dupeCount, dupeHashes)
+        val ddReport = DedupeReport(recordCount, rsColumns.values.toSet(), dupeCount, distinctDupeCount, dupeHashes)
         logger.info("Dedupe report: $ddReport")
         logger.info("Deduping process complete.")
         return ddReport
