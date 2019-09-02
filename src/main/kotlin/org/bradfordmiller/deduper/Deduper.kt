@@ -84,16 +84,16 @@ class Deduper(private val config: Config) {
 
                     while (rs.next()) {
 
-                        val hashColumns =
+                        val md5Values =
                                 if (keysPopulated) {
                                     hashColumns.map { rs.getString(it) }.joinToString()
                                 } else {
                                     (1..colCount).toList().map { rs.getString(it) }.joinToString()
                                 }
 
-                        logger.trace("Using the following value(s): $hashColumns to calculate unique hash.")
+                        logger.trace("Using the following value(s): $md5Values to calculate unique hash.")
 
-                        val hash = DigestUtils.md5Hex(hashColumns).toUpperCase()
+                        val hash = DigestUtils.md5Hex(md5Values).toUpperCase()
 
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
