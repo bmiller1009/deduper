@@ -1,6 +1,5 @@
 package org.bradfordmiller.deduper.csv
 
-import org.bradfordmiller.deduper.Deduper
 import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.utils.Right
 import org.slf4j.LoggerFactory

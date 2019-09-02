@@ -1,18 +1,16 @@
 package org.bradfordmiller.deduper
 
 import org.apache.commons.codec.digest.DigestUtils
-import org.apache.commons.lang.mutable.Mutable
 import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.persistors.*
 import org.bradfordmiller.deduper.sql.SqlUtils
 
-import org.bradfordmiller.deduper.utils.Left
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
 
 import java.sql.ResultSet
-import javax.sql.DataSource
+
 
 data class DedupeReport(
     val recordCount: Long,
