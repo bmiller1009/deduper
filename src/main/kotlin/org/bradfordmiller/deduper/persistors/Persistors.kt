@@ -132,7 +132,6 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
     }
 
     //TODO: Make a list of dupe columns and then pass it to both the INSERT and CREATE statements
-
     private val insertStatement = "INSERT INTO dupes(hash, row_ids, first_found_row_number, dupe_values) VALUES (?,?,?,?)"
 
     override fun createDupe() {

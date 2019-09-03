@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory
 
 import java.sql.ResultSet
 
-
 data class DedupeReport(
     val recordCount: Long,
     val columnsFound: Set<String>,
