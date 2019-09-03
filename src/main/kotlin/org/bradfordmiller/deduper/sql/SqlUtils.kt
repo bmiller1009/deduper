@@ -65,7 +65,6 @@ class SqlUtils {
             val columnsComma = getColumnsCommaDelimited(rsmd, vendor, true)
             return "$ctClause ($columnsComma)"
         }
-
         fun executeDDL(conn: Connection, ddl: String) {
             conn.createStatement().use {stmt ->
                 stmt.executeUpdate(ddl)

@@ -144,7 +144,8 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
                  "hash ${sqlVendorTypes.getStringType()} NOT NULL, " +
                  "row_ids ${sqlVendorTypes.getLongType()} NOT NULL, " +
                  "first_found_row_number ${sqlVendorTypes.getLongType()} NOT NULL, " +
-                 "dupe_values ${sqlVendorTypes.getStringType()} ${sqlVendorTypes.getStringMaxSize()} NOT NULL" +
+                 "dupe_values ${sqlVendorTypes.getStringType()} ${sqlVendorTypes.getStringMaxSize()} NOT NULL," +
+                 "${sqlVendorTypes.getPrimaryKeySyntax("hash")}" +
                  ")"
             SqlUtils.executeDDL(conn, createStatement)
         }

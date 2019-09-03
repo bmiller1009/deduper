@@ -37,4 +37,11 @@ class SqlVendorTypes(vendor: String) {
             type
         }
     }
+    fun getPrimaryKeySyntax(column: String): String {
+        return if(formattedVendor.contains("sqlite")) {
+            "PRIMARY KEY($column)"
+        } else {
+            "CONSTRAINT PK_$column PRIMARY KEY ($column)"
+        }
+    }
 }
