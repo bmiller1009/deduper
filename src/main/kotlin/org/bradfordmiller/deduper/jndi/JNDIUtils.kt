@@ -44,5 +44,15 @@ class JNDIUtils {
             val jndi = (getDataSource(jndiString, context) as Left<DataSource?, String>).left!!
             return jndi.connection
         }
+        fun addJndiConnection(jndiName: String, context: String, values: Set<String>) {
+            val ctx = InitialContext() as Context
+            val mc = (ctx.lookup(context) as MemoryContext)
+            val root = mc.environment.get("org.osjava.sj.root")
+            val colonReplace = mc.environment.get("org.osjava.sj.colon.replace")
+            val delimiter = mc.environment.get("org.osjava.sj.delimiter")
+
+
+
+        }
     }
 }
