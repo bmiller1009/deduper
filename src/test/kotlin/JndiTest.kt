@@ -15,7 +15,13 @@ import javax.naming.InitialContext
 class JndiTest {
     @Test fun addNewJndiResource() {
 
-        val ds = BasicDataSource()
+        JNDIUtils.addJndiConnection(
+            "BradTestJNDI",
+            "default_ds_2",
+            mapOf("targetName" to "src/test/resources/data/outputData/targetName")
+        )
+
+        /*val ds = BasicDataSource()
 
         ds.driverClassName = "org.sqlite.JDBC"
         ds.url = "jdbc:sqlite:src/test/resources/data/outputData/real_estate.db"
@@ -39,6 +45,6 @@ class JndiTest {
 
         mc.bind("SqlLiteTesting", ds)
 
-        mc.close()
+        mc.close()*/
     }
 }
