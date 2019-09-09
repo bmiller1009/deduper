@@ -2,6 +2,7 @@ import org.bradfordmiller.deduper.jndi.JNDIUtils
 
 import org.junit.jupiter.api.Test
 import org.osjava.sj.jndi.JndiUtils
+import javax.naming.InitialContext
 
 class JndiTest {
     @Test fun addNewJndiResource() {
@@ -30,5 +31,22 @@ class JndiTest {
     @Test fun getAllJndiContexts() {
         val contexts = JNDIUtils.getAvailableJndiContexts()
         println(contexts)
+    }
+
+    @Test fun getEntriesForJndiContext() {
+        val initCtx = InitialContext()
+        val contextName = "default_ds"
+        val mc = JNDIUtils.getMemoryContextFromInitContext(initCtx, contextName)
+        if(mc != null) {
+            val entries = JNDIUtils.getEntriesForJndiContext(mc)
+            println(entries)
+        }
+    }
+    @Test fun getJndiEntry() {
+        val initCtx = InitialContext()
+        val contextName = "default_ds"
+        val entry = "SqlLiteTestPW"
+        val entryResult = JNDIUtils.getDetailsforJndiEntry(initCtx, contextName, entry)
+        println(entryResult)
     }
 }

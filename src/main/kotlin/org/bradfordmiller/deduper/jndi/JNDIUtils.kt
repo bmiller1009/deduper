@@ -1,26 +1,37 @@
 package org.bradfordmiller.deduper.jndi
 
+import org.apache.commons.io.FilenameUtils
 import org.bradfordmiller.deduper.utils.Either
 import org.bradfordmiller.deduper.utils.Left
 import org.bradfordmiller.deduper.utils.Right
-import org.osjava.sj.SimpleJndi
-import org.osjava.sj.SimpleJndiContextFactory
 import org.osjava.sj.jndi.MemoryContext
 import org.slf4j.LoggerFactory
 import java.io.*
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.rmi.activation.UnknownObjectException
 import java.sql.Connection
 import java.sql.SQLException
 import java.util.*
 import javax.naming.*
-import javax.naming.spi.InitialContextFactory
 import javax.sql.DataSource
+import kotlin.streams.toList
 
 class JNDIUtils {
 
     companion object {
 
         private val logger = LoggerFactory.getLogger(JNDIUtils::class.java)
+
+        fun getMemoryContextFromInitContext(initCtx: InitialContext, contextName: String): MemoryContext? {
+            return try {
+                val mc = (initCtx.lookup(contextName) as MemoryContext)
+                mc
+            } catch (ne: NamingException) {
+                logger.info("Naming exception occurred on jndi lookup of context $contextName: ${ne.message}")
+                null
+            }
+        }
 
         fun getDataSource(jndi: String, context: String): Either<DataSource?, Map<*, *>> {
             val ctx = InitialContext() as Context
@@ -49,18 +60,36 @@ class JNDIUtils {
             return jndi.connection
         }
         fun getAvailableJndiContexts(): List<String> {
-
             val ctx = InitialContext()
+            val root = ctx.environment.get("org.osjava.sj.root").toString()
 
-            val field = ctx.javaClass.getDeclaredField("defaultInitCtx")
+            try {
+                val files = Files.walk(Paths.get(root)).filter {it ->
+                    val ext = FilenameUtils.getExtension(it.fileName.toString())
+                    !(Files.isDirectory(it)) && ext == "properties"
+                }
+                return files.map {it.toString()}.toList()
+            } catch(ioEx: IOException) {
+                logger.error("Error listing jndi contexts: ${ioEx.message}")
+                throw ioEx
+            }
+        }
+        fun getEntriesForJndiContext(memoryContext: MemoryContext): Map<String, String> {
+            val field = memoryContext.javaClass.getDeclaredField("namesToObjects")
             field.isAccessible = true
 
-            val defaultInitCtx = field.get(ctx) as InitialContextFactory
+            val fieldMap = field.get(memoryContext) as Map<Name, Object>
 
+            val map = fieldMap.map {
+                it.key.toString() to it.value.toString()
+            }.toMap()
 
-
-
-            return listOf()
+            return map
+        }
+        fun getDetailsforJndiEntry(context: InitialContext, jndiName: String, entry: String): Pair<String, String> {
+            val mc = getMemoryContextFromInitContext(context, jndiName)
+            val entries = getEntriesForJndiContext(mc!!)
+            return entry to entries[entry]!!
         }
         //TODO: Make sure to put a lock file in place while updating the jndi root directory
         fun addJndiConnection(jndiName: String, context: String, values: Map<String, String>): Boolean {
@@ -92,22 +121,11 @@ class JNDIUtils {
                     logger.info("Lock file is absent. Locking directory before proceeding")
                     lockFile.createNewFile()
 
-                    val memoryContext =
-                            try {
-                                val mc = (ctx.lookup(context) as MemoryContext)
-                                mc
-                            } catch (ne: NamingException) {
-                                logger.info("Naming exception occurred on jndi lookup of context $context: ${ne.message}")
-                                null
-                            }
+                    val memoryContext = getMemoryContextFromInitContext(ctx, context)
 
                     if (memoryContext != null) {
                         //Check if the key being added already exists
-                        val field = memoryContext.javaClass.getDeclaredField("namesToObjects")
-                        field.isAccessible = true
-
-                        val fieldMap = field.get(memoryContext) as Map<Name, Object>
-                        val fieldKeys = fieldMap.keys.map { k -> k.toString() }
+                        val fieldKeys = getEntriesForJndiContext(memoryContext)
 
                         if (fieldKeys.contains(jndiName)) {
                             val errorString = "Jndi name $jndiName already exists for context $context."

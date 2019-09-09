@@ -61,6 +61,7 @@ dependencies {
     implementation("org.xerial", "sqlite-jdbc", "3.28.0")
     implementation("org.json", "json", "20190722")
     implementation("org.apache.commons", "commons-dbcp2", "2.7.0")
+    implementation("commons-io", "commons-io", "2.6")
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 
