@@ -3,6 +3,8 @@ package org.bradfordmiller.deduper.jndi
 import org.bradfordmiller.deduper.utils.Either
 import org.bradfordmiller.deduper.utils.Left
 import org.bradfordmiller.deduper.utils.Right
+import org.osjava.sj.SimpleJndi
+import org.osjava.sj.SimpleJndiContextFactory
 import org.osjava.sj.jndi.MemoryContext
 import org.slf4j.LoggerFactory
 import java.io.*
@@ -11,6 +13,7 @@ import java.sql.Connection
 import java.sql.SQLException
 import java.util.*
 import javax.naming.*
+import javax.naming.spi.InitialContextFactory
 import javax.sql.DataSource
 
 class JNDIUtils {
@@ -33,7 +36,6 @@ class JNDIUtils {
                 }
             }
         }
-
         fun getConnection(ds: DataSource): Connection? {
             return try {
                 ds.connection
@@ -42,12 +44,24 @@ class JNDIUtils {
                 throw sqlEx
             }
         }
-
         fun getJndiConnection(jndiString: String, context: String): Connection {
             val jndi = (getDataSource(jndiString, context) as Left<DataSource?, String>).left!!
             return jndi.connection
         }
+        fun getAvailableJndiContexts(): List<String> {
 
+            val ctx = InitialContext()
+
+            val field = ctx.javaClass.getDeclaredField("defaultInitCtx")
+            field.isAccessible = true
+
+            val defaultInitCtx = field.get(ctx) as InitialContextFactory
+
+
+
+
+            return listOf()
+        }
         //TODO: Make sure to put a lock file in place while updating the jndi root directory
         fun addJndiConnection(jndiName: String, context: String, values: Map<String, String>): Boolean {
 
@@ -61,7 +75,7 @@ class JNDIUtils {
                 }
             }
 
-            val ctx = InitialContext() as Context
+            val ctx = InitialContext()
 
             val root = ctx.environment.get("org.osjava.sj.root").toString()
             val colonReplace = ctx.environment.get("org.osjava.sj.colon.replace")

@@ -1,6 +1,7 @@
 import org.bradfordmiller.deduper.jndi.JNDIUtils
 
 import org.junit.jupiter.api.Test
+import org.osjava.sj.jndi.JndiUtils
 
 class JndiTest {
     @Test fun addNewJndiResource() {
@@ -24,5 +25,10 @@ class JndiTest {
                         "targetName" to "src/test/resources/data/outputData/testJNDI"
                 )
         )
+    }
+
+    @Test fun getAllJndiContexts() {
+        val contexts = JNDIUtils.getAvailableJndiContexts()
+        println(contexts)
     }
 }
