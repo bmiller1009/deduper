@@ -32,7 +32,6 @@ class JNDIUtils {
                 null
             }
         }
-
         fun getDataSource(jndi: String, context: String): Either<DataSource?, Map<*, *>> {
             val ctx = InitialContext() as Context
             val mc = (ctx.lookup(context) as MemoryContext)
@@ -51,7 +50,7 @@ class JNDIUtils {
             return try {
                 ds.connection
             } catch (sqlEx: SQLException) {
-                logger.error(sqlEx.message)
+                logger.error("Error fetching connection from data source: ${sqlEx.message}")
                 throw sqlEx
             }
         }
@@ -133,7 +132,6 @@ class JNDIUtils {
                             throw IllegalAccessException(errorString)
                         } else {
                             val uuid = UUID.randomUUID().toString()
-                            val ap = file.absolutePath
                             val backupFile = File(file.parentFile.name + "/" + context + "_" + uuid + ".properties")
                             file.copyTo(backupFile, true)
                             //Append the data to the copy

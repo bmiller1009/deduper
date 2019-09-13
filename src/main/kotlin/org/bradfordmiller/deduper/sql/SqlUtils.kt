@@ -58,15 +58,20 @@ class SqlUtils {
             val insertClause = "INSERT INTO $tableName "
             val wildcards = (1..colCount).map {"?"}.joinToString(",")
             val columnsComma = getColumnsCommaDelimited(rsmd, vendor)
-            return "$insertClause ($columnsComma) VALUES ($wildcards)"
+            val insertSql = "$insertClause ($columnsComma) VALUES ($wildcards)"
+            logger.trace("Insert SQL $insertSql has been generated.")
+            return insertSql
         }
         fun generateDDL(tableName: String, rsmd: ResultSetMetaData, vendor: String): String {
             val ctClause = "CREATE TABLE $tableName "
             val columnsComma = getColumnsCommaDelimited(rsmd, vendor, true)
-            return "$ctClause ($columnsComma)"
+            val ddl = "$ctClause ($columnsComma)"
+            logger.trace("DDL $ddl has been generated.")
+            return ddl
         }
         fun executeDDL(conn: Connection, ddl: String) {
             conn.createStatement().use {stmt ->
+                logger.trace("Executing the following ddl SQL: $ddl")
                 stmt.executeUpdate(ddl)
             }
         }

@@ -19,7 +19,10 @@ data class DedupeReport(
     var dupes: MutableMap<Long, Dupe>
 ) {
     override fun toString(): String {
-        return "recordCount=$recordCount, columnsFound=$columnsFound, dupeCount=$dupeCount, distinctDupeCount=$distinctDupeCount"
+        return "recordCount=$recordCount, " +
+                "columnsFound=$columnsFound, " +
+                "dupeCount=$dupeCount, " +
+                "distinctDupeCount=$distinctDupeCount"
     }
 }
 
@@ -28,7 +31,7 @@ class Deduper(private val config: Config) {
     companion object {
         val logger = LoggerFactory.getLogger(Deduper::class.java)
     }
-    fun dedupe(commitSize: Long = 500): DedupeReport {
+    fun dedupe(commitSize: Long = 500, outputReportCommitSize: Long = 1000000): DedupeReport {
 
         logger.info("Beginning the deduping process.")
 
@@ -60,11 +63,16 @@ class Deduper(private val config: Config) {
 
             val sql = config.sqlStatement
 
+            logger.trace("The following sql statement will be run: $sql")
+
             conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
                 stmt.executeQuery().use { rs ->
 
                     val rsmd = rs.metaData
                     val colCount = rsmd.columnCount
+
+                    logger.trace("$colCount columns have been found in the result set.")
+
                     var dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
                     var data: MutableList<Map<String, Any>> = mutableListOf()
 
@@ -94,6 +102,8 @@ class Deduper(private val config: Config) {
 
                         val hash = DigestUtils.md5Hex(md5Values).toUpperCase()
 
+                        logger.trace("MD-5 hash $hash generated for MD-5 values.")
+
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
                             data.add(targetPersistor.prepRow(rs, rsColumns))
@@ -114,6 +124,8 @@ class Deduper(private val config: Config) {
                             writeData(dupeCount, duplicatePersistor, dupeMap.toList().toMutableList())
                         }
                         recordCount += 1
+                        if(recordCount % outputReportCommitSize == 0L)
+                            logger.info("$recordCount records have been processed so far.")
                     }
                     //Flush target/dupe data that's in the buffer
                     writeData(targetPersistor, data)
