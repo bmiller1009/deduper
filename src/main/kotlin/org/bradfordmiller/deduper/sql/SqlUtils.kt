@@ -3,6 +3,7 @@ package org.bradfordmiller.deduper.sql
 import org.slf4j.LoggerFactory
 import java.sql.Connection
 import java.sql.JDBCType
+import java.sql.ResultSet
 import java.sql.ResultSetMetaData
 
 class SqlUtils {
@@ -10,6 +11,13 @@ class SqlUtils {
     companion object {
 
         private val logger = LoggerFactory.getLogger(SqlUtils::class.java)
+
+        fun getMapFromRs(rs: ResultSet, colNames: Map<Int, String>): Map<String, Any> {
+            return (1..colNames.size).map{
+                val column = colNames[it] ?: error("Column Index $it does not have an entry in the column name map.")
+                column to rs.getObject(column)
+            }.toMap()
+        }
 
         fun getColumnsFromRs(rsmd: ResultSetMetaData): Map<Int, String> {
             val colCount = rsmd.columnCount

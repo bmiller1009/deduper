@@ -82,6 +82,33 @@ class DeduperTest {
         deduper.dedupe()
     }
 
+    @Test fun testRunWithoutTarget() {
+        val config = Config.ConfigBuilder()
+                .sourceJndi("RealEstateIn")
+                .sourceName("Sacramentorealestatetransactions")
+                .jndiContext("default_ds")
+                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+                .dupesJndi("RealEstateOutDupesUseDefaults")
+                .build()
+
+        val deduper = Deduper(config)
+
+        deduper.dedupe()
+    }
+
+    @Test fun testRunWithoutTargetAndDupe() {
+        val config = Config.ConfigBuilder()
+                .sourceJndi("RealEstateIn")
+                .sourceName("Sacramentorealestatetransactions")
+                .jndiContext("default_ds")
+                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+                .build()
+
+        val deduper = Deduper(config)
+
+        deduper.dedupe()
+    }
+
     @Test fun testCsvTargetCreation() {
 
         /*val hash = "7328393ce354e4b1b574d2d532ea3625".toUpperCase()

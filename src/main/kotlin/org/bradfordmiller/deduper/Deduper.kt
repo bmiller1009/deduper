@@ -2,17 +2,22 @@ package org.bradfordmiller.deduper
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
+import org.bradfordmiller.deduper.config.ConfigType
+import org.bradfordmiller.deduper.csv.CsvConfigParser
 import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.persistors.*
 import org.bradfordmiller.deduper.sql.SqlUtils
+import org.bradfordmiller.deduper.utils.Left
 
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
 
 import java.sql.ResultSet
+import javax.sql.DataSource
 
 data class DedupeReport(
     val recordCount: Long,
+    val hashColumns: Set<String>,
     val columnsFound: Set<String>,
     val dupeCount: Long,
     val distinctDupeCount: Long,
@@ -21,6 +26,7 @@ data class DedupeReport(
     override fun toString(): String {
         return "recordCount=$recordCount, " +
                 "columnsFound=$columnsFound, " +
+                "hashColumns=$hashColumns, " +
                 "dupeCount=$dupeCount, " +
                 "distinctDupeCount=$distinctDupeCount"
     }
@@ -28,9 +34,56 @@ data class DedupeReport(
 
 class Deduper(private val config: Config) {
 
+    private val tgtPersistor: TargetPersistor? by lazy {
+        if(config.tgtTable.isNullOrEmpty()) {
+            if(config.tgtJndi != null) {
+                val tgtConfigMap = CsvConfigParser.getCsvMap(config.context, config.tgtJndi)
+                logger.trace("tgtConfigMap = $tgtConfigMap")
+                CsvTargetPersistor(tgtConfigMap)
+            } else {
+                null
+            }
+        } else {
+            if(config.tgtJndi != null) {
+                SqlTargetPersistor(config.tgtTable, config.tgtJndi, config.context)
+            } else {
+                null
+            }
+        }
+    }
+
+    private val duplicatePersistor: DupePersistor? by lazy {
+        if(config.tgtTable.isNullOrEmpty()) {
+            if(config.dupesJndi != null) {
+                val dupesConfigMap = CsvConfigParser.getCsvMap(config.context, config.dupesJndi)
+                logger.trace("dupesConfigMap = $dupesConfigMap")
+                CsvDupePersistor(dupesConfigMap)
+            } else {
+                null
+            }
+        } else {
+            if(config.dupesJndi != null) {
+                SqlDupePersistor(config.dupesJndi, config.context)
+            } else {
+                null
+            }
+        }
+    }
+
+    val sourceDataSource: DataSource by lazy {(JNDIUtils.getDataSource(config.srcJndi, config.context) as Left<DataSource?, String>).left!!}
+
+    val sqlStatement by lazy {
+        if (config.srcName.startsWith("SELECT", true)) {
+            config.srcName
+        } else {
+            "SELECT * FROM ${config.srcName}"
+        }
+    }
+
     companion object {
         val logger = LoggerFactory.getLogger(Deduper::class.java)
     }
+
     fun dedupe(commitSize: Long = 500, outputReportCommitSize: Long = 1000000): DedupeReport {
 
         logger.info("Beginning the deduping process.")
@@ -45,8 +98,6 @@ class Deduper(private val config: Config) {
             }
         }
 
-        val targetPersistor = config.getTargetPersistor()
-        val duplicatePersistor = config.getDuplicatePersistor()
         val hashColumns = config.hashColumns
 
         var recordCount = 0L
@@ -56,16 +107,11 @@ class Deduper(private val config: Config) {
         var dupeHashes = mutableMapOf<Long, Dupe>()
         var rsColumns = mapOf<Int, String>()
 
-        //Get src connection from JNDI - Note that this is always cast to a datasource
-        val dsSrc = config.sourceDataSource
+        JNDIUtils.getConnection(sourceDataSource)!!.use { conn ->
 
-        JNDIUtils.getConnection(dsSrc)!!.use { conn ->
+            logger.trace("The following sql statement will be run: $sqlStatement")
 
-            val sql = config.sqlStatement
-
-            logger.trace("The following sql statement will be run: $sql")
-
-            conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
+            conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
                 stmt.executeQuery().use { rs ->
 
                     val rsmd = rs.metaData
@@ -76,8 +122,12 @@ class Deduper(private val config: Config) {
                     var dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
                     var data: MutableList<Map<String, Any>> = mutableListOf()
 
-                    targetPersistor.createTarget(rsmd)
-                    duplicatePersistor.createDupe()
+                    val targetPersistor = tgtPersistor
+                    val dupePersistor = duplicatePersistor
+
+                    targetPersistor?.createTarget(rsmd)
+
+                    dupePersistor?.createDupe()
 
                     rsColumns = SqlUtils.getColumnsFromRs(rsmd)
 
@@ -87,7 +137,7 @@ class Deduper(private val config: Config) {
 
                     val keysPopulated = hashColumns.isNotEmpty()
 
-                    logger.info("Using ${rsColumns.values.joinToString(",")} to calculate hashes")
+                    logger.info("Using ${hashColumns.joinToString(",")} to calculate hashes")
 
                     while (rs.next()) {
 
@@ -106,34 +156,43 @@ class Deduper(private val config: Config) {
 
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
-                            data.add(targetPersistor.prepRow(rs, rsColumns))
-                            writeData(recordCount, targetPersistor, data)
+                            if(targetPersistor != null) {
+                                data.add(SqlUtils.getMapFromRs(rs, rsColumns))
+                                writeData(recordCount, targetPersistor, data)
+                            }
                         } else {
                             if(dupeMap.containsKey(hash)) {
                                 dupeMap[hash]?.first?.add(recordCount)
                             } else {
                                 val firstSeenRow = seenHashes[hash]!!
-                                val dupeValues = targetPersistor.prepRow(rs, rsColumns)
+                                val dupeValues = SqlUtils.getMapFromRs(rs, rsColumns)
                                 val dupeJson = JSONObject(dupeValues).toString()
                                 val dupe = Dupe(firstSeenRow, dupeJson)
                                 dupeMap[hash] = Pair(mutableListOf(recordCount), dupe)
+
                                 distinctDupeCount += 1
                             }
 
                             dupeCount += 1
-                            writeData(dupeCount, duplicatePersistor, dupeMap.toList().toMutableList())
+                            if(dupePersistor != null) {
+                                writeData(dupeCount, dupePersistor, dupeMap.toList().toMutableList())
+                            }
                         }
                         recordCount += 1
                         if(recordCount % outputReportCommitSize == 0L)
                             logger.info("$recordCount records have been processed so far.")
                     }
                     //Flush target/dupe data that's in the buffer
-                    writeData(targetPersistor, data)
-                    writeData(duplicatePersistor, dupeMap.toList().toMutableList())
+                    if(targetPersistor != null) {
+                        writeData(targetPersistor, data)
+                    }
+                    if(dupePersistor != null) {
+                        writeData(dupePersistor, dupeMap.toList().toMutableList())
+                    }
                 }
             }
         }
-        val ddReport = DedupeReport(recordCount, rsColumns.values.toSet(), dupeCount, distinctDupeCount, dupeHashes)
+        val ddReport = DedupeReport(recordCount, hashColumns, rsColumns.values.toSet(), dupeCount, distinctDupeCount, dupeHashes)
         logger.info("Dedupe report: $ddReport")
         logger.info("Deduping process complete.")
         return ddReport

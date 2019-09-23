@@ -11,20 +11,20 @@ import javax.sql.DataSource
 enum class ConfigType {Sql, Csv}
 
 class Config private constructor(
-    srcJndi: String,
-    srcName: String,
-    context: String,
+    val srcJndi: String,
+    val srcName: String,
+    val context: String,
     val hashColumns: Set<String>,
-    tgtJndi: String,
-    dupesJndi: String,
-    tgtTable: String?
+    val tgtJndi: String?,
+    val dupesJndi: String?,
+    val tgtTable: String?
 ) {
 
     companion object {
         private val logger = LoggerFactory.getLogger(Config::class.java)
     }
 
-    internal data class Persistors(val targetPersistor: TargetPersistor, val dupePersistor: DupePersistor, val configType: ConfigType)
+    /*internal data class Persistors(val targetPersistor: TargetPersistor, val dupePersistor: DupePersistor, val configType: ConfigType)
 
     private val persistors: Persistors by lazy {
         if(tgtTable.isNullOrEmpty()) {
@@ -45,11 +45,11 @@ class Config private constructor(
         } else {
             "SELECT * FROM $srcName"
         }
-    }
+    }*/
 
-    fun getTargetPersistor() = persistors.targetPersistor
-    fun getDuplicatePersistor() = persistors.dupePersistor
-    fun getConfigType() = persistors.configType
+    //fun getTargetPersistor() = persistors.targetPersistor
+    //fun getDuplicatePersistor() = persistors.dupePersistor
+    //fun getConfigType() = persistors.configType
 
     data class ConfigBuilder(
         private var srcJndi: String? = null,
@@ -75,8 +75,8 @@ class Config private constructor(
             val sourceJndi = srcJndi ?: throw NullArgumentException("Source JNDI must be set")
             val sourceName = srcName ?: throw NullArgumentException("Source JNDI name must be set")
             val finalContext = context ?: throw NullArgumentException("JNDI context must be set")
-            val targetJndi = tgtJndi ?: throw NullArgumentException("Target JNDI must be set")
-            val finalDupesJndi = dupesJndi ?: throw NullArgumentException("Duplicates JNDI must be set")
+            val targetJndi = tgtJndi
+            val finalDupesJndi = dupesJndi
             val config = Config(sourceJndi, sourceName, finalContext, keyOn.orEmpty(), targetJndi, finalDupesJndi, tgtTable)
             logger.trace("Built config object $config")
             return config

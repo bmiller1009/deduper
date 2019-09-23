@@ -17,12 +17,6 @@ interface WritePersistor<T> {
 interface TargetPersistor: WritePersistor<Map<String, Any>> {
     override fun writeRows(rows: MutableList<Map<String, Any>>)
     fun createTarget(rsmd: ResultSetMetaData)
-    fun prepRow(rs: ResultSet, colNames: Map<Int, String>): Map<String, Any> {
-        return (1..colNames.size).map{
-            val column = colNames[it] ?: error("Column Index $it does not have an entry in the column name map.")
-            column to rs.getObject(column)
-        }.toMap()
-    }
 }
 interface DupePersistor: WritePersistor<Pair<String, Pair<MutableList<Long>, Dupe>>> {
     override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>)
