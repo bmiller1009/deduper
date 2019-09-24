@@ -6,7 +6,9 @@ import org.bradfordmiller.deduper.csv.CsvConfigParser
 import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.persistors.*
 import org.bradfordmiller.deduper.sql.SqlUtils
+import org.bradfordmiller.deduper.utils.Either
 import org.bradfordmiller.deduper.utils.Left
+import org.bradfordmiller.deduper.utils.Right
 
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
@@ -124,9 +126,9 @@ class Deduper(private val config: Config) {
                     val targetPersistor = tgtPersistor
                     val dupePersistor = duplicatePersistor
 
-                    targetPersistor?.createTarget(rsmd)
+                    targetPersistor?.createTarget(rsmd, config.deleteTargetIfExists)
 
-                    dupePersistor?.createDupe()
+                    dupePersistor?.createDupe(config.deleteDupeIfExist)
 
                     rsColumns = SqlUtils.getColumnsFromRs(rsmd)
 

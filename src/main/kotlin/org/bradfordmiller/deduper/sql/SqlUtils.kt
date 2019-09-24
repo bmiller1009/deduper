@@ -1,10 +1,7 @@
 package org.bradfordmiller.deduper.sql
 
 import org.slf4j.LoggerFactory
-import java.sql.Connection
-import java.sql.JDBCType
-import java.sql.ResultSet
-import java.sql.ResultSetMetaData
+import java.sql.*
 
 class SqlUtils {
 
@@ -81,6 +78,10 @@ class SqlUtils {
                 logger.trace("Executing the following ddl SQL: $ddl")
                 stmt.executeUpdate(ddl)
             }
+        }
+        fun tableExists(dbmd: DatabaseMetaData, tableName: String): Boolean {
+            val rs = dbmd.getTables(null, null, tableName, null)
+            return rs.next()
         }
     }
 }

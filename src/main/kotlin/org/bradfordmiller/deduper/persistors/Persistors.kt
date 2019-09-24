@@ -16,11 +16,11 @@ interface WritePersistor<T> {
 }
 interface TargetPersistor: WritePersistor<Map<String, Any>> {
     override fun writeRows(rows: MutableList<Map<String, Any>>)
-    fun createTarget(rsmd: ResultSetMetaData)
+    fun createTarget(rsmd: ResultSetMetaData, deleteIfTargetExists: Boolean)
 }
 interface DupePersistor: WritePersistor<Pair<String, Pair<MutableList<Long>, Dupe>>> {
     override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>)
-    fun createDupe()
+    fun createDupe(deleteIfDupeExists: Boolean)
 }
 abstract class CsvPersistor(config: Map<String, String>) {
     val ccp = CsvConfigParser(config)
@@ -32,9 +32,9 @@ abstract class CsvPersistor(config: Map<String, String>) {
     }
 }
 class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), TargetPersistor {
-    override fun createTarget(rsmd: ResultSetMetaData) {
+    override fun createTarget(rsmd: ResultSetMetaData, deleteIfTargetExists: Boolean) {
         val columns = SqlUtils.getColumnsFromRs(rsmd)
-        FileUtils.prepFile(ccp.targetName, columns.values.toSet(), ccp.extension, ccp.delimiter)
+        FileUtils.prepFile(ccp.targetName, columns.values.toSet(), ccp.extension, ccp.delimiter, deleteIfTargetExists)
     }
     override fun writeRows(rows: MutableList<Map<String, Any>>) {
         val stringData = convertRowsToStrings(rows)
@@ -42,9 +42,9 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
     }
 }
 class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupePersistor {
-    override fun createDupe() {
+    override fun createDupe(deleteIfDupeExists: Boolean) {
         val columns = setOf("hash", "row_ids", "first_found_row_number", "dupe_values")
-        FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter)
+        FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter, deleteIfDupeExists)
     }
     //TODO: Clean this up.  The pair syntax second.second.blah is clunky and hard to read
     override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>) {
@@ -82,8 +82,20 @@ class SqlTargetPersistor(
             }
         }
     }
-    override fun createTarget(rsmd: ResultSetMetaData) {
+    override fun createTarget(rsmd: ResultSetMetaData, deleteIfTargetExists: Boolean) {
         JNDIUtils.getJndiConnection(targetJndi, context).use { conn ->
+            if(deleteIfTargetExists) {
+                logger.info("deleteIfTargetExists is set to true.  Checking database to see if target $targetName exists.")
+
+                if(SqlUtils.tableExists(conn.metaData, targetName)) {
+                    logger.info("Table with target name $targetName exists. Generating script to drop table.")
+
+                    val dropSql = "DROP TABLE $targetName"
+                    SqlUtils.executeDDL(conn, dropSql)
+
+                    logger.info("Table $targetName dropped.")
+                }
+            }
             val vendor = conn.metaData.databaseProductName
             val ddl = SqlUtils.generateDDL(targetName, rsmd, vendor)
             SqlUtils.executeDDL(conn, ddl)
@@ -128,8 +140,20 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
     //TODO: Make a list of dupe columns and then pass it to both the INSERT and CREATE statements
     private val insertStatement = "INSERT INTO dupes(hash, row_ids, first_found_row_number, dupe_values) VALUES (?,?,?,?)"
 
-    override fun createDupe() {
+    override fun createDupe(deleteIfDupeExists: Boolean) {
         JNDIUtils.getJndiConnection(dupesJndi, context).use { conn ->
+
+            if(deleteIfDupeExists) {
+                logger.info("deleteIfDupeExists is set to true. Checking to see if table 'dupes' exists.")
+
+                if(SqlUtils.tableExists(conn.metaData, "dupes")) {
+                    logger.info("Table 'dupes' exists. Generating script to drop table")
+                    val dropSql = "Drop table dupes"
+                    SqlUtils.executeDDL(conn, dropSql)
+                    logger.info("Table 'dupes' dropped")
+                }
+            }
+
             val vendor = conn.metaData.databaseProductName
             val sqlVendorTypes = SqlVendorTypes(vendor)
             val createStatement =
