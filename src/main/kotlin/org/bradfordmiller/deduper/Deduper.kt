@@ -2,7 +2,6 @@ package org.bradfordmiller.deduper
 
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
-import org.bradfordmiller.deduper.config.ConfigType
 import org.bradfordmiller.deduper.csv.CsvConfigParser
 import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.persistors.*

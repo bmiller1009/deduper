@@ -18,7 +18,6 @@ class SqlUtils {
                 column to rs.getObject(column)
             }.toMap()
         }
-
         fun getColumnsFromRs(rsmd: ResultSetMetaData): Map<Int, String> {
             val colCount = rsmd.columnCount
 

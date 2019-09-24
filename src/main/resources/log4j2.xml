@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="WARN">
+<Configuration status="INFO">
 <Appenders>
     <Console name="Console" target="SYSTEM_OUT">
         <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5p %c{1}:%L - %msg\n" />
@@ -16,7 +16,7 @@
 
 </Appenders>
 <Loggers>
-<Logger name="org.bradfordmiller." level="trace" />
+<Logger name="org.bradfordmiller." level="info" />
 <Root level="info">
     <AppenderRef ref="Console" />
     <AppenderRef ref="RollingFile" />
