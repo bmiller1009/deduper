@@ -109,6 +109,72 @@ class DeduperTest {
         deduper.dedupe()
     }
 
+    @Test fun testDeleteCsvDeleteTarget() {
+        val config = Config.ConfigBuilder()
+                .sourceJndi("RealEstateIn")
+                .sourceName("Sacramentorealestatetransactions")
+                .jndiContext("default_ds")
+                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+                .targetJndi("RealEstateOutTargetUseDefaults")
+                .dupesJndi("RealEstateOutDupesUseDefaults")
+                .deleteTargetIfExists(true)
+                .build()
+
+        val deduper = Deduper(config)
+
+        deduper.dedupe()
+    }
+
+    @Test fun testDeleteCsvDeleteDupe() {
+        val config = Config.ConfigBuilder()
+                .sourceJndi("RealEstateIn")
+                .sourceName("Sacramentorealestatetransactions")
+                .jndiContext("default_ds")
+                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+                .targetJndi("RealEstateOutTargetUseDefaults")
+                .dupesJndi("RealEstateOutDupesUseDefaults")
+                .deleteDupeIfExists(true)
+                .build()
+
+        val deduper = Deduper(config)
+
+        deduper.dedupe()
+    }
+
+    @Test fun testDeleteCsvDeleteTargetAndDupe() {
+        val config = Config.ConfigBuilder()
+                .sourceJndi("RealEstateIn")
+                .sourceName("Sacramentorealestatetransactions")
+                .jndiContext("default_ds")
+                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+                .targetJndi("RealEstateOutTargetUseDefaults")
+                .dupesJndi("RealEstateOutDupesUseDefaults")
+                .deleteTargetIfExists(true)
+                .deleteDupeIfExists(true)
+                .build()
+
+        val deduper = Deduper(config)
+
+        deduper.dedupe()
+    }
+
+    @Test fun testDeleteSqlDeleteTarget() {
+        val config = Config.ConfigBuilder()
+                .sourceJndi("RealEstateIn")
+                .sourceName("Sacramentorealestatetransactions")
+                .jndiContext("default_ds")
+                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+                .targetJndi("SqlLiteTest")
+                .targetTable("target_data")
+                .dupesJndi("SqlLiteTest")
+                .deleteTargetIfExists(true)
+                .build()
+
+        val deduper = Deduper(config)
+
+        deduper.dedupe()
+    }
+
     @Test fun testCsvTargetCreation() {
 
         /*val hash = "7328393ce354e4b1b574d2d532ea3625".toUpperCase()
