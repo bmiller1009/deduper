@@ -10,7 +10,7 @@ class SqlVendorTypes(vendor: String) {
         }
     }
     fun getStringMaxSize(): String {
-        return if(formattedVendor.contains("sqlite")) {
+        return if(formattedVendor.contains("sqlite") || formattedVendor.contains("postgres")) {
             ""
         } else {
             "MAX"

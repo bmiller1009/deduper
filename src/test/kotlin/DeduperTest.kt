@@ -175,6 +175,41 @@ class DeduperTest {
         deduper.dedupe()
     }
 
+    @Test fun testDeleteSqlDeleteDupe() {
+        val config = Config.ConfigBuilder()
+                .sourceJndi("RealEstateIn")
+                .sourceName("Sacramentorealestatetransactions")
+                .jndiContext("default_ds")
+                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+                .targetJndi("SqlLiteTest")
+                .targetTable("target_data")
+                .dupesJndi("SqlLiteTest")
+                .deleteDupeIfExists(true)
+                .build()
+
+        val deduper = Deduper(config)
+
+        deduper.dedupe()
+    }
+
+    @Test fun testDeleteSqlDeleteDupeAndTarget() {
+        val config = Config.ConfigBuilder()
+                .sourceJndi("RealEstateIn")
+                .sourceName("Sacramentorealestatetransactions")
+                .jndiContext("default_ds")
+                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+                .targetJndi("PostGresTest")
+                .targetTable("target_data")
+                .dupesJndi("PostGresTest")
+                .deleteTargetIfExists(true)
+                .deleteDupeIfExists(true)
+                .build()
+
+        val deduper = Deduper(config)
+
+        deduper.dedupe()
+    }
+
     @Test fun testCsvTargetCreation() {
 
         /*val hash = "7328393ce354e4b1b574d2d532ea3625".toUpperCase()

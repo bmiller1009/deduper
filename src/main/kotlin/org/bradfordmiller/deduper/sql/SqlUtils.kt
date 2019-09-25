@@ -80,8 +80,10 @@ class SqlUtils {
             }
         }
         fun tableExists(dbmd: DatabaseMetaData, tableName: String): Boolean {
-            val rs = dbmd.getTables(null, null, tableName, null)
-            return rs.next()
+            dbmd.getTables(null, null, tableName, null).use {rs ->
+                val hasNext = rs.next()
+                return hasNext
+            }
         }
     }
 }

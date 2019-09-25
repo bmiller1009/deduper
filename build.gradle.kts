@@ -53,7 +53,6 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-core:2.9.4")
     implementation("org.apache.logging.log4j",  "log4j-core",  "2.12.0")
     implementation("org.apache.logging.log4j",  "log4j-api",  "2.12.0")
-    //implementation("org.apache.logging.log4j",  "log4j-to-slf4j",  "2.12.0")
     implementation("commons-cli", "commons-cli","1.4")
     implementation("com.github.h-thurow", "simple-jndi","0.18.1")
     implementation("commons-codec", "commons-codec","1.12")
@@ -62,6 +61,7 @@ dependencies {
     implementation("org.json", "json", "20190722")
     implementation("org.apache.commons", "commons-dbcp2", "2.7.0")
     implementation("commons-io", "commons-io", "2.6")
+    implementation("org.postgresql", "postgresql", "42.2.8")
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 
