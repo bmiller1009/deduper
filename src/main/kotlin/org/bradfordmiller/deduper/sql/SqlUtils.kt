@@ -41,13 +41,13 @@ class SqlUtils {
                 typeName
             }
         }
-        private fun getColumnsCommaDelimited(rsmd: ResultSetMetaData, vendor: String, includeType: Boolean = false): String {
+        private fun getColumnsCommaDelimited(rsmd: ResultSetMetaData, vendor: String, varcharPadding: Int = 0, includeType: Boolean = false): String {
             val colCount = rsmd.columnCount
             return (1..colCount).map { c ->
                 val colName = rsmd.getColumnName(c)
                 val type = rsmd.getColumnType(c)
                 val typeName = JDBCType.valueOf(type).name
-                val size = rsmd.getColumnDisplaySize(c)
+                val size = rsmd.getColumnDisplaySize(c) + varcharPadding
                 val sqlType =
                     if(includeType) {
                         getType(vendor, typeName, type, size)
@@ -66,9 +66,9 @@ class SqlUtils {
             logger.trace("Insert SQL $insertSql has been generated.")
             return insertSql
         }
-        fun generateDDL(tableName: String, rsmd: ResultSetMetaData, vendor: String): String {
+        fun generateDDL(tableName: String, rsmd: ResultSetMetaData, vendor: String, varcharPadding: Int): String {
             val ctClause = "CREATE TABLE $tableName "
-            val columnsComma = getColumnsCommaDelimited(rsmd, vendor, true)
+            val columnsComma = getColumnsCommaDelimited(rsmd, vendor, varcharPadding, true)
             val ddl = "$ctClause ($columnsComma)"
             logger.trace("DDL $ddl has been generated.")
             return ddl

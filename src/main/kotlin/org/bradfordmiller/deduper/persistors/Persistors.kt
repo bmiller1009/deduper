@@ -98,7 +98,7 @@ class SqlTargetPersistor(
                 }
             }
             val vendor = conn.metaData.databaseProductName
-            val ddl = SqlUtils.generateDDL(targetName, rsmd, vendor)
+            val ddl = SqlUtils.generateDDL(targetName, rsmd, vendor, varcharPadding)
             SqlUtils.executeDDL(conn, ddl)
         }
     }
