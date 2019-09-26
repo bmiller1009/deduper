@@ -46,7 +46,7 @@ class Deduper(private val config: Config) {
             }
         } else {
             if(config.tgtJndi != null) {
-                SqlTargetPersistor(config.tgtTable, config.tgtJndi, config.context)
+                SqlTargetPersistor(config.tgtTable, config.tgtJndi, config.context, config.varcharPadding)
             } else {
                 null
             }

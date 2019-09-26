@@ -62,7 +62,8 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
 class SqlTargetPersistor(
     private val targetName: String,
     private val targetJndi: String,
-    private val context: String
+    private val context: String,
+    private val varcharPadding: Int
 ): TargetPersistor {
 
     companion object {

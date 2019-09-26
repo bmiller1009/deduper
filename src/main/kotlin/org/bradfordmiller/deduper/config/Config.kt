@@ -14,7 +14,8 @@ class Config private constructor(
     val dupesJndi: String?,
     val tgtTable: String?,
     val deleteTargetIfExists: Boolean,
-    val deleteDupeIfExist: Boolean
+    val deleteDupeIfExist: Boolean,
+    val varcharPadding: Int
 ) {
 
     companion object {
@@ -30,7 +31,8 @@ class Config private constructor(
         private var dupesJndi: String? = null,
         private var tgtTable: String? = null,
         private var deleteTargetIfExist: Boolean = false,
-        private var deleteDupeIfExist: Boolean = false
+        private var deleteDupeIfExist: Boolean = false,
+        private var varcharPadding: Int = 0
     ) {
         companion object {
             private val logger = LoggerFactory.getLogger(ConfigBuilder::class.java)
@@ -45,6 +47,7 @@ class Config private constructor(
         fun targetTable(targetTable: String) = apply { this.tgtTable = targetTable }
         fun deleteTargetIfExists(deleteTargetIfExist: Boolean) = apply {this.deleteTargetIfExist = deleteTargetIfExist}
         fun deleteDupeIfExists(deleteDupeIfExist: Boolean) = apply {this.deleteDupeIfExist = deleteDupeIfExist}
+        fun varcharPadding(varcharPadding: Int) = apply {this.varcharPadding = varcharPadding}
         fun build(): Config {
             val sourceJndi = srcJndi ?: throw NullArgumentException("Source JNDI must be set")
             val sourceName = srcName ?: throw NullArgumentException("Source JNDI name must be set")
@@ -53,7 +56,7 @@ class Config private constructor(
             val finalDupesJndi = dupesJndi
             val finalDeleteTargetIfExists = deleteTargetIfExist
             val finalDeleteDupeIfExists = deleteDupeIfExist
-            val config = Config(sourceJndi, sourceName, finalContext, keyOn.orEmpty(), targetJndi, finalDupesJndi, tgtTable, finalDeleteTargetIfExists, finalDeleteDupeIfExists)
+            val config = Config(sourceJndi, sourceName, finalContext, keyOn.orEmpty(), targetJndi, finalDupesJndi, tgtTable, finalDeleteTargetIfExists, finalDeleteDupeIfExists, varcharPadding)
             logger.trace("Built config object $config")
             return config
         }
