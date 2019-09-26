@@ -193,17 +193,19 @@ class DeduperTest {
     }
 
     @Test fun testDeleteSqlDeleteDupeAndTarget() {
-        val config = Config.ConfigBuilder()
+        var build = Config.ConfigBuilder()
                 .sourceJndi("RealEstateIn")
                 .sourceName("Sacramentorealestatetransactions")
                 .jndiContext("default_ds")
-                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
-                .targetJndi("PostGresTest")
+                .hashColumns(mutableSetOf("street", "city", "state", "zip", "price"))
+                .targetJndi("SqlLiteTest")
                 .targetTable("target_data")
-                .dupesJndi("PostGresTest")
+                .dupesJndi("SqlLiteTest")
                 .deleteTargetIfExists(true)
                 .deleteDupeIfExists(true)
+                .varcharPadding(20)
                 .build()
+        val config = build
 
         val deduper = Deduper(config)
 
