@@ -12,8 +12,8 @@ fun main(args: Array<String>) {
         .sourceName("Sacramentorealestatetransactions")
         .jndiContext("default_ds")
         .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
-        .targetJndi("RealEstateOut")
-        .dupesJndi("RealEstateOutDupes")
+        //.targetJndi("RealEstateOut")
+        //.dupesJndi("RealEstateOutDupes")
         .build()
 
     val deduper = Deduper(config)

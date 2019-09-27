@@ -3,12 +3,12 @@ package org.bradfordmiller.deduper
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.csv.CsvConfigParser
+import org.bradfordmiller.deduper.jndi.CsvJNDITargetType
 import org.bradfordmiller.deduper.jndi.JNDIUtils
+import org.bradfordmiller.deduper.jndi.SqlJNDITargetType
 import org.bradfordmiller.deduper.persistors.*
 import org.bradfordmiller.deduper.sql.SqlUtils
-import org.bradfordmiller.deduper.utils.Either
 import org.bradfordmiller.deduper.utils.Left
-import org.bradfordmiller.deduper.utils.Right
 
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
@@ -35,40 +35,40 @@ data class DedupeReport(
 
 class Deduper(private val config: Config) {
 
-    private val tgtPersistor: TargetPersistor? by lazy {
-        if(config.tgtTable.isNullOrEmpty()) {
-            if(config.tgtJndi != null) {
-                val tgtConfigMap = CsvConfigParser.getCsvMap(config.context, config.tgtJndi)
-                logger.trace("tgtConfigMap = $tgtConfigMap")
-                CsvTargetPersistor(tgtConfigMap)
-            } else {
-                null
-            }
-        } else {
-            if(config.tgtJndi != null) {
-                SqlTargetPersistor(config.tgtTable, config.tgtJndi, config.context, config.varcharPadding)
-            } else {
-                null
-            }
-        }
-    }
+    internal data class Persistors(val targetPersistor: TargetPersistor?, val dupePersistor: DupePersistor?)
 
-    private val duplicatePersistor: DupePersistor? by lazy {
-        if(config.tgtTable.isNullOrEmpty()) {
-            if(config.dupesJndi != null) {
-                val dupesConfigMap = CsvConfigParser.getCsvMap(config.context, config.dupesJndi)
-                logger.trace("dupesConfigMap = $dupesConfigMap")
-                CsvDupePersistor(dupesConfigMap)
-            } else {
-                null
-            }
-        } else {
-            if(config.dupesJndi != null) {
-                SqlDupePersistor(config.dupesJndi, config.context)
-            } else {
-                null
-            }
-        }
+    private val persistors: Persistors by lazy {
+
+        val targetPersistor: TargetPersistor? =
+                if (config.targetJndi != null) {
+                    if (config.targetJndi is CsvJNDITargetType) {
+                        val csvJndi = config.targetJndi
+                        val tgtConfigMap = CsvConfigParser.getCsvMap(config.context, csvJndi.jndi)
+                        logger.trace("tgtConfigMap = $tgtConfigMap")
+                        CsvTargetPersistor(tgtConfigMap)
+                    } else {
+                        val sqlJndi = config.targetJndi as SqlJNDITargetType
+                        SqlTargetPersistor(sqlJndi.targetTable, sqlJndi.jndi, config.context, sqlJndi.varcharPadding)
+                    }
+                } else {
+                    null
+                }
+
+        val dupePersistor: DupePersistor? =
+                if (config.dupesJndi != null) {
+                    if (config.dupesJndi is CsvJNDITargetType) {
+                        val csvJndi = config.dupesJndi
+                        val dupesConfigMap = CsvConfigParser.getCsvMap(config.context, csvJndi.jndi)
+                        logger.trace("tgtConfigMap = $dupesConfigMap")
+                        CsvDupePersistor(dupesConfigMap)
+                    } else {
+                        SqlDupePersistor(config.dupesJndi.jndi, config.context)
+                    }
+                } else {
+                    null
+                }
+
+        Persistors(targetPersistor, dupePersistor)
     }
 
     val sourceDataSource: DataSource by lazy {(JNDIUtils.getDataSource(config.srcJndi, config.context) as Left<DataSource?, String>).left!!}
@@ -123,8 +123,8 @@ class Deduper(private val config: Config) {
                     var dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
                     var data: MutableList<Map<String, Any>> = mutableListOf()
 
-                    val targetPersistor = tgtPersistor
-                    val dupePersistor = duplicatePersistor
+                    val targetPersistor = persistors.targetPersistor
+                    val dupePersistor = persistors.dupePersistor
 
                     targetPersistor?.createTarget(rsmd, config.deleteTargetIfExists)
 
