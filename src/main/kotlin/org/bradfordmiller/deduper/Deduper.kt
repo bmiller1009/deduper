@@ -35,40 +35,47 @@ data class DedupeReport(
 
 class Deduper(private val config: Config) {
 
-    internal data class Persistors(val targetPersistor: TargetPersistor?, val dupePersistor: DupePersistor?)
+    internal data class Persistors(
+            val targetPersistor: TargetPersistor?,
+            val deleteTargetIfExists: Boolean,
+            val dupePersistor: DupePersistor?,
+            val deleteDupeIfExists: Boolean
+    )
 
     private val persistors: Persistors by lazy {
 
-        val targetPersistor: TargetPersistor? =
+        val targetPersistor: Pair<TargetPersistor?, Boolean> =
                 if (config.targetJndi != null) {
+                    val deleteTarget = config.targetJndi.deleteIfExists
                     if (config.targetJndi is CsvJNDITargetType) {
                         val csvJndi = config.targetJndi
                         val tgtConfigMap = CsvConfigParser.getCsvMap(config.context, csvJndi.jndi)
                         logger.trace("tgtConfigMap = $tgtConfigMap")
-                        CsvTargetPersistor(tgtConfigMap)
+                        Pair(CsvTargetPersistor(tgtConfigMap), deleteTarget)
                     } else {
                         val sqlJndi = config.targetJndi as SqlJNDITargetType
-                        SqlTargetPersistor(sqlJndi.targetTable, sqlJndi.jndi, config.context, sqlJndi.varcharPadding)
+                        Pair(SqlTargetPersistor(sqlJndi.targetTable, sqlJndi.jndi, config.context, sqlJndi.varcharPadding), deleteTarget)
                     }
                 } else {
-                    null
+                    Pair(null, false)
                 }
 
-        val dupePersistor: DupePersistor? =
+        val dupePersistor: Pair<DupePersistor?, Boolean> =
                 if (config.dupesJndi != null) {
+                    val deleteDupe = config.dupesJndi.deleteIfExists
                     if (config.dupesJndi is CsvJNDITargetType) {
                         val csvJndi = config.dupesJndi
                         val dupesConfigMap = CsvConfigParser.getCsvMap(config.context, csvJndi.jndi)
                         logger.trace("tgtConfigMap = $dupesConfigMap")
-                        CsvDupePersistor(dupesConfigMap)
+                        Pair(CsvDupePersistor(dupesConfigMap), deleteDupe)
                     } else {
-                        SqlDupePersistor(config.dupesJndi.jndi, config.context)
+                        Pair(SqlDupePersistor(config.dupesJndi.jndi, config.context), deleteDupe)
                     }
                 } else {
-                    null
+                    Pair(null, false)
                 }
 
-        Persistors(targetPersistor, dupePersistor)
+        Persistors(targetPersistor.first, targetPersistor.second, dupePersistor.first, dupePersistor.second)
     }
 
     val sourceDataSource: DataSource by lazy {(JNDIUtils.getDataSource(config.srcJndi, config.context) as Left<DataSource?, String>).left!!}
@@ -124,11 +131,12 @@ class Deduper(private val config: Config) {
                     var data: MutableList<Map<String, Any>> = mutableListOf()
 
                     val targetPersistor = persistors.targetPersistor
+                    val deleteTarget = persistors.deleteTargetIfExists
                     val dupePersistor = persistors.dupePersistor
+                    val deleteDupe = persistors.deleteDupeIfExists
 
-                    targetPersistor?.createTarget(rsmd, config.deleteTargetIfExists)
-
-                    dupePersistor?.createDupe(config.deleteDupeIfExist)
+                    targetPersistor?.createTarget(rsmd, deleteTarget)
+                    dupePersistor?.createDupe(deleteDupe)
 
                     rsColumns = SqlUtils.getColumnsFromRs(rsmd)
 

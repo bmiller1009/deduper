@@ -1,6 +1,6 @@
 package org.bradfordmiller.deduper.jndi
 
-abstract class JNDITargetType(val jndi: String)
-class CsvJNDITargetType(jndi: String): JNDITargetType(jndi)
-class SqlJNDITargetType(jndi: String, val targetTable: String, val varcharPadding: Int = 0): JNDITargetType(jndi)
-class SqlJNDIDupeType(jndi: String): JNDITargetType(jndi)
+abstract class JNDITargetType(val jndi: String, val deleteIfExists: Boolean)
+class CsvJNDITargetType(jndi: String, deleteIfExists: Boolean): JNDITargetType(jndi, deleteIfExists)
+class SqlJNDITargetType(jndi: String, deleteIfExists: Boolean, val targetTable: String, val varcharPadding: Int = 0): JNDITargetType(jndi, deleteIfExists)
+class SqlJNDIDupeType(jndi: String, deleteIfExists: Boolean): JNDITargetType(jndi, deleteIfExists)
