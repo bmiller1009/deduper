@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory
 import java.sql.*
 
 data class Dupe(val firstFoundRowNumber: Long, val dupes: String)
+data class HashRow(val hash: String, val hash_json: String)
 
 interface WritePersistor<T> {
     fun writeRows(rows: MutableList<T>)
@@ -21,6 +22,10 @@ interface TargetPersistor: WritePersistor<Map<String, Any>> {
 interface DupePersistor: WritePersistor<Pair<String, Pair<MutableList<Long>, Dupe>>> {
     override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>)
     fun createDupe(deleteIfDupeExists: Boolean)
+}
+interface HashPersistor: WritePersistor<HashRow> {
+    override fun writeRows(rows: MutableList<Map<String, String>>)
+    fun createHashTable(deleteIfHashTableExists: Boolean)
 }
 abstract class CsvPersistor(config: Map<String, String>) {
     val ccp = CsvConfigParser(config)
@@ -57,6 +62,17 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
               it.second.second.dupes
         }
         FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension)
+    }
+}
+class CsvHashPersistor(config: Map<String, String>): CsvPersistor(config), HashPersistor {
+    override fun createHashTable(deleteIfHashTableExists: Boolean) {
+        val columns = setOf("hash", "row_json")
+        FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter, deleteIfHashTableExists)
+    }
+    override fun writeRows(rows: MutableList<Map<String, String>>) {
+        val data = rows.map {r ->
+            r.get
+        }
     }
 }
 class SqlTargetPersistor(
