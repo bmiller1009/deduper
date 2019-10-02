@@ -3,6 +3,7 @@ package org.bradfordmiller.deduper
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.csv.CsvConfigParser
+import org.bradfordmiller.deduper.hashing.Hasher
 import org.bradfordmiller.deduper.jndi.CsvJNDITargetType
 import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.jndi.SqlJNDIHashType
@@ -170,6 +171,10 @@ class Deduper(private val config: Config) {
 
                     logger.info("Using ${hashColumns.joinToString(",")} to calculate hashes")
 
+                    val targetIsNotNull: Boolean = targetPersistor != null
+                    val dupeIsNotNull: Boolean = dupePersistor != null
+                    val hashIsNotNull: Boolean = hashPersistor != null
+
                     while (rs.next()) {
 
                         val md5Values =
@@ -185,14 +190,16 @@ class Deduper(private val config: Config) {
                         logger.trace("Using the following value(s): $md5Values to calculate unique hash.")
 
                         val hash = DigestUtils.md5Hex(md5Values).toUpperCase()
+                        val longHash = Hasher.hashString(hash)
 
                         logger.trace("MD-5 hash $hash generated for MD-5 values.")
+                        logger.trace("Converted hash value to long value: $longHash")
 
                         //TODO - replace seenHashes with trove collection and store the long representation of the string hash
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
                             //TODO - Do these null checks/boolean checks once outside the loop
-                            if(targetPersistor != null) {
+                            if(targetIsNotNull) {
                                 data.add(rsMap)
                                 writeData(recordCount, targetPersistor, data)
                             }
