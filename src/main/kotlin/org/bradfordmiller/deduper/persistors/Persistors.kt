@@ -6,11 +6,12 @@ import org.bradfordmiller.deduper.sql.SqlUtils
 import org.bradfordmiller.deduper.sql.SqlVendorTypes
 import org.bradfordmiller.deduper.utils.FileUtils
 import org.json.JSONArray
+import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import java.sql.*
 
 data class Dupe(val firstFoundRowNumber: Long, val dupes: String)
-data class HashRow(val hash: String, val hash_json: String)
+data class HashRow(val hash: String, val hash_json: String?)
 
 interface WritePersistor<T> {
     fun writeRows(rows: MutableList<T>)
@@ -24,7 +25,7 @@ interface DupePersistor: WritePersistor<Pair<String, Pair<MutableList<Long>, Dup
     fun createDupe(deleteIfDupeExists: Boolean)
 }
 interface HashPersistor: WritePersistor<HashRow> {
-    override fun writeRows(rows: MutableList<Map<String, String>>)
+    override fun writeRows(rows: MutableList<HashRow>)
     fun createHashTable(deleteIfHashTableExists: Boolean)
 }
 abstract class CsvPersistor(config: Map<String, String>) {
@@ -66,13 +67,14 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
 }
 class CsvHashPersistor(config: Map<String, String>): CsvPersistor(config), HashPersistor {
     override fun createHashTable(deleteIfHashTableExists: Boolean) {
-        val columns = setOf("hash", "row_json")
+        val columns = setOf("hash", "json_row")
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter, deleteIfHashTableExists)
     }
-    override fun writeRows(rows: MutableList<Map<String, String>>) {
-        val data = rows.map {r ->
-            r.get
+    override fun writeRows(rows: MutableList<HashRow>) {
+        val data = rows.map {hr ->
+            hr.hash + ccp.delimiter + hr.hash_json
         }
+        FileUtils.writeStringsToFile(data, ccp.targetName, ccp.delimiter)
     }
 }
 class SqlTargetPersistor(
@@ -206,6 +208,67 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
                     conn.commit()
                 } catch (sqlEx: SQLException) {
                     logger.error("Error while inserting duplicate values: ${sqlEx.message}")
+                } finally {
+                    conn.rollback()
+                }
+            }
+        }
+    }
+}
+
+class SqlHashPersistor(private val hashJndi: String, private val context: String): HashPersistor {
+    companion object {
+        val logger = LoggerFactory.getLogger(SqlHashPersistor::class.java)
+    }
+
+    private val insertStatement = "INSERT INTO hashes(hash, json_row) VALUES (?,?)"
+
+    override fun createHashTable(deleteIfHashTableExists: Boolean) {
+        JNDIUtils.getJndiConnection(hashJndi, context).use { conn ->
+
+            if (deleteIfHashTableExists) {
+                logger.info("deleteIfHashTableExists is set to true. Checking to see if table 'hashes' exists.")
+                //TODO - extract this out into a deleteTable method in SqlUtils
+                if (SqlUtils.tableExists(conn.metaData, "hashes")) {
+                    logger.info("Table 'hashes' exists. Generating script to drop table")
+                    val dropSql = "Drop table hashes"
+                    SqlUtils.executeDDL(conn, dropSql)
+                    logger.info("Table 'hashes' dropped")
+                }
+            }
+
+            //TODO - extract this into a createTableMethod in SqlUtils
+            val vendor = conn.metaData.databaseProductName
+            val sqlVendorTypes = SqlVendorTypes(vendor)
+            val createStatement =
+                "CREATE TABLE hashes(" +
+                        "hash ${sqlVendorTypes.getStringType()} NOT NULL, " +
+                        "json_row ${sqlVendorTypes.getStringType()} NULL, " +
+                        "${sqlVendorTypes.getPrimaryKeySyntax("hash")}" +
+                        ")"
+            SqlUtils.executeDDL(conn, createStatement)
+        }
+    }
+
+    override fun writeRows(rows: MutableList<HashRow>) {
+        JNDIUtils.getJndiConnection(hashJndi, context).use { conn ->
+            conn.autoCommit = false
+            conn.prepareStatement(insertStatement).use { pstmt ->
+                try {
+                    rows.forEach { hr ->
+                        pstmt.setString(1, hr.hash)
+                        pstmt.setString(2, hr.hash_json)
+                        pstmt.addBatch()
+                    }
+                    try {
+                        pstmt.executeBatch()
+                    } catch (sqlEx: SQLException) {
+                        logger.error("Error committing batch: ${sqlEx.message}")
+                        return
+                    }
+                    conn.commit()
+                } catch (sqlEx: SQLException) {
+                    logger.error("Error while inserting hash values: ${sqlEx.message}")
                 } finally {
                     conn.rollback()
                 }

@@ -2,6 +2,7 @@ import org.bradfordmiller.deduper.Deduper
 import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.jndi.CsvJNDITargetType
 import org.bradfordmiller.deduper.jndi.SqlJNDIDupeType
+import org.bradfordmiller.deduper.jndi.SqlJNDIHashType
 import org.bradfordmiller.deduper.jndi.SqlJNDITargetType
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -228,6 +229,46 @@ class DeduperTest {
                 .build()
 
         val deduper = Deduper(build)
+
+        deduper.dedupe()
+    }
+
+    @Test fun testHashPersistor() {
+        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", true,"target_data")
+        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", true)
+        val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", true, true)
+
+        val config = Config.ConfigBuilder()
+            .sourceJndi("RealEstateIn")
+            .sourceName("Sacramentorealestatetransactions")
+            .jndiContext("default_ds")
+            .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+            .targetJndi(sqlTargetJndi)
+            .dupesJndi(sqlDupesJndi)
+            .hashJndi(sqlHashJndi)
+            .build()
+
+        val deduper = Deduper(config)
+
+        deduper.dedupe()
+    }
+
+    @Test fun testHashPersistorNoJson() {
+        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", true,"target_data")
+        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", true)
+        val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", false, true)
+
+        val config = Config.ConfigBuilder()
+            .sourceJndi("RealEstateIn")
+            .sourceName("Sacramentorealestatetransactions")
+            .jndiContext("default_ds")
+            .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+            .targetJndi(sqlTargetJndi)
+            .dupesJndi(sqlDupesJndi)
+            .hashJndi(sqlHashJndi)
+            .build()
+
+        val deduper = Deduper(config)
 
         deduper.dedupe()
     }

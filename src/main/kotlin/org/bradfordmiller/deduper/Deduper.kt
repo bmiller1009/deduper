@@ -5,6 +5,7 @@ import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.csv.CsvConfigParser
 import org.bradfordmiller.deduper.jndi.CsvJNDITargetType
 import org.bradfordmiller.deduper.jndi.JNDIUtils
+import org.bradfordmiller.deduper.jndi.SqlJNDIHashType
 import org.bradfordmiller.deduper.jndi.SqlJNDITargetType
 import org.bradfordmiller.deduper.persistors.*
 import org.bradfordmiller.deduper.sql.SqlUtils
@@ -39,7 +40,9 @@ class Deduper(private val config: Config) {
             val targetPersistor: TargetPersistor?,
             val deleteTargetIfExists: Boolean,
             val dupePersistor: DupePersistor?,
-            val deleteDupeIfExists: Boolean
+            val deleteDupeIfExists: Boolean,
+            val hashPersistor: HashPersistor?,
+            val deleteHashIfExists: Boolean
     )
 
     private val persistors: Persistors by lazy {
@@ -61,21 +64,36 @@ class Deduper(private val config: Config) {
                 }
 
         val dupePersistor: Pair<DupePersistor?, Boolean> =
-                if (config.dupesJndi != null) {
-                    val deleteDupe = config.dupesJndi.deleteIfExists
-                    if (config.dupesJndi is CsvJNDITargetType) {
-                        val csvJndi = config.dupesJndi
-                        val dupesConfigMap = CsvConfigParser.getCsvMap(config.context, csvJndi.jndi)
-                        logger.trace("tgtConfigMap = $dupesConfigMap")
-                        Pair(CsvDupePersistor(dupesConfigMap), deleteDupe)
-                    } else {
-                        Pair(SqlDupePersistor(config.dupesJndi.jndi, config.context), deleteDupe)
-                    }
+            if (config.dupesJndi != null) {
+                val deleteDupe = config.dupesJndi.deleteIfExists
+                if (config.dupesJndi is CsvJNDITargetType) {
+                    val csvJndi = config.dupesJndi
+                    val dupesConfigMap = CsvConfigParser.getCsvMap(config.context, csvJndi.jndi)
+                    logger.trace("dupesConfigMap = $dupesConfigMap")
+                    Pair(CsvDupePersistor(dupesConfigMap), deleteDupe)
                 } else {
-                    Pair(null, false)
+                    Pair(SqlDupePersistor(config.dupesJndi.jndi, config.context), deleteDupe)
                 }
+            } else {
+                Pair(null, false)
+            }
 
-        Persistors(targetPersistor.first, targetPersistor.second, dupePersistor.first, dupePersistor.second)
+        val hashPersistor: Pair<HashPersistor?, Boolean> =
+            if (config.hashJndi != null) {
+                val deleteHash = config.hashJndi.deleteIfExists
+                if (config.hashJndi is CsvJNDITargetType) {
+                    val csvJndi = config.hashJndi
+                    val hashConfigMap = CsvConfigParser.getCsvMap(config.context, csvJndi.jndi)
+                    logger.trace("hashConfigMap = $hashConfigMap")
+                    Pair(CsvHashPersistor(hashConfigMap), deleteHash)
+                } else {
+                    Pair(SqlHashPersistor(config.hashJndi.jndi, config.context), deleteHash)
+                }
+            } else {
+                Pair(null, false)
+            }
+
+        Persistors(targetPersistor.first, targetPersistor.second, dupePersistor.first, dupePersistor.second, hashPersistor.first, hashPersistor.second)
     }
 
     val sourceDataSource: DataSource by lazy {(JNDIUtils.getDataSource(config.srcJndi, config.context) as Left<DataSource?, String>).left!!}
@@ -129,14 +147,18 @@ class Deduper(private val config: Config) {
 
                     var dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
                     var data: MutableList<Map<String, Any>> = mutableListOf()
+                    var hashes: MutableList<HashRow> = mutableListOf()
 
                     val targetPersistor = persistors.targetPersistor
                     val deleteTarget = persistors.deleteTargetIfExists
                     val dupePersistor = persistors.dupePersistor
                     val deleteDupe = persistors.deleteDupeIfExists
+                    val hashPersistor = persistors.hashPersistor
+                    val deleteHash = persistors.deleteHashIfExists
 
                     targetPersistor?.createTarget(rsmd, deleteTarget)
                     dupePersistor?.createDupe(deleteDupe)
+                    hashPersistor?.createHashTable(deleteHash)
 
                     rsColumns = SqlUtils.getColumnsFromRs(rsmd)
 
@@ -157,25 +179,40 @@ class Deduper(private val config: Config) {
                                     (1..colCount).toList().map { rs.getString(it) }.joinToString()
                                 }
 
+                        //Hold data in map of columns/values
+                        val rsMap = SqlUtils.getMapFromRs(rs, rsColumns)
+
                         logger.trace("Using the following value(s): $md5Values to calculate unique hash.")
 
                         val hash = DigestUtils.md5Hex(md5Values).toUpperCase()
 
                         logger.trace("MD-5 hash $hash generated for MD-5 values.")
 
+                        //TODO - replace seenHashes with trove collection and store the long representation of the string hash
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
+                            //TODO - Do these null checks/boolean checks once outside the loop
                             if(targetPersistor != null) {
-                                data.add(SqlUtils.getMapFromRs(rs, rsColumns))
+                                data.add(rsMap)
                                 writeData(recordCount, targetPersistor, data)
+                            }
+                            if(hashPersistor != null) {
+                                val hashConfig = config.hashJndi as SqlJNDIHashType
+                                val json =
+                                    if(hashConfig.includeJson) {
+                                        JSONObject(rsMap).toString()
+                                    } else {
+                                        null
+                                    }
+                                hashes.add(HashRow(hash, json))
+                                writeData(recordCount, hashPersistor, hashes)
                             }
                         } else {
                             if(dupeMap.containsKey(hash)) {
                                 dupeMap[hash]?.first?.add(recordCount)
                             } else {
                                 val firstSeenRow = seenHashes[hash]!!
-                                val dupeValues = SqlUtils.getMapFromRs(rs, rsColumns)
-                                val dupeJson = JSONObject(dupeValues).toString()
+                                val dupeJson = JSONObject(rsMap).toString()
                                 val dupe = Dupe(firstSeenRow, dupeJson)
                                 dupeMap[hash] = Pair(mutableListOf(recordCount), dupe)
 
@@ -191,12 +228,15 @@ class Deduper(private val config: Config) {
                         if(recordCount % outputReportCommitSize == 0L)
                             logger.info("$recordCount records have been processed so far.")
                     }
-                    //Flush target/dupe data that's in the buffer
+                    //Flush target/dupe/hash data that's in the buffer
                     if(targetPersistor != null) {
                         writeData(targetPersistor, data)
                     }
                     if(dupePersistor != null) {
                         writeData(dupePersistor, dupeMap.toList().toMutableList())
+                    }
+                    if(hashPersistor != null) {
+                        writeData(hashPersistor, hashes)
                     }
                 }
             }

@@ -10,9 +10,8 @@ class Config private constructor(
     val context: String,
     val hashColumns: Set<String>,
     val targetJndi: JNDITargetType?,
-    val dupesJndi: JNDITargetType?//,
-    //val deleteTargetIfExists: Boolean,
-    //val deleteDupeIfExist: Boolean
+    val dupesJndi: JNDITargetType?,
+    val hashJndi: JNDITargetType?
 ) {
 
     companion object {
@@ -25,9 +24,8 @@ class Config private constructor(
         private var context: String? = null,
         private var keyOn: Set<String>? = null,
         private var targetJndi: JNDITargetType? = null,
-        private var dupesJndi: JNDITargetType? = null//,
-        //private var deleteTargetIfExist: Boolean = false,
-        //private var deleteDupeIfExist: Boolean = false
+        private var dupesJndi: JNDITargetType? = null,
+        private var hashJndi: JNDITargetType? = null
     ) {
         companion object {
             private val logger = LoggerFactory.getLogger(ConfigBuilder::class.java)
@@ -39,17 +37,15 @@ class Config private constructor(
         fun hashColumns(hashColumns: Set<String>) = apply { this.keyOn = hashColumns }
         fun targetJndi(jndiTargetType: JNDITargetType) = apply {this.targetJndi = jndiTargetType}
         fun dupesJndi(jndiTargetType: JNDITargetType) = apply {this.dupesJndi = jndiTargetType}
-        //fun deleteTargetIfExists(deleteTargetIfExist: Boolean) = apply {this.deleteTargetIfExist = deleteTargetIfExist}
-        //fun deleteDupeIfExists(deleteDupeIfExist: Boolean) = apply {this.deleteDupeIfExist = deleteDupeIfExist}
+        fun hashJndi(jndiTargetType: JNDITargetType) = apply {this.hashJndi = jndiTargetType}
         fun build(): Config {
             val sourceJndi = srcJndi ?: throw NullArgumentException("Source JNDI must be set")
             val sourceName = srcName ?: throw NullArgumentException("Source JNDI name must be set")
             val finalContext = context ?: throw NullArgumentException("JNDI context must be set")
             val finalTargetJndi = targetJndi
             val finalDupesJndi = dupesJndi
-            //val finalDeleteTargetIfExists = deleteTargetIfExist
-            //val finalDeleteDupeIfExists = deleteDupeIfExist
-            val config = Config(sourceJndi, sourceName, finalContext, keyOn.orEmpty(), finalTargetJndi, finalDupesJndi)//, finalDeleteTargetIfExists, finalDeleteDupeIfExists)
+            val finalHashJndi = hashJndi
+            val config = Config(sourceJndi, sourceName, finalContext, keyOn.orEmpty(), finalTargetJndi, finalDupesJndi, finalHashJndi)
             logger.trace("Built config object $config")
             return config
         }
