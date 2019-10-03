@@ -178,7 +178,7 @@ class Deduper(private val config: Config) {
 
                     var hashIsNotNull: Boolean = false
                     lateinit var hashPersistor: HashPersistor
-                    if(persistors.targetPersistor != null) {
+                    if(persistors.hashPersistor != null) {
                         hashIsNotNull = true
                         hashPersistor = persistors.hashPersistor!!
                         hashPersistor.createHashTable(persistors.deleteHashIfExists)
@@ -207,7 +207,7 @@ class Deduper(private val config: Config) {
                         //TODO - replace seenHashes with trove collection and store the long representation of the string hash
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
-                            
+
                             if(targetIsNotNull) {
                                 data.add(rsMap)
                                 writeData(recordCount, targetPersistor, data)

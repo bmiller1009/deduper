@@ -41,20 +41,30 @@ class SqlUtils {
                 typeName
             }
         }
-        private fun getColumnsCommaDelimited(rsmd: ResultSetMetaData, vendor: String, varcharPadding: Int = 0, includeType: Boolean = false): String {
+        private fun getColumnsCommaDelimited(rsmd: ResultSetMetaData, vendor: String, varcharPadding: Int = 0, includeType: Boolean = false, includeNullability: Boolean = false): String {
             val colCount = rsmd.columnCount
             return (1..colCount).map { c ->
                 val colName = rsmd.getColumnName(c)
                 val type = rsmd.getColumnType(c)
                 val typeName = JDBCType.valueOf(type).name
                 val size = rsmd.getColumnDisplaySize(c) + varcharPadding
+                val isNull =
+                    if(includeNullability) {
+                        if (rsmd.isNullable(c) == ResultSetMetaData.columnNullable) {
+                            "NULL"
+                        } else {
+                            "NOT NULL"
+                        }
+                    } else {
+                        ""
+                    }
                 val sqlType =
                     if(includeType) {
                         getType(vendor, typeName, type, size)
                     } else {
                         ""
                     }
-                "$colName $sqlType"
+                "$colName $sqlType $isNull"
             }.joinToString(",")
         }
         fun generateInsert(tableName: String, rsmd: ResultSetMetaData, vendor: String): String {
