@@ -103,17 +103,9 @@ class SqlTargetPersistor(
     }
     override fun createTarget(rsmd: ResultSetMetaData, deleteIfTargetExists: Boolean) {
         JNDIUtils.getJndiConnection(targetJndi, context).use { conn ->
-            if(deleteIfTargetExists) {
+            if (deleteIfTargetExists) {
                 logger.info("deleteIfTargetExists is set to true.  Checking database to see if target $targetName exists.")
-
-                if(SqlUtils.tableExists(conn.metaData, targetName)) {
-                    logger.info("Table with target name $targetName exists. Generating script to drop table.")
-
-                    val dropSql = "DROP TABLE $targetName"
-                    SqlUtils.executeDDL(conn, dropSql)
-
-                    logger.info("Table $targetName dropped.")
-                }
+                SqlUtils.deleteTableIfExists(conn, targetName)
             }
             val vendor = conn.metaData.databaseProductName
             val ddl = SqlUtils.generateDDL(targetName, rsmd, vendor, varcharPadding)
@@ -164,13 +156,7 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
 
             if(deleteIfDupeExists) {
                 logger.info("deleteIfDupeExists is set to true. Checking to see if table 'dupes' exists.")
-
-                if(SqlUtils.tableExists(conn.metaData, "dupes")) {
-                    logger.info("Table 'dupes' exists. Generating script to drop table")
-                    val dropSql = "Drop table dupes"
-                    SqlUtils.executeDDL(conn, dropSql)
-                    logger.info("Table 'dupes' dropped")
-                }
+                SqlUtils.deleteTableIfExists(conn, "dupes")
             }
 
             val vendor = conn.metaData.databaseProductName
@@ -228,13 +214,7 @@ class SqlHashPersistor(private val hashJndi: String, private val context: String
 
             if (deleteIfHashTableExists) {
                 logger.info("deleteIfHashTableExists is set to true. Checking to see if table 'hashes' exists.")
-                //TODO - extract this out into a deleteTable method in SqlUtils
-                if (SqlUtils.tableExists(conn.metaData, "hashes")) {
-                    logger.info("Table 'hashes' exists. Generating script to drop table")
-                    val dropSql = "Drop table hashes"
-                    SqlUtils.executeDDL(conn, dropSql)
-                    logger.info("Table 'hashes' dropped")
-                }
+                SqlUtils.deleteTableIfExists(conn, "hashes")
             }
 
             //TODO - extract this into a createTableMethod in SqlUtils

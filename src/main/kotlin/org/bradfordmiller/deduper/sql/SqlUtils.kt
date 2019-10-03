@@ -95,5 +95,13 @@ class SqlUtils {
                 return hasNext
             }
         }
+        fun deleteTableIfExists(conn: Connection, tableName: String) {
+            if(SqlUtils.tableExists(conn.metaData, tableName)) {
+                logger.info("Table '$tableName' exists. Generating script to drop table")
+                val dropSql = "Drop table $tableName"
+                SqlUtils.executeDDL(conn, dropSql)
+                logger.info("Table '$tableName' dropped")
+            }
+        }
     }
 }
