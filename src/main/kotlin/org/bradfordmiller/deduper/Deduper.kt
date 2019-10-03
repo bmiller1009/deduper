@@ -150,17 +150,6 @@ class Deduper(private val config: Config) {
                     var data: MutableList<Map<String, Any>> = mutableListOf()
                     var hashes: MutableList<HashRow> = mutableListOf()
 
-                    val targetPersistor = persistors.targetPersistor
-                    val deleteTarget = persistors.deleteTargetIfExists
-                    val dupePersistor = persistors.dupePersistor
-                    val deleteDupe = persistors.deleteDupeIfExists
-                    val hashPersistor = persistors.hashPersistor
-                    val deleteHash = persistors.deleteHashIfExists
-
-                    targetPersistor?.createTarget(rsmd, deleteTarget)
-                    dupePersistor?.createDupe(deleteDupe)
-                    hashPersistor?.createHashTable(deleteHash)
-
                     rsColumns = SqlUtils.getColumnsFromRs(rsmd)
 
                     require(rsColumns.values.containsAll(hashColumns)) {
@@ -171,9 +160,29 @@ class Deduper(private val config: Config) {
 
                     logger.info("Using ${hashColumns.joinToString(",")} to calculate hashes")
 
-                    val targetIsNotNull: Boolean = targetPersistor != null
-                    val dupeIsNotNull: Boolean = dupePersistor != null
-                    val hashIsNotNull: Boolean = hashPersistor != null
+                    var targetIsNotNull: Boolean = false
+                    lateinit var targetPersistor: TargetPersistor
+                    if(persistors.targetPersistor != null) {
+                        targetIsNotNull = true
+                        targetPersistor = persistors.targetPersistor!!
+                        targetPersistor.createTarget(rsmd, persistors.deleteTargetIfExists)
+                    }
+
+                    var dupeIsNotNull: Boolean = false
+                    lateinit var dupePersistor: DupePersistor
+                    if(persistors.dupePersistor != null) {
+                        dupeIsNotNull = true
+                        dupePersistor = persistors.dupePersistor!!
+                        dupePersistor.createDupe(persistors.deleteDupeIfExists)
+                    }
+
+                    var hashIsNotNull: Boolean = false
+                    lateinit var hashPersistor: HashPersistor
+                    if(persistors.targetPersistor != null) {
+                        hashIsNotNull = true
+                        hashPersistor = persistors.hashPersistor!!
+                        hashPersistor.createHashTable(persistors.deleteHashIfExists)
+                    }
 
                     while (rs.next()) {
 
@@ -203,7 +212,7 @@ class Deduper(private val config: Config) {
                                 data.add(rsMap)
                                 writeData(recordCount, targetPersistor, data)
                             }
-                            if(hashPersistor != null) {
+                            if(hashIsNotNull) {
                                 val hashConfig = config.hashJndi as SqlJNDIHashType
                                 val json =
                                     if(hashConfig.includeJson) {
@@ -227,7 +236,7 @@ class Deduper(private val config: Config) {
                             }
 
                             dupeCount += 1
-                            if(dupePersistor != null) {
+                            if(dupeIsNotNull) {
                                 writeData(dupeCount, dupePersistor, dupeMap.toList().toMutableList())
                             }
                         }
@@ -236,13 +245,13 @@ class Deduper(private val config: Config) {
                             logger.info("$recordCount records have been processed so far.")
                     }
                     //Flush target/dupe/hash data that's in the buffer
-                    if(targetPersistor != null) {
+                    if(targetIsNotNull) {
                         writeData(targetPersistor, data)
                     }
-                    if(dupePersistor != null) {
+                    if(dupeIsNotNull) {
                         writeData(dupePersistor, dupeMap.toList().toMutableList())
                     }
-                    if(hashPersistor != null) {
+                    if(hashIsNotNull) {
                         writeData(hashPersistor, hashes)
                     }
                 }
