@@ -273,6 +273,25 @@ class DeduperTest {
         deduper.dedupe()
     }
 
+    @Test fun testNullsInSource() {
+        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", true,"target_data")
+        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", true)
+        val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", true, true)
+
+        val config = Config.ConfigBuilder()
+                .sourceJndi("SqliteChinook")
+                .sourceName("tracks")
+                .jndiContext("default_ds")
+                .targetJndi(sqlTargetJndi)
+                .dupesJndi(sqlDupesJndi)
+                .hashJndi(sqlHashJndi)
+                .build()
+
+        val deduper = Deduper(config)
+
+        deduper.dedupe()
+    }
+
     @Test fun testCsvTargetCreation() {
 
         /*val hash = "7328393ce354e4b1b574d2d532ea3625".toUpperCase()

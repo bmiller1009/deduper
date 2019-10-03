@@ -190,9 +190,15 @@ class Deduper(private val config: Config) {
 
                         val md5Values =
                                 if (keysPopulated) {
-                                    hashColumns.map { rs.getString(it) }.joinToString()
+                                    hashColumns.map {
+                                        val s = rs.getString(it)
+                                        s
+                                    }.joinToString()
                                 } else {
-                                    (1..colCount).toList().map { rs.getString(it) }.joinToString()
+                                    (1..colCount).toList().map {
+                                        val s = rs.getString(it)
+                                        s
+                                    }.joinToString()
                                 }
 
                         //Hold data in map of columns/values
