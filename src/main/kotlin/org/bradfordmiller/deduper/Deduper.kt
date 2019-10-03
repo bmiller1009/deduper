@@ -207,7 +207,7 @@ class Deduper(private val config: Config) {
                         //TODO - replace seenHashes with trove collection and store the long representation of the string hash
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
-                            //TODO - Do these null checks/boolean checks once outside the loop
+                            
                             if(targetIsNotNull) {
                                 data.add(rsMap)
                                 writeData(recordCount, targetPersistor, data)
