@@ -177,10 +177,12 @@ class Deduper(private val config: Config) {
                     }
 
                     var hashIsNotNull: Boolean = false
+                    var includeJson: Boolean = false
                     lateinit var hashPersistor: HashPersistor
                     if(persistors.hashPersistor != null) {
                         hashIsNotNull = true
                         hashPersistor = persistors.hashPersistor!!
+                        includeJson = (config.hashJndi as SqlJNDIHashType).includeJson
                         hashPersistor.createHashTable(persistors.deleteHashIfExists)
                     }
 
@@ -213,9 +215,8 @@ class Deduper(private val config: Config) {
                                 writeData(recordCount, targetPersistor, data)
                             }
                             if(hashIsNotNull) {
-                                val hashConfig = config.hashJndi as SqlJNDIHashType
                                 val json =
-                                    if(hashConfig.includeJson) {
+                                    if(includeJson) {
                                         JSONObject(rsMap).toString()
                                     } else {
                                         null
