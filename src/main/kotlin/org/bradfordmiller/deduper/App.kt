@@ -5,7 +5,7 @@ import org.slf4j.LoggerFactory
 
 fun main(args: Array<String>) {
 
-    val logger = LoggerFactory.getLogger("Main")
+    /*val logger = LoggerFactory.getLogger("Main")
 
     val config = Config.ConfigBuilder()
         .sourceJndi("RealEstateIn")
@@ -20,5 +20,5 @@ fun main(args: Array<String>) {
 
     val rpt = deduper.dedupe()
 
-    logger.info(rpt.toString())
+    logger.info(rpt.toString())*/
 }

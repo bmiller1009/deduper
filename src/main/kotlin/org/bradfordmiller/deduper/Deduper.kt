@@ -38,12 +38,12 @@ data class DedupeReport(
 class Deduper(private val config: Config) {
 
     internal data class Persistors(
-            val targetPersistor: TargetPersistor?,
-            val deleteTargetIfExists: Boolean,
-            val dupePersistor: DupePersistor?,
-            val deleteDupeIfExists: Boolean,
-            val hashPersistor: HashPersistor?,
-            val deleteHashIfExists: Boolean
+      val targetPersistor: TargetPersistor?,
+      val deleteTargetIfExists: Boolean,
+      val dupePersistor: DupePersistor?,
+      val deleteDupeIfExists: Boolean,
+      val hashPersistor: HashPersistor?,
+      val deleteHashIfExists: Boolean
     )
 
     private val persistors: Persistors by lazy {
@@ -97,13 +97,13 @@ class Deduper(private val config: Config) {
         Persistors(targetPersistor.first, targetPersistor.second, dupePersistor.first, dupePersistor.second, hashPersistor.first, hashPersistor.second)
     }
 
-    val sourceDataSource: DataSource by lazy {(JNDIUtils.getDataSource(config.srcJndi, config.context) as Left<DataSource?, String>).left!!}
+    val sourceDataSource: DataSource by lazy {(JNDIUtils.getDataSource(config.sourceJndi.jndiName, config.context) as Left<DataSource?, String>).left!!}
 
     val sqlStatement by lazy {
-        if (config.srcName.startsWith("SELECT", true)) {
-            config.srcName
+        if (config.sourceJndi.tableQuery.startsWith("SELECT", true)) {
+            config.sourceJndi.tableQuery
         } else {
-            "SELECT * FROM ${config.srcName}"
+            "SELECT * FROM ${config.sourceJndi.tableQuery}"
         }
     }
 
