@@ -1,5 +1,6 @@
 import org.bradfordmiller.deduper.Deduper
 import org.bradfordmiller.deduper.config.Config
+import org.bradfordmiller.deduper.config.HashSourceJndi
 import org.bradfordmiller.deduper.config.SourceJndi
 import org.bradfordmiller.deduper.jndi.CsvJNDITargetType
 import org.bradfordmiller.deduper.jndi.SqlJNDIDupeType
@@ -289,6 +290,23 @@ class DeduperTest {
                 .dupesJndi(sqlDupesJndi)
                 .hashJndi(sqlHashJndi)
                 .build()
+
+        val deduper = Deduper(config)
+
+        deduper.dedupe()
+    }
+
+    @Test fun testSourceHashTable() {
+
+        val sqlSourceJndi = SourceJndi("SqlLiteTest", "real_estate")
+        val sqlHashSourceJndi = HashSourceJndi("SqlLiteTest", "hashes", "hash")
+
+        val config = Config.ConfigBuilder()
+            .sourceJndi(sqlSourceJndi)
+            .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
+            .seenHashesJndi(sqlHashSourceJndi)
+            .jndiContext("default_ds")
+            .build()
 
         val deduper = Deduper(config)
 

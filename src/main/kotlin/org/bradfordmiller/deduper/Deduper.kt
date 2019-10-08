@@ -130,9 +130,32 @@ class Deduper(private val config: Config) {
         var recordCount = 0L
         var dupeCount = 0L
         var distinctDupeCount = 0L
-        var seenHashes = mutableMapOf<String, Long>()
         var dupeHashes = mutableMapOf<Long, Dupe>()
         var rsColumns = mapOf<Int, String>()
+        var seenHashes = mutableMapOf<String, Long>()
+
+         if(config.seenHashesJndi != null) {
+
+            logger.info("Seen hashes JNDI is populated. Attempting to load hashes...")
+
+            val hashSourceDataSource = (JNDIUtils.getDataSource(config.seenHashesJndi.jndiName, config.context) as Left<DataSource?, String>).left!!
+            val sqlStatement =
+                "SELECT ${config.seenHashesJndi.hashColumnName} FROM ${config.seenHashesJndi.hashTableName}"
+
+            logger.info("Executing the following SQL against the seen hashes jndi: $sqlStatement")
+
+            JNDIUtils.getConnection(hashSourceDataSource)!!.use { conn ->
+                conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+                    .use { stmt ->
+                        stmt.executeQuery().use { rs ->
+                            while (rs.next()) {
+                                seenHashes.put(rs.getString(1), 0)
+                            }
+                        }
+                    }
+            }
+            logger.info("Seen hashes loaded. ${seenHashes.size} hashes loaded into memory.")
+        }
 
         JNDIUtils.getConnection(sourceDataSource)!!.use { conn ->
 
@@ -190,15 +213,9 @@ class Deduper(private val config: Config) {
 
                         val md5Values =
                                 if (keysPopulated) {
-                                    hashColumns.map {
-                                        val s = rs.getString(it)
-                                        s
-                                    }.joinToString()
+                                    hashColumns.map {rs.getString(it)}.joinToString()
                                 } else {
-                                    (1..colCount).toList().map {
-                                        val s = rs.getString(it)
-                                        s
-                                    }.joinToString()
+                                    (1..colCount).toList().map {rs.getString(it)}.joinToString()
                                 }
 
                         //Hold data in map of columns/values
