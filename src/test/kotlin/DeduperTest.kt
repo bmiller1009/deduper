@@ -37,14 +37,13 @@ class DeduperTest {
 
     @Test fun dedupeCsvTest() {
 
-        val csvTargetJndi = CsvJNDITargetType("RealEstateOut", false)
-        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupes", false)
-        val csvSourceJndi = SourceJndi("RealEstateIn", "Sacramentorealestatetransactions")
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvTargetJndi = CsvJNDITargetType("RealEstateOut", "default_ds",false)
+        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupes", "default_ds",false)
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
         val config = Config.ConfigBuilder()
             .sourceJndi(csvSourceJndi)
-            .jndiContext("default_ds")
-            .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
             .targetJndi(csvTargetJndi)
             .dupesJndi(csvDupesJndi)
             .build()
@@ -55,14 +54,13 @@ class DeduperTest {
     }
     @Test fun dedupeSqlTest() {
 
-        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", false,"real_estate")
-        val sqlDupeJndi = SqlJNDIDupeType("SqlLiteTest", true)
-        val csvSourceJndi = SourceJndi("RealEstateIn", "Sacramentorealestatetransactions")
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",false,"real_estate")
+        val sqlDupeJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
         val config = Config.ConfigBuilder()
             .sourceJndi(csvSourceJndi)
-            .jndiContext("default_ds")
-            .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
             .targetJndi(sqlTargetJndi)
             .dupesJndi(sqlDupeJndi)
             .build()
@@ -74,14 +72,13 @@ class DeduperTest {
 
     @Test fun testCsvTargetWithDefaults() {
 
-        val csvTargetJndi = CsvJNDITargetType("RealEstateOutTargetUseDefaults", false)
-        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaults", false)
-        val csvSourceJndi = SourceJndi("RealEstateIn", "Sacramentorealestatetransactions")
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvTargetJndi = CsvJNDITargetType("RealEstateOutTargetUseDefaults", "default_ds",false)
+        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaults", "default_ds",false)
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
         val config = Config.ConfigBuilder()
             .sourceJndi(csvSourceJndi)
-            .jndiContext("default_ds")
-            .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
             .targetJndi(csvTargetJndi)
             .dupesJndi(csvDupesJndi)
             .build()
@@ -93,13 +90,12 @@ class DeduperTest {
 
     @Test fun testRunWithoutTarget() {
 
-        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaults", false)
-        val csvSourceJndi = SourceJndi("RealEstateIn", "Sacramentorealestatetransactions")
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaults", "default_ds",false)
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
         val config = Config.ConfigBuilder()
                 .sourceJndi(csvSourceJndi)
-                .jndiContext("default_ds")
-                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
                 .dupesJndi(csvDupesJndi)
                 .build()
 
@@ -110,12 +106,11 @@ class DeduperTest {
 
     @Test fun testRunWithoutTargetAndDupe() {
 
-        val csvSourceJndi = SourceJndi("RealEstateIn", "Sacramentorealestatetransactions")
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
 
         val config = Config.ConfigBuilder()
                 .sourceJndi(csvSourceJndi)
-                .jndiContext("default_ds")
-                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
                 .build()
 
         val deduper = Deduper(config)
@@ -125,14 +120,13 @@ class DeduperTest {
 
     @Test fun testDeleteCsvDeleteTarget() {
 
-        val csvTargetJndi = CsvJNDITargetType("RealEstateOutTargetUseDefaults", true)
-        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaults", false)
-        val csvSourceJndi = SourceJndi("RealEstateIn", "Sacramentorealestatetransactions")
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvTargetJndi = CsvJNDITargetType("RealEstateOutTargetUseDefaults", "default_ds",true)
+        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaults", "default_ds",false)
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
 
         val config = Config.ConfigBuilder()
                 .sourceJndi(csvSourceJndi)
-                .jndiContext("default_ds")
-                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
                 .targetJndi(csvTargetJndi)
                 .dupesJndi(csvDupesJndi)
                 .build()
@@ -144,14 +138,13 @@ class DeduperTest {
 
     @Test fun testDeleteCsvDeleteDupe() {
 
-        val csvTargetJndi = CsvJNDITargetType("RealEstateOutTargetUseDefaults", false)
-        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaults", true)
-        val csvSourceJndi = SourceJndi("RealEstateIn", "Sacramentorealestatetransactions")
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvTargetJndi = CsvJNDITargetType("RealEstateOutTargetUseDefaults", "default_ds",false)
+        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaults", "default_ds",true)
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
         val config = Config.ConfigBuilder()
                 .sourceJndi(csvSourceJndi)
-                .jndiContext("default_ds")
-                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
                 .targetJndi(csvTargetJndi)
                 .dupesJndi(csvDupesJndi)
                 .build()
@@ -163,14 +156,13 @@ class DeduperTest {
 
     @Test fun testDeleteCsvDeleteTargetAndDupe() {
 
-        val csvTargetJndi = CsvJNDITargetType("RealEstateOutTargetUseDefaults", true)
-        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaults", true)
-        val csvSourceJndi = SourceJndi("RealEstateIn", "Sacramentorealestatetransactions")
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvTargetJndi = CsvJNDITargetType("RealEstateOutTargetUseDefaults", "default_ds",true)
+        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaults", "default_ds",true)
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
         val config = Config.ConfigBuilder()
                 .sourceJndi(csvSourceJndi)
-                .jndiContext("default_ds")
-                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
                 .targetJndi(csvTargetJndi)
                 .dupesJndi(csvDupesJndi)
                 .build()
@@ -182,14 +174,13 @@ class DeduperTest {
 
     @Test fun testDeleteSqlDeleteTarget() {
 
-        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", true,"target_data")
-        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", false)
-        val csvSourceJndi = SourceJndi("RealEstateIn", "Sacramentorealestatetransactions")
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data")
+        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",false)
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
         val config = Config.ConfigBuilder()
                 .sourceJndi(csvSourceJndi)
-                .jndiContext("default_ds")
-                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
                 .targetJndi(sqlTargetJndi)
                 .dupesJndi(sqlDupesJndi)
                 .build()
@@ -201,14 +192,13 @@ class DeduperTest {
 
     @Test fun testDeleteSqlDeleteDupe() {
 
-        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", true,"target_data")
-        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", true)
-        val csvSourceJndi = SourceJndi("RealEstateIn", "Sacramentorealestatetransactions")
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data")
+        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
         val config = Config.ConfigBuilder()
                 .sourceJndi(csvSourceJndi)
-                .jndiContext("default_ds")
-                .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
                 .targetJndi(sqlTargetJndi)
                 .dupesJndi(sqlDupesJndi)
                 .build()
@@ -220,14 +210,13 @@ class DeduperTest {
 
     @Test fun testDeleteSqlDeleteDupeAndTarget() {
 
-        val sqlTargetJndi = SqlJNDITargetType("PostGresTest", true,"target_data", 20)
-        val sqlDupesJndi = SqlJNDIDupeType("PostGresTest", true)
-        val csvSourceJndi = SourceJndi("RealEstateIn", "Sacramentorealestatetransactions")
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val sqlTargetJndi = SqlJNDITargetType("PostGresTest", "default_ds",true,"target_data", 20)
+        val sqlDupesJndi = SqlJNDIDupeType("PostGresTest", "default_ds",true)
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
         var build = Config.ConfigBuilder()
                 .sourceJndi(csvSourceJndi)
-                .jndiContext("default_ds")
-                .hashColumns(mutableSetOf("street", "city", "state", "zip", "price"))
                 .targetJndi(sqlTargetJndi)
                 .dupesJndi(sqlDupesJndi)
                 .build()
@@ -238,15 +227,15 @@ class DeduperTest {
     }
 
     @Test fun testHashPersistor() {
-        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", true,"target_data")
-        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", true)
-        val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", true, true)
-        val csvSourceJndi = SourceJndi("RealEstateIn", "Sacramentorealestatetransactions")
+
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data")
+        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
+        val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", "default_ds",true, true)
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
         val config = Config.ConfigBuilder()
             .sourceJndi(csvSourceJndi)
-            .jndiContext("default_ds")
-            .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
             .targetJndi(sqlTargetJndi)
             .dupesJndi(sqlDupesJndi)
             .hashJndi(sqlHashJndi)
@@ -258,15 +247,15 @@ class DeduperTest {
     }
 
     @Test fun testHashPersistorNoJson() {
-        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", true,"target_data")
-        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", true)
-        val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", false, true)
-        val csvSourceJndi = SourceJndi("RealEstateIn", "Sacramentorealestatetransactions")
+
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data")
+        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
+        val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", "default_ds",false, true)
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
         val config = Config.ConfigBuilder()
             .sourceJndi(csvSourceJndi)
-            .jndiContext("default_ds")
-            .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
             .targetJndi(sqlTargetJndi)
             .dupesJndi(sqlDupesJndi)
             .hashJndi(sqlHashJndi)
@@ -278,14 +267,13 @@ class DeduperTest {
     }
 
     @Test fun testNullsInSource() {
-        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", true,"target_data")
-        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", true)
-        val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", true, true)
-        val sqlSourceJndi = SourceJndi("SqliteChinook", "tracks")
+        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data")
+        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
+        val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", "default_ds",true, true)
+        val sqlSourceJndi = SourceJndi("SqliteChinook", "default_ds","tracks")
 
         val config = Config.ConfigBuilder()
                 .sourceJndi(sqlSourceJndi)
-                .jndiContext("default_ds")
                 .targetJndi(sqlTargetJndi)
                 .dupesJndi(sqlDupesJndi)
                 .hashJndi(sqlHashJndi)
@@ -298,40 +286,17 @@ class DeduperTest {
 
     @Test fun testSourceHashTable() {
 
-        val sqlSourceJndi = SourceJndi("SqlLiteTest", "real_estate")
-        val sqlHashSourceJndi = HashSourceJndi("SqlLiteTest", "hashes", "hash")
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val sqlSourceJndi = SourceJndi("SqlLiteTest", "default_ds","real_estate", hashColumns)
+        val sqlHashSourceJndi = HashSourceJndi("SqlLiteTest", "default_ds","hashes", "hash")
 
         val config = Config.ConfigBuilder()
             .sourceJndi(sqlSourceJndi)
-            .hashColumns(mutableSetOf("street","city", "state", "zip", "price"))
             .seenHashesJndi(sqlHashSourceJndi)
-            .jndiContext("default_ds")
             .build()
 
         val deduper = Deduper(config)
 
         deduper.dedupe()
-    }
-
-    @Test fun testCsvTargetCreation() {
-
-        /*val hash = "7328393ce354e4b1b574d2d532ea3625".toUpperCase()
-        val tgtName = "/tmp/targetName"
-
-        Deduper().dedupe(
-                "RealEstateIn",
-                "Sacramentorealestatetransactions",
-                "default_ds",
-                "RealEstateOut",
-                tgtName,
-            "RealEstateOutDupes",
-                mutableSetOf("street", "city", "state", "zip", "price")
-        )
-
-        val md5 = Files.newInputStream(Paths.get("$tgtName.txt")).use {
-            org.apache.commons.codec.digest.DigestUtils.md5Hex(it)
-        }.toUpperCase()
-
-        assert(md5 == hash)*/
     }
 }

@@ -53,12 +53,12 @@ class Deduper(private val config: Config) {
                     val deleteTarget = config.targetJndi.deleteIfExists
                     if (config.targetJndi is CsvJNDITargetType) {
                         val csvJndi = config.targetJndi
-                        val tgtConfigMap = CsvConfigParser.getCsvMap(config.context, csvJndi.jndi)
+                        val tgtConfigMap = CsvConfigParser.getCsvMap(csvJndi.context, csvJndi.jndi)
                         logger.trace("tgtConfigMap = $tgtConfigMap")
                         Pair(CsvTargetPersistor(tgtConfigMap), deleteTarget)
                     } else {
                         val sqlJndi = config.targetJndi as SqlJNDITargetType
-                        Pair(SqlTargetPersistor(sqlJndi.targetTable, sqlJndi.jndi, config.context, sqlJndi.varcharPadding), deleteTarget)
+                        Pair(SqlTargetPersistor(sqlJndi.targetTable, sqlJndi.jndi, sqlJndi.context, sqlJndi.varcharPadding), deleteTarget)
                     }
                 } else {
                     Pair(null, false)
@@ -69,11 +69,11 @@ class Deduper(private val config: Config) {
                 val deleteDupe = config.dupesJndi.deleteIfExists
                 if (config.dupesJndi is CsvJNDITargetType) {
                     val csvJndi = config.dupesJndi
-                    val dupesConfigMap = CsvConfigParser.getCsvMap(config.context, csvJndi.jndi)
+                    val dupesConfigMap = CsvConfigParser.getCsvMap(csvJndi.context, csvJndi.jndi)
                     logger.trace("dupesConfigMap = $dupesConfigMap")
                     Pair(CsvDupePersistor(dupesConfigMap), deleteDupe)
                 } else {
-                    Pair(SqlDupePersistor(config.dupesJndi.jndi, config.context), deleteDupe)
+                    Pair(SqlDupePersistor(config.dupesJndi.jndi, config.dupesJndi.context), deleteDupe)
                 }
             } else {
                 Pair(null, false)
@@ -84,11 +84,11 @@ class Deduper(private val config: Config) {
                 val deleteHash = config.hashJndi.deleteIfExists
                 if (config.hashJndi is CsvJNDITargetType) {
                     val csvJndi = config.hashJndi
-                    val hashConfigMap = CsvConfigParser.getCsvMap(config.context, csvJndi.jndi)
+                    val hashConfigMap = CsvConfigParser.getCsvMap(csvJndi.context, csvJndi.jndi)
                     logger.trace("hashConfigMap = $hashConfigMap")
                     Pair(CsvHashPersistor(hashConfigMap), deleteHash)
                 } else {
-                    Pair(SqlHashPersistor(config.hashJndi.jndi, config.context), deleteHash)
+                    Pair(SqlHashPersistor(config.hashJndi.jndi, config.hashJndi.context), deleteHash)
                 }
             } else {
                 Pair(null, false)
@@ -97,7 +97,7 @@ class Deduper(private val config: Config) {
         Persistors(targetPersistor.first, targetPersistor.second, dupePersistor.first, dupePersistor.second, hashPersistor.first, hashPersistor.second)
     }
 
-    val sourceDataSource: DataSource by lazy {(JNDIUtils.getDataSource(config.sourceJndi.jndiName, config.context) as Left<DataSource?, String>).left!!}
+    val sourceDataSource: DataSource by lazy {(JNDIUtils.getDataSource(config.sourceJndi.jndiName, config.sourceJndi.context) as Left<DataSource?, String>).left!!}
 
     val sqlStatement by lazy {
         if (config.sourceJndi.tableQuery.startsWith("SELECT", true)) {
@@ -125,7 +125,7 @@ class Deduper(private val config: Config) {
             }
         }
 
-        val hashColumns = config.hashColumns
+        val hashColumns = config.sourceJndi.hashKeys
 
         var recordCount = 0L
         var dupeCount = 0L
@@ -138,7 +138,7 @@ class Deduper(private val config: Config) {
 
             logger.info("Seen hashes JNDI is populated. Attempting to load hashes...")
 
-            val hashSourceDataSource = (JNDIUtils.getDataSource(config.seenHashesJndi.jndiName, config.context) as Left<DataSource?, String>).left!!
+            val hashSourceDataSource = (JNDIUtils.getDataSource(config.seenHashesJndi.jndiName, config.seenHashesJndi.context) as Left<DataSource?, String>).left!!
             val sqlStatement =
                 "SELECT ${config.seenHashesJndi.hashColumnName} FROM ${config.seenHashesJndi.hashTableName}"
 

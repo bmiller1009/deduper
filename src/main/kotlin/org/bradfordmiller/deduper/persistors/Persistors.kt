@@ -6,7 +6,6 @@ import org.bradfordmiller.deduper.sql.SqlUtils
 import org.bradfordmiller.deduper.sql.SqlVendorTypes
 import org.bradfordmiller.deduper.utils.FileUtils
 import org.json.JSONArray
-import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import java.sql.*
 
@@ -147,7 +146,6 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
     companion object {
         val logger = LoggerFactory.getLogger(SqlDupePersistor::class.java)
     }
-
     //TODO: Make a list of dupe columns and then pass it to both the INSERT and CREATE statements
     private val insertStatement = "INSERT INTO dupes(hash, row_ids, first_found_row_number, dupe_values) VALUES (?,?,?,?)"
 
@@ -203,6 +201,7 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
 }
 
 class SqlHashPersistor(private val hashJndi: String, private val context: String): HashPersistor {
+
     companion object {
         val logger = LoggerFactory.getLogger(SqlHashPersistor::class.java)
     }
@@ -229,7 +228,6 @@ class SqlHashPersistor(private val hashJndi: String, private val context: String
             SqlUtils.executeDDL(conn, createStatement)
         }
     }
-
     override fun writeRows(rows: MutableList<HashRow>) {
         JNDIUtils.getJndiConnection(hashJndi, context).use { conn ->
             conn.autoCommit = false
