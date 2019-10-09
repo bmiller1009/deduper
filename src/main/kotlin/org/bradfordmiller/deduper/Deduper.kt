@@ -1,5 +1,6 @@
 package org.bradfordmiller.deduper
 
+import gnu.trove.map.hash.THashMap
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.csv.CsvConfigParser
@@ -150,7 +151,7 @@ class Deduper(private val config: Config) {
         var distinctDupeCount = 0L
         var dupeHashes = mutableMapOf<Long, Dupe>()
         var rsColumns = mapOf<Int, String>()
-        var seenHashes = mutableMapOf<String, Long>()
+        var seenHashes = THashMap<String, Long>()
 
          if(config.seenHashesJndi != null) {
 
