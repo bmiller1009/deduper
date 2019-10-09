@@ -30,11 +30,11 @@ interface HashPersistor: WritePersistor<HashRow> {
 abstract class CsvPersistor(config: Map<String, String>) {
     val ccp = CsvConfigParser(config)
 
-    fun convertRowsToStrings(data: List<Map<String, Any>>): List<String> {
+    /*fun convertRowsToStrings(data: List<Map<String, Any>>): List<String> {
         return data.map {strings ->
             strings.values.joinToString(separator = ccp.delimiter) { it.toString() }
         }
-    }
+    }*/
 }
 class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), TargetPersistor {
     override fun createTarget(rsmd: ResultSetMetaData, deleteIfTargetExists: Boolean) {
@@ -42,8 +42,8 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
         FileUtils.prepFile(ccp.targetName, columns.values.toSet(), ccp.extension, ccp.delimiter, deleteIfTargetExists)
     }
     override fun writeRows(rows: MutableList<Map<String, Any>>) {
-        val stringData = convertRowsToStrings(rows)
-        FileUtils.writeStringsToFile(stringData, ccp.targetName, ccp.extension)
+        //val stringData = convertRowsToStrings(rows)
+        //FileUtils.writeStringsToFile(stringData, ccp.targetName, ccp.extension)
     }
 }
 class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupePersistor {

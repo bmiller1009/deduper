@@ -1,13 +1,28 @@
 package org.bradfordmiller.deduper.utils
 
+import com.opencsv.CSVWriter
+import com.opencsv.ICSVParser.DEFAULT_ESCAPE_CHARACTER
+import com.opencsv.ICSVWriter.DEFAULT_LINE_END
+import com.opencsv.ICSVWriter.NO_QUOTE_CHARACTER
 import org.slf4j.LoggerFactory
 import java.io.*
+import java.nio.charset.Charset
 import java.nio.file.FileSystemException
+import java.nio.file.Files
+import java.nio.file.Paths
 
 class FileUtils {
     companion object {
 
         val logger = LoggerFactory.getLogger(FileUtils::class.java)
+
+        private fun writeRowsToFile(fileName: String, delimiter: Char, data: Array<String>) {
+            Files.newBufferedWriter(Paths.get(fileName), Charset.forName("utf-8")).use {bw ->
+                CSVWriter(bw, delimiter, NO_QUOTE_CHARACTER, DEFAULT_ESCAPE_CHARACTER, DEFAULT_LINE_END).use { csvWriter ->
+                    csvWriter.writeNext(data)
+                }
+            }
+        }
 
         fun prepFile(targetName: String, columns: Set<String>, extension: String, delimiter: String, deleteIfExists: Boolean) {
             val fileName = "$targetName.$extension"
@@ -21,18 +36,11 @@ class FileUtils {
                 logger.info("deleteIfExists is set to true, deleting file $fileName before continuing.")
                 f.delete()
             }
-
-            BufferedWriter(OutputStreamWriter(FileOutputStream(fileName), "utf-8")).use { bw ->
-                bw.write(columns.joinToString(separator=delimiter,postfix="\n"))
-            }
+            writeRowsToFile(fileName, delimiter.single(), columns.toTypedArray())
         }
-        fun writeStringsToFile(strings: List<String>, file: String, extension: String) {
+        fun writeStringsToFile(strings: Array<String>, file: String, extension: String, delimiter: String) {
             val fileName = "$file.$extension"
-            BufferedWriter(FileWriter(fileName, true)).use { bw ->
-                strings.forEach {
-                    bw.write(it + "\n")
-                }
-            }
+            writeRowsToFile(fileName, delimiter.single(), strings)
         }
     }
 }

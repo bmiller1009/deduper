@@ -62,6 +62,7 @@ dependencies {
     implementation("commons-io", "commons-io", "2.6")
     implementation("org.postgresql", "postgresql", "42.2.8")
     implementation("net.sf.trove4j", "core", "3.1.0")
+    implementation("com.opencsv", "opencsv", "4.6")
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 
