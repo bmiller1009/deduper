@@ -299,4 +299,22 @@ class DeduperTest {
 
         deduper.dedupe()
     }
+
+    @Test fun testSampleHash() {
+
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
+
+        val config = Config.ConfigBuilder()
+                .sourceJndi(csvSourceJndi)
+                .build()
+
+        val deduper = Deduper(config)
+
+        val sampleRow = deduper.getSampleHash()
+
+        println(sampleRow)
+
+        deduper.dedupe()
+    }
 }

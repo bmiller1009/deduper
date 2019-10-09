@@ -18,6 +18,8 @@ import org.slf4j.LoggerFactory
 import java.sql.ResultSet
 import javax.sql.DataSource
 
+data class SampleRow(val sampleString: String, val sampleHash: String)
+
 data class DedupeReport(
     val recordCount: Long,
     val hashColumns: Set<String>,
@@ -111,6 +113,22 @@ class Deduper(private val config: Config) {
         val logger = LoggerFactory.getLogger(Deduper::class.java)
     }
 
+    fun getSampleHash(): SampleRow {
+
+        val hashColumns = config.sourceJndi.hashKeys
+
+        JNDIUtils.getConnection(sourceDataSource)!!.use { conn ->
+            conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
+                stmt.executeQuery().use { rs ->
+                    rs.next()
+                    val md5Values = SqlUtils.stringifyRow(rs, hashColumns)
+                    val hash = DigestUtils.md5Hex(md5Values).toUpperCase()
+                    return SampleRow(md5Values, hash)
+                }
+            }
+        }
+    }
+
     fun dedupe(commitSize: Long = 500, outputReportCommitSize: Long = 1000000): DedupeReport {
 
         logger.info("Beginning the deduping process.")
@@ -179,8 +197,6 @@ class Deduper(private val config: Config) {
                         "One or more provided keys $hashColumns not contained in resultset: $rsColumns"
                     }
 
-                    val keysPopulated = hashColumns.isNotEmpty()
-
                     logger.info("Using ${hashColumns.joinToString(",")} to calculate hashes")
 
                     var targetIsNotNull: Boolean = false
@@ -211,13 +227,7 @@ class Deduper(private val config: Config) {
 
                     while (rs.next()) {
 
-                        val md5Values =
-                                if (keysPopulated) {
-                                    hashColumns.map {rs.getString(it)}.joinToString()
-                                } else {
-                                    (1..colCount).toList().map {rs.getString(it)}.joinToString()
-                                }
-
+                        val md5Values = SqlUtils.stringifyRow(rs, hashColumns)
                         //Hold data in map of columns/values
                         val rsMap = SqlUtils.getMapFromRs(rs, rsColumns)
 

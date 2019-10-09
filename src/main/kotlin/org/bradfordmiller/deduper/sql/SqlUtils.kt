@@ -103,5 +103,14 @@ class SqlUtils {
                 logger.info("Table '$tableName' dropped")
             }
         }
+        fun stringifyRow(rs: ResultSet, columnList: MutableSet<String> = mutableSetOf()): String {
+            val rsmd = rs.metaData
+            val colCount = rsmd.columnCount
+            return if (columnList.isNotEmpty()) {
+                columnList.map { rs.getString(it) }.joinToString()
+            } else {
+                (1..colCount).toList().map { rs.getString(it) }.joinToString()
+            }
+        }
     }
 }
