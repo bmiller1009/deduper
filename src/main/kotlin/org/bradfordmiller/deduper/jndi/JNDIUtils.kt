@@ -55,8 +55,8 @@ class JNDIUtils {
             }
         }
         fun getJndiConnection(jndiString: String, context: String): Connection {
-            val jndi = (getDataSource(jndiString, context) as Left<DataSource?, String>).left!!
-            return jndi.connection
+            val ds = (getDataSource(jndiString, context) as Left<DataSource?, String>).left!!
+            return getConnection(ds)!!
         }
         fun getAvailableJndiContexts(): List<String> {
             val ctx = InitialContext()
