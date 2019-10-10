@@ -42,5 +42,10 @@ class FileUtils {
             val fileName = "$file.$extension"
             writeRowsToFile(fileName, delimiter.single(), strings)
         }
+        fun writeStringsToFile(strings: Array<Array<String>>, file: String, extension: String, delimiter: String) {
+            strings.forEach{s ->
+                writeStringsToFile(s, file, extension, delimiter)
+            }
+        }
     }
 }

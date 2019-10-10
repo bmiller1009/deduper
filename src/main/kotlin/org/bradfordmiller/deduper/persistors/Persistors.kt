@@ -56,12 +56,13 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
         val data = rows.map {
             val list = it.second.first
             val json = JSONArray(list).toString()
-            it.first + ccp.delimiter +
+            arrayListOf(it.first, json, it.second.second.firstFoundRowNumber, it.second.second.dupes)
+            /*it.first + ccp.delimiter +
               json + ccp.delimiter +
               it.second.second.firstFoundRowNumber + ccp.delimiter +
-              it.second.second.dupes
+              it.second.second.dupes*/
         }
-        FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension)
+        FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension, ccp.delimiter)
     }
 }
 class CsvHashPersistor(config: Map<String, String>): CsvPersistor(config), HashPersistor {
@@ -73,7 +74,7 @@ class CsvHashPersistor(config: Map<String, String>): CsvPersistor(config), HashP
         val data = rows.map {hr ->
             hr.hash + ccp.delimiter + hr.hash_json
         }
-        FileUtils.writeStringsToFile(data, ccp.targetName, ccp.delimiter)
+        FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension, ccp.delimiter)
     }
 }
 class SqlTargetPersistor(
