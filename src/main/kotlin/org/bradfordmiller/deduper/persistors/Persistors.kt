@@ -29,12 +29,6 @@ interface HashPersistor: WritePersistor<HashRow> {
 }
 abstract class CsvPersistor(config: Map<String, String>) {
     val ccp = CsvConfigParser(config)
-
-    /*fun convertRowsToStrings(data: List<Map<String, Any>>): List<String> {
-        return data.map {strings ->
-            strings.values.joinToString(separator = ccp.delimiter) { it.toString() }
-        }
-    }*/
 }
 class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), TargetPersistor {
     override fun createTarget(rsmd: ResultSetMetaData, deleteIfTargetExists: Boolean) {
@@ -42,8 +36,10 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
         FileUtils.prepFile(ccp.targetName, columns.values.toSet(), ccp.extension, ccp.delimiter, deleteIfTargetExists)
     }
     override fun writeRows(rows: MutableList<Map<String, Any>>) {
-        //val stringData = convertRowsToStrings(rows)
-        //FileUtils.writeStringsToFile(stringData, ccp.targetName, ccp.extension)
+        val data = rows.map {r ->
+            r.values.map {v -> v.toString()}.toTypedArray()
+        }.toTypedArray()
+        FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension, ccp.delimiter)
     }
 }
 class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupePersistor {
@@ -56,12 +52,8 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
         val data = rows.map {
             val list = it.second.first
             val json = JSONArray(list).toString()
-            arrayListOf(it.first, json, it.second.second.firstFoundRowNumber, it.second.second.dupes)
-            /*it.first + ccp.delimiter +
-              json + ccp.delimiter +
-              it.second.second.firstFoundRowNumber + ccp.delimiter +
-              it.second.second.dupes*/
-        }
+            arrayOf(it.first, json, it.second.second.firstFoundRowNumber.toString(), it.second.second.dupes)
+        }.toTypedArray()
         FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension, ccp.delimiter)
     }
 }
@@ -72,8 +64,8 @@ class CsvHashPersistor(config: Map<String, String>): CsvPersistor(config), HashP
     }
     override fun writeRows(rows: MutableList<HashRow>) {
         val data = rows.map {hr ->
-            hr.hash + ccp.delimiter + hr.hash_json
-        }
+            arrayOf(hr.hash, hr.hash_json.orEmpty())
+        }.toTypedArray()
         FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension, ccp.delimiter)
     }
 }

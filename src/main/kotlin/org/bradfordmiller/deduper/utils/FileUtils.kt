@@ -7,17 +7,15 @@ import com.opencsv.ICSVWriter.NO_QUOTE_CHARACTER
 import org.slf4j.LoggerFactory
 import java.io.*
 import java.nio.charset.Charset
-import java.nio.file.FileSystemException
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.nio.file.*
 
 class FileUtils {
     companion object {
 
         val logger = LoggerFactory.getLogger(FileUtils::class.java)
-
-        private fun writeRowsToFile(fileName: String, delimiter: Char, data: Array<String>) {
-            Files.newBufferedWriter(Paths.get(fileName), Charset.forName("utf-8")).use {bw ->
+        //, StandardOpenOption.CREATE, StandardOpenOption.APPEND
+        private fun writeRowsToFile(fileName: String, delimiter: Char, data: Array<String>, so: OpenOption) {
+            Files.newBufferedWriter(Paths.get(fileName), Charset.forName("utf-8"), StandardOpenOption.CREATE, so).use { bw ->
                 CSVWriter(bw, delimiter, NO_QUOTE_CHARACTER, DEFAULT_ESCAPE_CHARACTER, DEFAULT_LINE_END).use { csvWriter ->
                     csvWriter.writeNext(data)
                 }
@@ -36,11 +34,11 @@ class FileUtils {
                 logger.info("deleteIfExists is set to true, deleting file $fileName before continuing.")
                 f.delete()
             }
-            writeRowsToFile(fileName, delimiter.single(), columns.toTypedArray())
+            writeRowsToFile(fileName, delimiter.single(), columns.toTypedArray(), StandardOpenOption.TRUNCATE_EXISTING)
         }
         fun writeStringsToFile(strings: Array<String>, file: String, extension: String, delimiter: String) {
             val fileName = "$file.$extension"
-            writeRowsToFile(fileName, delimiter.single(), strings)
+            writeRowsToFile(fileName, delimiter.single(), strings, StandardOpenOption.APPEND)
         }
         fun writeStringsToFile(strings: Array<Array<String>>, file: String, extension: String, delimiter: String) {
             strings.forEach{s ->
