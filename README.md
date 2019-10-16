@@ -73,22 +73,20 @@ Datasources are used when reading or writing data using a JDBC interface. Maps a
 
 Here is a sample DataSource entry for a sql lite database which is used by this projects unit tests (note that username and password are optional and depend on how the security of the database being targeted is configured):
 
-> 
-SqliteChinook/type=javax.sql.DataSource  
-SqliteChinook/driver=org.sqlite.JDBC  
-SqliteChinook/url=jdbc:sqlite:src/test/resources/data/chinook.db  
-SqliteChinook/user=  
-SqliteChinook/password=
+> SqliteChinook/type=javax.sql.DataSource  
+> SqliteChinook/driver=org.sqlite.JDBC  
+> SqliteChinook/url=jdbc:sqlite:src/test/resources/data/chinook.db  
+> SqliteChinook/user=  
+> SqliteChinook/password=
 
 The jndi name in this case is "SqliteChinook".  The context is "default\_ds" because the name of the property file is "default_ds.properties".
 
 Here is a sample Map entry for a target csv file. Currently these are gathered in a key-value pair pattern. In addition to the "targetName" property which is the path to the csv file, other optional parameters include the file delimiter ("delimiter" property) and file extension ("extension" property). Note that the delimiter property defaults to a comma and the extension property defaults to txt if not otherwised specified in the Map entry:
 
->
-RealEstateOutDupes/type=java.util.Map   
-RealEstateOutDupes/ext=txt   
-RealEstateOutDupes/delimiter=|  
-RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
+> RealEstateOutDupes/type=java.util.Map   
+> RealEstateOutDupes/ext=txt   
+> RealEstateOutDupes/delimiter=|  
+> RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
 
 The jndi name in this case is "RealEstateOutDupes".  The context is "default\_ds" because the name of the property file is "default_ds.properties".
 
