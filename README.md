@@ -109,7 +109,7 @@ Kotlin code for adding a new DataSource jndi entry to the default_ds.properties 
                     )  
             )  
 
-###Configuring and running a deduper process
+### Configuring and running a deduper process
 
 The library uses the [builder](https://www.baeldung.com/kotlin-builder-pattern) design pattern to construct the configuration to run a deduping job.  
 
@@ -137,7 +137,7 @@ Deduper is an engine which can detect duplicates, so by default it will use ever
 
 Now only the columns specified in the column set will be considered for detecting duplicates.
 
-###Complete example
+### Complete example
 
     import org.bradfordmiller.deduper.config.SourceJndi
     import org.bradfordmiller.deduper.Deduper
@@ -168,6 +168,59 @@ So this run found a total of **986** rows in the source table.  Using the column
 
 A look at the [Sacramentorealestatetransactions.csv](https://github.com/bmiller1009/deduper/blob/master/src/test/resources/data/Sacramentorealestatetransactions.csv) file in the test data folder, we can indeed see that there are 986 rows in the file.  We can also see that column values for columns "street, city, state, zip, price" indeed first occurred on line **341** and were repeated on lines
 **342** and **984**.
+
+### Deduping data against a known set of hashes
+
+This can be useful if you want to take an existing set of hashes and look for matches between the known set and the current set.  Loading in an existing hash set is simply setting a **_HashSourceJndi_** object in the configuration builder, as well as a table name for the stored hashes and the column under which the hashes are stored:
+
+	import org.bradfordmiller.deduper.config.HashSourceJndi
+    import org.bradfordmiller.deduper.config.SourceJndi
+    import org.bradfordmiller.deduper.Deduper
+    import org.bradfordmiller.deduper.config.Config
+    ...
+    val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+    val sqlSourceJndi = SourceJndi("SqlLiteTest", "default_ds","real_estate", hashColumns)
+    val sqlHashSourceJndi = HashSourceJndi("SqlLiteTest", "default_ds","hashes", "hash")
+
+    val config = Config.ConfigBuilder()
+        .sourceJndi(sqlSourceJndi)
+        .seenHashesJndi(sqlHashSourceJndi)
+        .build()
+
+    val deduper = Deduper(config)
+
+    val report = deduper.dedupe()
+
+    println(report)
+
+Before examining the results of the run let's go over the code. There is a new property being set in the config builder which is a **_HashSourceJndi_** object. That object contains the jndi details (jndi name and context) as well as the table name (**_hashes_**) and the column in the **_hashes_** table where the hash values are stored.  In this case the column name in **_hashes_** where the hash values are stored is simply **_hash_**.
+
+The **_hashes_** table in this contains all of the unique hashes from the [Sacramentorealestatetransactions.csv](https://github.com/bmiller1009/deduper/blob/master/src/test/resources/data/Sacramentorealestatetransactions.csv) file and they are stored in the column **_hash_**.  Thus, the expected output of this run should report that **_no_** unique values were found, and that all were duplicates.  The report confirms this:
+
+    Dedupe report: recordCount=982, columnsFound=[street, city, zip, state, beds, baths, sq__ft, type, sale_date, price, latitude, longitude], hashColumns=[street, city, state, zip, price], dupeCount=982, distinctDupeCount=982
+
+We saw earlier that the [Sacramentorealestatetransactions.csv](https://github.com/bmiller1009/deduper/blob/master/src/test/resources/data/Sacramentorealestatetransactions.csv) file had four duplicates, meaning there were **_982_** unique rows in the dataset.  We can see above that the dupeCount of the report was **_982_**.
+
+### Sampling the hash
+
+You can see a sample row and how it is hashed to get a sense of the hash value and the actual values being passed in:
+
+    val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+    val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
+
+    val config = Config.ConfigBuilder()
+            .sourceJndi(csvSourceJndi)
+            .build()
+
+    val deduper = Deduper(config)
+
+    val sampleRow = deduper.getSampleHash()
+
+    println(sampleRow)
+
+The output of this call is as follows
+
+    SampleRow(sampleString=3526 HIGH ST, SACRAMENTO, CA, 95838, 59222, sampleHash=B23CF69F6FC378E0A9C1AF14F2D2083C)
 
 ## Built With
 

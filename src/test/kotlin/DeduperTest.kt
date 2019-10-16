@@ -300,7 +300,9 @@ class DeduperTest {
 
         val deduper = Deduper(config)
 
-        deduper.dedupe()
+        val report = deduper.dedupe()
+
+        println(report)
     }
 
     @Test fun testSampleHash() {
@@ -317,7 +319,5 @@ class DeduperTest {
         val sampleRow = deduper.getSampleHash()
 
         println(sampleRow)
-
-        deduper.dedupe()
     }
 }
