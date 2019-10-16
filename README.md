@@ -116,9 +116,10 @@ The library uses the [builder](https://www.baeldung.com/kotlin-builder-pattern) 
 There are a bunch of options which can be configured as part of a deduper process.  Let's start with the basics. Use the **_Config_** class to set up the deduper job.  This object will be passed into the **_Deduper_** class as part of the instantiation of the **_Deduper_** class. 
 
 The only _required_ input to deduper is a JDBC souce in the form of a JNDI Connection.  This is set up using the SourceJndi class.  Here is some Kotlin code which instantiates a **_SourceJndi_** object. 
-> import org.bradfordmiller.deduper.config.SourceJndi  
-> ...  
-> val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions")
+
+    import org.bradfordmiller.deduper.config.SourceJndi  
+    ...  
+    val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions")
 
 In the above case "RealEstateIn" is the jndi name, "default\_ds" is the context name (and correlates to "default\_ds.properties"), and "Sacramentorealestatetransactions" is the table to be queried. 
 
