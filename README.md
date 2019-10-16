@@ -55,8 +55,7 @@ Gradle Build instructions will go here
 
 ## Using the library
 
-The library uses the [builder](https://www.baeldung.com/kotlin-builder-pattern) design pattern to construct the
-configuration to run a deduping job.  Configuation information is stored using the [simple-jndi](https://github.com/h-thurow/Simple-JNDI)
+Configuation information is stored using the [simple-jndi](https://github.com/h-thurow/Simple-JNDI)
 API so a [jndi.properties](https://github.com/bmiller1009/deduper/blob/master/src/main/resources/jndi.properties) file will need to be present
 in src/main/resources and correctly configured for this library to work.  
 
@@ -92,10 +91,11 @@ The jndi name in this case is "RealEstateOutDupes".  The context is "default\_ds
 
 #### Adding Jndi entries programatically
 
-Use the JNDIUtils class in the deduper library to add jndi entries programatically
+Use the **_JNDIUtils_** class in the deduper library to add jndi entries programatically
 
 Kotlin code for adding a new DataSource jndi entry to the default_ds.properties jndi file:
-
+> import org.bradfordmiller.deduper.jndi.JNDIUtils  
+> ...  
 > JNDIUtils.addJndiConnection(  
 >                &nbsp;&nbsp;&nbsp;&nbsp;"BradTestJNDI\_23",  
 >                &nbsp;&nbsp;&nbsp;&nbsp;"default\_ds",  
@@ -108,8 +108,33 @@ Kotlin code for adding a new DataSource jndi entry to the default_ds.properties 
 >                &nbsp;&nbsp;&nbsp;&nbsp;)  
 >        )  
 
+###Configuring and running a deduper process
 
+The library uses the [builder](https://www.baeldung.com/kotlin-builder-pattern) design pattern to construct the configuration to run a deduping job.  
 
+There are a bunch of options which can be configured as part of a deduper process.  Let's start with the basics. Use the **_Config_** class to set up the deduper job.  This object will be passed into the **_Deduper_** class as part of the instantiation of the **_Deduper_** class. 
+
+The only _required_ input to deduper is a JDBC souce in the form of a JNDI Connection.  This is set up using the SourceJndi class.  Here is some Kotlin code which instantiates a SourceJndi object. 
+> import org.bradfordmiller.deduper.config.SourceJndi  
+> ...  
+> val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions")
+
+In the above case "RealEstateIn" is the jndi name, "default\_ds" is the context name (and correlates to "default\_ds.properties"), and "Sacramentorealestatetransactions" is the table to be queried. 
+
+By default, a "SELECT *" query will be issued against the table ("Sacramentorealestatetransactions" in this case). It is also possible to pass in a query, rather than a table name, like so:
+
+> import org.bradfordmiller.deduper.config.SourceJndi  
+> ...  
+> val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "SELECT street from Sacramentorealestatetransactions")
+
+Deduper is an engine which can detect duplicates, so by default it will use every value the row to create a duplicate. The API also accepts a subset of columns in the table on which to "dedupe".  Here is some Kotlin code which demonstrates this:
+
+> import org.bradfordmiller.deduper.config.SourceJndi  
+> ...  
+> val hashColumns = mutableSetOf("street","city", "state", "zip", "price")  
+> val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
+
+Now only the columns specified in the column set will be considered for detecting duplicates.
 
 
 
