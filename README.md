@@ -90,6 +90,31 @@ Here is a sample Map entry for a target csv file. Currently these are gathered i
 
 The jndi name in this case is "RealEstateOutDupes".  The context is "default\_ds" because the name of the property file is "default_ds.properties".
 
+#### Adding Jndi entries programatically
+
+Use the JNDIUtils class in the deduper library to add jndi entries programatically
+
+Kotlin code for adding a new DataSource jndi entry to the default_ds.properties jndi file:
+
+> JNDIUtils.addJndiConnection(  
+>                &nbsp;&nbsp;&nbsp;&nbsp;"BradTestJNDI\_23",  
+>                &nbsp;&nbsp;&nbsp;&nbsp;"default\_ds",  
+>                &nbsp;&nbsp;&nbsp;&nbsp;mapOf(  
+>                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"type" to "javax.sql.DataSource",  
+>                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"driver" to "org.sqlite.JDBC",  
+>                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url" to "jdbc:sqlite:src/test/resources/data/outputData/real\_estate.db",  
+>                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"user" to "test\_user",  
+>                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"password" to "test_password"  
+>                &nbsp;&nbsp;&nbsp;&nbsp;)  
+>        )  
+
+
+
+
+
+
+
+
 ## Built With
 
 * [kotlin](https://kotlinlang.org/) - The programming language

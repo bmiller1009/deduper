@@ -28,6 +28,20 @@ class JndiTest {
         )
     }
 
+    @Test fun addNewSqlEntrytoExistingJndi() {
+        JNDIUtils.addJndiConnection(
+                "BradTestJNDI_23",
+                "default_ds",
+                mapOf(
+                        "type" to "javax.sql.DataSource",
+                        "driver" to "org.sqlite.JDBC",
+                        "url" to "jdbc:sqlite:src/test/resources/data/outputData/real_estate.db",
+                        "user" to "test_user",
+                        "password" to "test_password"
+                )
+        )
+    }
+
     @Test fun getAllJndiContexts() {
         val contexts = JNDIUtils.getAvailableJndiContexts()
         println(contexts)
