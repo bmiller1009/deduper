@@ -87,7 +87,7 @@ Here is a sample Map entry for a target csv file. Currently these are gathered i
 >
 RealEstateOutDupes/type=java.util.Map   
 RealEstateOutDupes/ext=txt   
-RealEstateOutDupes/delimiter=| 
+RealEstateOutDupes/delimiter=|  
 RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
 
 The jndi name in this case is "RealEstateOutDupes".  The context is "default\_ds" because the name of the property file is "default_ds.properties".
