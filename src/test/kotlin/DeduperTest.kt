@@ -118,6 +118,7 @@ class DeduperTest {
         val report = deduper.dedupe()
 
         println(report)
+        println(report.dupes)
     }
 
     @Test fun testDeleteCsvDeleteTarget() {

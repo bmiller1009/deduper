@@ -27,7 +27,7 @@ data class DedupeReport(
     val columnsFound: Set<String>,
     val dupeCount: Long,
     val distinctDupeCount: Long,
-    var dupes: MutableMap<Long, Dupe>
+    var dupes: MutableMap<String, Pair<MutableList<Long>, Dupe>>
 ) {
     override fun toString(): String {
         return "recordCount=$recordCount, " +
@@ -149,9 +149,9 @@ class Deduper(private val config: Config) {
         var recordCount = 0L
         var dupeCount = 0L
         var distinctDupeCount = 0L
-        var dupeHashes = mutableMapOf<Long, Dupe>()
         var rsColumns = mapOf<Int, String>()
         var seenHashes = THashMap<String, Long>()
+        var dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
 
          if(config.seenHashesJndi != null) {
 
@@ -188,7 +188,6 @@ class Deduper(private val config: Config) {
 
                     logger.trace("$colCount columns have been found in the result set.")
 
-                    var dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
                     var data: MutableList<Map<String, Any>> = mutableListOf()
                     var hashes: MutableList<HashRow> = mutableListOf()
 
@@ -292,7 +291,7 @@ class Deduper(private val config: Config) {
                 }
             }
         }
-        val ddReport = DedupeReport(recordCount, hashColumns, rsColumns.values.toSet(), dupeCount, distinctDupeCount, dupeHashes)
+        val ddReport = DedupeReport(recordCount, hashColumns, rsColumns.values.toSet(), dupeCount, distinctDupeCount, dupeMap)
         logger.info("Dedupe report: $ddReport")
         logger.info("Deduping process complete.")
         return ddReport
