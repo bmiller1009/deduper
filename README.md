@@ -247,10 +247,65 @@ For the csv interface, the classes to use are **_CsvTargetPersistor_**, **_CsvDu
 Note that the csv and JDBC interfaces can be used interchangably in the same dedupe job. IE you can output dupes to a flat file and hashes to a JDBC, etc, etc.
 
 Let's look at an example:
+	 
+	import org.bradfordmiller.deduper.Deduper
+    import org.bradfordmiller.deduper.config.Config
+    import org.bradfordmiller.deduper.config.HashSourceJndi
+    import org.bradfordmiller.deduper.config.SourceJndi
+    import org.bradfordmiller.deduper.jndi.CsvJNDITargetType
+    import org.bradfordmiller.deduper.jndi.SqlJNDIDupeType
+    import org.bradfordmiller.deduper.jndi.SqlJNDIHashType
+    import org.bradfordmiller.deduper.jndi.SqlJNDITargetType
+	 
+    val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+    val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data")
+    val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
+    val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", "default_ds",true, true)
+    val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
+    val config = Config.ConfigBuilder()
+        .sourceJndi(csvSourceJndi)
+        .targetJndi(sqlTargetJndi)
+        .dupesJndi(sqlDupesJndi)
+        .hashJndi(sqlHashJndi)
+        .build()
 
+    val deduper = Deduper(config)
 
+    val report = deduper.dedupe()
 
+    println(report)
+    println(report.dupes)
+
+Before examining the output, let's walk through the code.  
+
+**_SqlJNDITargetType_** is instantiated with the **jndi name, context, a boolean flag** which indicates whether or not to drop the table if it already exists, and a **table name**.
+
+**_SqlJNDIDupeType_** is instantiated with the **jndi name, context, and a boolean flag** which indicates whether or not to drop the dupe table if it already exists. Note:  **The table name for the duplicate data is always "dupes".**
+
+**_SqlJNDIHashType_** is instantiated with the **jndi name, context, a boolean flag** which indicates whether to include the data row expressed in json format, and **a boolean flag** which indicates whether or not to drop the dupe table if it already exists.
+
+The report variable in the above example will be the same, but lets look at the persistent objects created by this run of deduper:
+
+A **sql table** named **target_data** in the sqlite database.  The schema of this table will closely mirror the data types found in the source.  Note that if the source is a csv, all of the column types in the target_data table will be strings.
+  
+A **sql table** named **dupes** in the sqlite database with the following schema:
+
+    CREATE TABLE dupes(hash TEXT NOT NULL, row_ids TEXT NOT NULL, first_found_row_number INTEGER NOT NULL, dupe_values TEXT NOT NULL,PRIMARY KEY(hash))
+
+Here is a sample row from the **_dupes_** table from the run of the sample code above:
+
+"3230065898C61AE414BA58E7B7C99C0B","[342,984]","341",	"{"zip":"95820","baths":"1","city":"SACRAMENTO","sale_date":"Mon May 19 00:00:00 EDT 2008","street":"4734 14TH AVE","price":"68000","latitude":"38.539447","state":"CA","beds":"2","type":"Residential","sq\_\_ft":"834","longitude":"-121.450858"}"
+
+A **sql table** named **hashes** in the sqlite database with the following schema:
+
+    CREATE TABLE hashes(hash TEXT NOT NULL, json_row TEXT NULL, PRIMARY KEY(hash))
+
+Here is a sample row from the **_hashes_** table from the run of the sample code above:
+
+"B23CF69F6FC378E0A9C1AF14F2D2083C","{"zip":"95838","baths":"1","city":"SACRAMENTO","sale_date":"Wed May 21 00:00:00 EDT 2008","street":"3526 HIGH ST","price":"59222","latitude":"38.631913","state":"CA","beds":"2","type":"Residential","sq\_\_ft":"836","longitude":"-121.434879"}"
+
+Note that because the boolean flag in the hashes source class was set to true, the json that makes up the hash is included for each hash written to the table.
 
 ## Built With
 

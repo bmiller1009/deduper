@@ -266,7 +266,10 @@ class DeduperTest {
 
         val deduper = Deduper(config)
 
-        deduper.dedupe()
+        val report = deduper.dedupe()
+
+        println(report)
+        println(report.dupes)
     }
 
     @Test fun testNullsInSource() {
