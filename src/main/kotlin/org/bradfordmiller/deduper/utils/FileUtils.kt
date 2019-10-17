@@ -13,7 +13,7 @@ class FileUtils {
     companion object {
 
         val logger = LoggerFactory.getLogger(FileUtils::class.java)
-        //, StandardOpenOption.CREATE, StandardOpenOption.APPEND
+
         private fun writeRowsToFile(fileName: String, delimiter: Char, data: Array<String>, so: OpenOption) {
             Files.newBufferedWriter(Paths.get(fileName), Charset.forName("utf-8"), StandardOpenOption.CREATE, so).use { bw ->
                 CSVWriter(bw, delimiter, NO_QUOTE_CHARACTER, DEFAULT_ESCAPE_CHARACTER, DEFAULT_LINE_END).use { csvWriter ->
@@ -21,7 +21,6 @@ class FileUtils {
                 }
             }
         }
-
         fun prepFile(targetName: String, columns: Set<String>, extension: String, delimiter: String, deleteIfExists: Boolean) {
             val fileName = "$targetName.$extension"
 

@@ -167,7 +167,7 @@ The output of this run is:
 
 So this run found a total of **986** rows in the source table.  Using the columns "street, city, state, zip, price" **four** total duplicates were found.  **Three** distinct duplicates were found, meaning one duplicate actually occurred twice.  By examining the dupes object, we can see there are three unique hashes which occurred more than once.  If we take the first example, hash **3230065898C61AE414BA58E7B7C99C0B** was first seen at row **341** and was then seen again at rows **342** and **984**.
 
-A look at the [Sacramentorealestatetransactions.csv](https://github.com/bmiller1009/deduper/blob/master/src/test/resources/data/Sacramentorealestatetransactions.csv) file in the test data folder, we can indeed see that there are 986 rows in the file.  We can also see that column values for columns "street, city, state, zip, price" indeed first occurred on line **341** and were repeated on lines
+A look at the [Sacramentorealestatetransactions.csv](https://github.com/bmiller1009/deduper/blob/master/src/test/resources/data/Sacramentorealestatetransactions.csv) file in the test data folder, we can indeed see that there are **986** rows in the file.  We can also see that column values for columns "street, city, state, zip, price" indeed first occurred on line **341** and were repeated on lines
 **342** and **984**.
 
 ### Deduping data against a known set of hashes
@@ -205,7 +205,13 @@ We saw earlier that the [Sacramentorealestatetransactions.csv](https://github.co
 ### Sampling the hash
 
 You can see a sample row and how it is hashed to get a sense of the hash value and the actual values being passed in:
-
+    
+    import org.bradfordmiller.deduper.config.SourceJndi
+    import org.bradfordmiller.deduper.Deduper
+    import org.bradfordmiller.deduper.config.Config
+    
+    ...
+    
     val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
     val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
 
@@ -222,6 +228,29 @@ You can see a sample row and how it is hashed to get a sense of the hash value a
 The output of this call is as follows
 
     SampleRow(sampleString=3526 HIGH ST, SACRAMENTO, CA, 95838, 59222, sampleHash=B23CF69F6FC378E0A9C1AF14F2D2083C)
+
+
+### Configuring output files
+
+The deduper library has three optional outputs that can be configured either as SQL tables in a JDBC connection or output csv files.  All three of these outputs are **optional** and can be easily configured in the config builder.  All of the classes mentioned below can be found in the **_org.bradfordmiller.deduper.persistors_** package.
+
+For the JDBC interface, the classes to use are **_SqlJNDITargetType_**, **_SqlJNDIDupeType_**, and **_SqlJNDIHashType_**.  
+
+**_SqlJNDITargetType_** has a dynamic schema and is for configuring the output of the deduplicated data and the schema for the table is automatically generated based on the Jndi source metadata. 
+
+**_SqlJNDIDupeType_** has a static schema and is for configuring the output of any duplicate data in a json format.
+
+**_SqlJNDIHashType_** has a static schema and is for configuring the output of "found" hashes in the Jndi source data and will also optional emit the json representation which comprises the hash data.
+
+For the csv interface, the classes to use are **_CsvTargetPersistor_**, **_CsvDupePersistor_**, and **_CsvHashPersistor_**.  These classes follow a similar output format to the above JDBC classes, but they produce csv files rather than database tables.
+
+Note that the csv and JDBC interfaces can be used interchangably in the same dedupe job. IE you can output dupes to a flat file and hashes to a JDBC, etc, etc.
+
+Let's look at an example:
+
+
+
+
 
 ## Built With
 
