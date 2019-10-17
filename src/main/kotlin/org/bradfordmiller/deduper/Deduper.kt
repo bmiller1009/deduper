@@ -130,6 +130,9 @@ class Deduper(private val config: Config) {
         }
     }
 
+    /**
+     * @param commitSize
+     */
     fun dedupe(commitSize: Long = 500, outputReportCommitSize: Long = 1000000): DedupeReport {
 
         logger.info("Beginning the deduping process.")
