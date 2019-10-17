@@ -232,7 +232,9 @@ The output of this call is as follows
 
 ### Configuring output files
 
-The deduper library has three optional outputs that can be configured either as SQL tables in a JDBC connection or output csv files.  All three of these outputs are **optional** and can be easily configured in the config builder.  All of the classes mentioned below can be found in the **_org.bradfordmiller.deduper.persistors_** package.
+The deduper library has three optional outputs that can be configured either as SQL tables in a JDBC connection or output csv files.  All three of these outputs are **optional** and can be easily configured in the config builder.  All of the classes mentioned below can be found in the **_org.bradfordmiller.deduper.jndi_** package.
+
+#### JDBC output
 
 For the JDBC interface, the classes to use are **_SqlJNDITargetType_**, **_SqlJNDIDupeType_**, and **_SqlJNDIHashType_**.  
 
@@ -306,6 +308,45 @@ Here is a sample row from the **_hashes_** table from the run of the sample code
 "B23CF69F6FC378E0A9C1AF14F2D2083C","{"zip":"95838","baths":"1","city":"SACRAMENTO","sale_date":"Wed May 21 00:00:00 EDT 2008","street":"3526 HIGH ST","price":"59222","latitude":"38.631913","state":"CA","beds":"2","type":"Residential","sq\_\_ft":"836","longitude":"-121.434879"}"
 
 Note that because the boolean flag in the hashes source class was set to true, the json that makes up the hash is included for each hash written to the table.
+
+#### Csv output
+
+As mentioned earlier, csv outputs are defined in a jndi context as follows:
+
+    RealEstateOutDupes/type=java.util.Map   
+    RealEstateOutDupes/ext=txt   
+    RealEstateOutDupes/delimiter=|  
+    RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
+    
+The _minimum_ information needed to configure a csv output is the **targetName** as this is a path to output file location.  If the "ext" property and "delimiter" property aren't populated then the defaults will be used, which are "txt" for "ext" and "," for "delimiter".  All csv output definitions use the **_CsvJNDITargetType_** class.  This class takes in the jndi name, context, and **_deleteIfExists_** boolean flag.  
+
+Here is an example outputting data to csv.
+
+    import org.bradfordmiller.deduper.Deduper
+    import org.bradfordmiller.deduper.config.Config
+    import org.bradfordmiller.deduper.config.SourceJndi
+    import org.bradfordmiller.deduper.jndi.CsvJNDITargetType
+	 
+    val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+    val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data")
+    val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
+    val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
+
+    val config = Config.ConfigBuilder()
+        .sourceJndi(csvSourceJndi)
+        .targetJndi(sqlTargetJndi)
+        .dupesJndi(sqlDupesJndi)
+        .hashJndi(sqlHashJndi)
+        .build()
+
+    val deduper = Deduper(config)
+
+    val report = deduper.dedupe()
+
+    println(report)
+    println(report.dupes)
+
+
 
 ## Built With
 
