@@ -320,23 +320,31 @@ As mentioned earlier, csv outputs are defined in a jndi context as follows:
     
 The _minimum_ information needed to configure a csv output is the **targetName** as this is a path to output file location.  If the "ext" property and "delimiter" property aren't populated then the defaults will be used, which are "txt" for "ext" and "," for "delimiter".  All csv output definitions use the **_CsvJNDITargetType_** class.  This class takes in the jndi name, context, and **_deleteIfExists_** boolean flag.  
 
-Here is an example outputting data to csv.
+Here is an example outputting data to csv.  Here are the jndi configurations for **RealEstateOut** and **RealEstateOutDupes**:
 
-    import org.bradfordmiller.deduper.Deduper
-    import org.bradfordmiller.deduper.config.Config
-    import org.bradfordmiller.deduper.config.SourceJndi
-    import org.bradfordmiller.deduper.jndi.CsvJNDITargetType
-	 
+    RealEstateOut/type=java.util.Map
+	RealEstateOut/ext=txt
+	RealEstateOut/delimiter=,
+	RealEstateOut/targetName=src/test/resources/data/outputData/targetName
+
+and
+	
+	RealEstateOutDupes/type=java.util.Map
+	RealEstateOutDupes/ext=txt
+	RealEstateOutDupes/delimiter=|
+	RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
+
+Here is the code to output csv target data and csv dupe data:
+
     val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
-    val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data")
-    val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
+    val csvTargetJndi = CsvJNDITargetType("RealEstateOut", "default_ds",false)
+    val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupes", "default_ds",false)
     val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
     val config = Config.ConfigBuilder()
         .sourceJndi(csvSourceJndi)
-        .targetJndi(sqlTargetJndi)
-        .dupesJndi(sqlDupesJndi)
-        .hashJndi(sqlHashJndi)
+        .targetJndi(csvTargetJndi)
+        .dupesJndi(csvDupesJndi)
         .build()
 
     val deduper = Deduper(config)
@@ -346,7 +354,13 @@ Here is an example outputting data to csv.
     println(report)
     println(report.dupes)
 
+Here is the log output:
 
+    Dedupe report: recordCount=986, columnsFound=[street, city, zip, state, beds, baths, sq__ft, type, sale_date, price, latitude, longitude],      hashColumns=[street, city, state, zip, price], dupeCount=4, distinctDupeCount=3
+    2019-10-17 14:40:09,206 [main] INFO  Deduper:296 - Deduping process complete.
+    recordCount=986, columnsFound=[street, city, zip, state, beds, baths, sq__ft, type, sale_date, price, latitude, longitude], hashColumns=[street, city, state, zip, price], dupeCount=4, distinctDupeCount=3
+
+Also produced were two files, in the **_src/test/resources/data/outputData_** directory:  dupeName.txt (which contains the duplicates found) and targetName.txt (which contains the deduped data set).  A similar method can be used to persist "found" hashes to a csv.
 
 ## Built With
 
