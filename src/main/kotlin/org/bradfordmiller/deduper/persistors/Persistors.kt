@@ -9,7 +9,20 @@ import org.json.JSONArray
 import org.slf4j.LoggerFactory
 import java.sql.*
 
+/**
+ * represents a simple duplicate value found by deduper.
+ *
+ * @property firstFoundRowNumber row location of the value that this data is a duplicate of
+ * @property dupes json representation of the duplicate data row
+ */
 data class Dupe(val firstFoundRowNumber: Long, val dupes: String)
+
+/**
+ * represents hashed data created by deduper
+ *
+ * @property hash a hash value of a row found by deduper
+ * @property hash_json an optional json representation of the data which comprises the hash value
+ */
 data class HashRow(val hash: String, val hash_json: String?)
 
 interface WritePersistor<T> {
@@ -96,7 +109,9 @@ class SqlTargetPersistor(
     override fun createTarget(rsmd: ResultSetMetaData, deleteIfTargetExists: Boolean) {
         JNDIUtils.getJndiConnection(targetJndi, context).use { conn ->
             if (deleteIfTargetExists) {
-                logger.info("deleteIfTargetExists is set to true.  Checking database to see if target $targetName exists.")
+                logger.info(
+                    "deleteIfTargetExists is set to true.  Checking database to see if target $targetName exists."
+                )
                 SqlUtils.deleteTableIfExists(conn, targetName)
             }
             val vendor = conn.metaData.databaseProductName
@@ -140,7 +155,8 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
         val logger = LoggerFactory.getLogger(SqlDupePersistor::class.java)
     }
     //TODO: Make a list of dupe columns and then pass it to both the INSERT and CREATE statements
-    private val insertStatement = "INSERT INTO dupes(hash, row_ids, first_found_row_number, dupe_values) VALUES (?,?,?,?)"
+    private val insertStatement =
+        "INSERT INTO dupes(hash, row_ids, first_found_row_number, dupe_values) VALUES (?,?,?,?)"
 
     override fun createDupe(deleteIfDupeExists: Boolean) {
         JNDIUtils.getJndiConnection(dupesJndi, context).use { conn ->
