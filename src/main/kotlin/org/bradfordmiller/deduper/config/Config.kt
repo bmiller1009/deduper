@@ -4,9 +4,52 @@ import org.apache.commons.lang.NullArgumentException
 import org.bradfordmiller.deduper.jndi.JNDITargetType
 import org.slf4j.LoggerFactory
 
-data class SourceJndi(val jndiName: String, val context: String, val tableQuery: String, val hashKeys: MutableSet<String> = mutableSetOf())
-data class HashSourceJndi(val jndiName: String, val context: String, val hashTableName: String, val hashColumnName: String)
+/**
+ * A source jndi entity
+ *
+ * @property jndiName the jndi name defined in the simple-jndi properties file
+ * @property context the context name for the jndi name, which basically maps to a properties file of the same name
+ * IE if context = "test" then there should be a corresponding test.properties file present in the org.osjava.sj.root
+ * defined directory in jndi.properties.  In the above example, if the context = "test" and org.osjava.sj.root =
+ * src/main/resources/jndi then the jndi name will be searched for in src/main/resources/jndi/test.properties
+ * @property tableQuery can either be a table (which 'SELECT *' will be run against) or a specific 'SELECT' SQL query
+ * @property hashKeys a list of column names which will be used to hash the values returned by [tableQuery]
+ */
+data class SourceJndi(
+    val jndiName: String,
+    val context: String,
+    val tableQuery: String,
+    val hashKeys: MutableSet<String> = mutableSetOf()
+)
 
+/**
+ * A hash source jndi entity. This is used when configuring a specific set of existing hashes to "dedupe" against
+ *
+ * @property jndiName the jndi name defined in the simple-jndi properties file
+ * @property context the context name for the jndi name, which basically maps to a properties file of the same name
+ * IE if context = "test" then there should be a corresponding test.properties file present in the org.osjava.sj.root
+ * defined directory in jndi.properties.  In the above example, if the context = "test" and org.osjava.sj.root =
+ * src/main/resources/jndi then the jndi name will be searched for in src/main/resources/jndi/test.properties
+ * @property hashTableName the name of the table found in the [jndiName] which contains the existing hashes
+ * @property hashColumnName the name of the column in [hashTableName] which contains the hashes
+ */
+data class HashSourceJndi(
+    val jndiName: String,
+    val context: String,
+    val hashTableName: String,
+    val hashColumnName: String
+)
+
+/**
+ * Configuration for a deduper process
+ *
+ * @constructor creates a new instance of the Config class
+ * @property sourceJndi a [SourceJndi] object
+ * @property seenHashesJndi a [HashSourceJndi] object
+ * @property targetJndi a nullable [JNDITargetType] for writing out deduped data
+ * @property dupesJndi a nullable [JNDITargetType] for writing out duplicate data
+ * @property hashJndi a nullable [JNDITargetType] for writing out hashes from a deduper process
+ */
 class Config private constructor(
     val sourceJndi: SourceJndi,
     val seenHashesJndi: HashSourceJndi?,
@@ -14,6 +57,15 @@ class Config private constructor(
     val dupesJndi: JNDITargetType?,
     val hashJndi: JNDITargetType?
 ) {
+    /**
+     * Builder object for the [Config] class
+     *
+     * @property sourceJndi a [SourceJndi] object
+     * @property seenHashesJndi a [HashSourceJndi] object
+     * @property targetJndi a nullable [JNDITargetType] for writing out deduped data
+     * @property dupesJndi a nullable [JNDITargetType] for writing out duplicate data
+     * @property hashJndi a nullable [JNDITargetType] for writing out hashes from a deduper process
+     */
     data class ConfigBuilder(
         private var sourceJndi: SourceJndi? = null,
         private var seenHashesJndi: HashSourceJndi? = null,
@@ -24,12 +76,29 @@ class Config private constructor(
         companion object {
             private val logger = LoggerFactory.getLogger(ConfigBuilder::class.java)
         }
-
+        /**
+         * sets the [sourceJndi] for the builder object
+         */
         fun sourceJndi(sourceJndi: SourceJndi) = apply {this.sourceJndi = sourceJndi}
+        /**
+         * sets the [seenHashesJndi] for the builder object
+         */
         fun seenHashesJndi(seenHashesJndi: HashSourceJndi) = apply {this.seenHashesJndi = seenHashesJndi}
+        /**
+         * sets the [targetJndi] for the builder object
+         */
         fun targetJndi(jndiTargetType: JNDITargetType) = apply {this.targetJndi = jndiTargetType}
+        /**
+         * sets the [dupesJndi] for the builder object
+         */
         fun dupesJndi(jndiTargetType: JNDITargetType) = apply {this.dupesJndi = jndiTargetType}
+        /**
+         * sets the [hashJndi] for the builder object
+         */
         fun hashJndi(jndiTargetType: JNDITargetType) = apply {this.hashJndi = jndiTargetType}
+        /**
+         * returns [Config] object with builder options set
+         */
         fun build(): Config {
             val sourceJndi = sourceJndi ?: throw NullArgumentException("Source JNDI must be set")
             val seenHashesJndi = seenHashesJndi
