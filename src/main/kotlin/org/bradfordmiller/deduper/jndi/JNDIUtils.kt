@@ -17,12 +17,17 @@ import javax.naming.*
 import javax.sql.DataSource
 import kotlin.streams.toList
 
+/**
+ * Utility class for Jndi based operations on the simple-jndi API
+ */
 class JNDIUtils {
 
     companion object {
 
         private val logger = LoggerFactory.getLogger(JNDIUtils::class.java)
-
+        /**
+         * returns a nullable [MemoryContext] based on [initCtx] and the associated [contextName]
+         */
         fun getMemoryContextFromInitContext(initCtx: InitialContext, contextName: String): MemoryContext? {
             return try {
                 val mc = (initCtx.lookup(contextName) as MemoryContext)
@@ -32,6 +37,11 @@ class JNDIUtils {
                 null
             }
         }
+        /**
+         * returns an [Either] of a [DataSource] or a [Map] based on the [jndi] name in the associated [context]
+         *
+         * @throws UnknownObjectException
+         */
         fun getDataSource(jndi: String, context: String): Either<DataSource?, Map<*, *>> {
             val ctx = InitialContext() as Context
             val mc = (ctx.lookup(context) as MemoryContext)
@@ -46,6 +56,11 @@ class JNDIUtils {
                 }
             }
         }
+
+        /**
+         * returns a nullable [Connection] from [DataSource] [ds]
+         * @throws SQLException
+         */
         fun getConnection(ds: DataSource): Connection? {
             return try {
                 ds.connection
@@ -54,10 +69,19 @@ class JNDIUtils {
                 throw sqlEx
             }
         }
+        /**
+         * returns [Connection] from Datasource object configured in [jndiString] and the associated [context]
+         */
         fun getJndiConnection(jndiString: String, context: String): Connection {
             val ds = (getDataSource(jndiString, context) as Left<DataSource?, String>).left!!
             return getConnection(ds)!!
         }
+
+        /**
+         * returns a list of all available jndi contexts found under the "org.osjava.sj.root" setting in jndi.properties
+         *
+         * @throws IOException
+         */
         fun getAvailableJndiContexts(): List<String> {
             val ctx = InitialContext()
             val root = ctx.environment.get("org.osjava.sj.root").toString()
@@ -73,6 +97,9 @@ class JNDIUtils {
                 throw ioEx
             }
         }
+        /**
+         * returns a key/value pair of jndi entries in a specific [memoryContext]
+         */
         fun getEntriesForJndiContext(memoryContext: MemoryContext): Map<String, String> {
             val field = memoryContext.javaClass.getDeclaredField("namesToObjects")
             field.isAccessible = true
@@ -85,12 +112,17 @@ class JNDIUtils {
 
             return map
         }
+        /**
+         * returns specific details for a [context], jndi name [jndiName], and a specific [entry] in the jndi
+         */
         fun getDetailsforJndiEntry(context: InitialContext, jndiName: String, entry: String): Pair<String, String> {
             val mc = getMemoryContextFromInitContext(context, jndiName)
             val entries = getEntriesForJndiContext(mc!!)
             return entry to entries[entry]!!
         }
-        //TODO: Make sure to put a lock file in place while updating the jndi root directory
+        /**
+         * add a new jndi entry to specific context based on the [jndiName], [context], and [values]
+         */
         fun addJndiConnection(jndiName: String, context: String, values: Map<String, String>): Boolean {
 
             fun writeToFile(backupFile: File, delimiter: String) {
@@ -132,7 +164,8 @@ class JNDIUtils {
                             throw IllegalAccessException(errorString)
                         } else {
                             val uuid = UUID.randomUUID().toString()
-                            val backupFile = File(file.parentFile.name + "/" + context + "_" + uuid + ".properties")
+                            val backupFile =
+                                File(file.parentFile.name + "/" + context + "_" + uuid + ".properties")
                             file.copyTo(backupFile, true)
                             //Append the data to the copy
                             writeToFile(backupFile, delimiter)

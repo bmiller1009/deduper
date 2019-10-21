@@ -25,7 +25,7 @@ class CsvConfigParser(private val config: Map<String, String>) {
             return ds.right as Map<String, String>
         }
         /**
-         * sets default values in the csv configuration map if parameters are not provided
+         * sets default values in the csv [config] map if parameters are not provided
          */
         fun setDefault(config: Map<String, String>, key: String, default: String): String {
             if(!config.containsKey(key) || config[key] == "") {
