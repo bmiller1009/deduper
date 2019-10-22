@@ -3,18 +3,26 @@ package org.bradfordmiller.deduper.sql
 import org.slf4j.LoggerFactory
 import java.sql.*
 
+/**
+ * Sql operations utility class
+ */
 class SqlUtils {
 
     companion object {
 
         private val logger = LoggerFactory.getLogger(SqlUtils::class.java)
-
+        /**
+         * returns a map of column names and associated values from rs and list of column names contained in [colNames]
+         */
         fun getMapFromRs(rs: ResultSet, colNames: Map<Int, String>): Map<String, Any> {
             return (1..colNames.size).map{
                 val column = colNames[it] ?: error("Column Index $it does not have an entry in the column name map.")
                 column to rs.getObject(column)
             }.toMap()
         }
+        /**
+         *  returns column list with index and column name from [rsmd]
+         */
         fun getColumnsFromRs(rsmd: ResultSetMetaData): Map<Int, String> {
             val colCount = rsmd.columnCount
 
@@ -22,6 +30,9 @@ class SqlUtils {
                 i to rsmd.getColumnName(i)
             }.toMap()
         }
+        /**
+         * returns a list of columns and their indices from [rsmd]
+         */
         fun getColumnIdxFromRs(rsmd: ResultSetMetaData): Map<String, Int> {
             val colCount = rsmd.columnCount
 
@@ -29,6 +40,9 @@ class SqlUtils {
                 rsmd.getColumnName(i) to i
             }.toMap()
         }
+        /**
+         * returns stringified version of database column type based on [vendor], [typeName], [type], and [size]
+         */
         private fun getType(vendor: String, typeName: String, type: Int, size: Int): String {
             val sqlVendorTypes = SqlVendorTypes(vendor)
             return if (type == java.sql.Types.VARCHAR) {
