@@ -1,7 +1,14 @@
 package org.bradfordmiller.deduper.sql
 
+/**
+ * class for returning correctly formatted types based on a specific database [vendor]
+ */
 class SqlVendorTypes(vendor: String) {
+
     private val formattedVendor = vendor.toLowerCase()
+    /**
+     * returns a specific string type (IE TEXT, VARCHAR, etc) base on database vendor
+     */
     fun getStringType(): String {
         return if(formattedVendor.contains("sqlite")) {
             "TEXT"
@@ -9,6 +16,9 @@ class SqlVendorTypes(vendor: String) {
             "VARCHAR"
         }
     }
+    /**
+     * returns a specific string type (IE MAX) base on database vendor
+     */
     fun getStringMaxSize(): String {
         return if(formattedVendor.contains("sqlite") || formattedVendor.contains("postgres")) {
             ""
@@ -16,6 +26,9 @@ class SqlVendorTypes(vendor: String) {
             "MAX"
         }
     }
+    /**
+     * returns the formatted [size] of a string
+     */
     fun getStringSize(size: Int): String {
         return if(formattedVendor.contains("sqlite")) {
             ""
@@ -23,6 +36,9 @@ class SqlVendorTypes(vendor: String) {
             "(${size.toString()})"
         }
     }
+    /**
+     *  returns the formatted long type based on database vendor
+     */
     fun getLongType(): String {
         return if(formattedVendor.contains("sqlite")) {
             "INTEGER"
@@ -30,6 +46,9 @@ class SqlVendorTypes(vendor: String) {
             "BIGINT"
         }
     }
+    /**
+     * returns the formatted decimal [type] based on database vendor
+     */
     fun getDecimalType(type: String): String {
         return if(formattedVendor.contains("sqlite")) {
             "REAL"
@@ -37,6 +56,9 @@ class SqlVendorTypes(vendor: String) {
             type
         }
     }
+    /**
+     * returns correct DDL for primary key based on vendor and [column] name
+     */
     fun getPrimaryKeySyntax(column: String): String {
         return if(formattedVendor.contains("sqlite")) {
             "PRIMARY KEY($column)"

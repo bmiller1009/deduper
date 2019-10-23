@@ -45,17 +45,27 @@ class SqlUtils {
          */
         private fun getType(vendor: String, typeName: String, type: Int, size: Int): String {
             val sqlVendorTypes = SqlVendorTypes(vendor)
-            return if (type == java.sql.Types.VARCHAR) {
+            return if (type == Types.VARCHAR) {
                 sqlVendorTypes.getStringType() + sqlVendorTypes.getStringSize(size)
-            } else if(type == java.sql.Types.BIGINT) {
+            } else if(type == Types.BIGINT) {
                 sqlVendorTypes.getLongType()
-            } else if(type == java.sql.Types.DOUBLE || type == java.sql.Types.DECIMAL || type == java.sql.Types.FLOAT ) {
+            } else if(type == Types.DOUBLE || type == Types.DECIMAL || type == Types.FLOAT ) {
                 sqlVendorTypes.getDecimalType(typeName)
             } else {
                 typeName
             }
         }
-        private fun getColumnsCommaDelimited(rsmd: ResultSetMetaData, vendor: String, varcharPadding: Int = 0, includeType: Boolean = false, includeNullability: Boolean = false): String {
+        /**
+         * returns a stringified list of columns based on [rsmd], [vendor], [varcharPadding], [includeType], and
+         * [includeNullability]
+         */
+        private fun getColumnsCommaDelimited(
+            rsmd: ResultSetMetaData,
+            vendor: String,
+            varcharPadding: Int = 0,
+            includeType: Boolean = false,
+            includeNullability: Boolean = false
+        ): String {
             val colCount = rsmd.columnCount
             return (1..colCount).map { c ->
                 val colName = rsmd.getColumnName(c)
@@ -81,6 +91,10 @@ class SqlUtils {
                 "$colName $sqlType $isNull"
             }.joinToString(",")
         }
+        /**
+         * returns a string representing a parameterized INSERT sql statement based on the [tableName] which is the
+         * target of the INSERT, [rsmd], and the database [vendor]
+         */
         fun generateInsert(tableName: String, rsmd: ResultSetMetaData, vendor: String): String {
             val colCount = rsmd.columnCount
             val insertClause = "INSERT INTO $tableName "
@@ -90,6 +104,9 @@ class SqlUtils {
             logger.trace("Insert SQL $insertSql has been generated.")
             return insertSql
         }
+        /**
+         * returns a CREATE TABLE sql DDL based on the [tableName], [rsmd], [vendor], and [varcharPadding]
+         */
         fun generateDDL(tableName: String, rsmd: ResultSetMetaData, vendor: String, varcharPadding: Int): String {
             val ctClause = "CREATE TABLE $tableName "
             val columnsComma = getColumnsCommaDelimited(rsmd, vendor, varcharPadding, true)
@@ -97,26 +114,38 @@ class SqlUtils {
             logger.trace("DDL $ddl has been generated.")
             return ddl
         }
+        /**
+         *  runs arbitrary [ddl] statements on a target [conn]
+         */
         fun executeDDL(conn: Connection, ddl: String) {
             conn.createStatement().use {stmt ->
                 logger.trace("Executing the following ddl SQL: $ddl")
                 stmt.executeUpdate(ddl)
             }
         }
+        /**
+         * returns true/false based on if a [tableName] exists in [dbmd]
+         */
         fun tableExists(dbmd: DatabaseMetaData, tableName: String): Boolean {
             dbmd.getTables(null, null, tableName, null).use {rs ->
                 val hasNext = rs.next()
                 return hasNext
             }
         }
+        /**
+         *  deletes a [tableName] if it exists for a specific [conn]
+         */
         fun deleteTableIfExists(conn: Connection, tableName: String) {
-            if(SqlUtils.tableExists(conn.metaData, tableName)) {
+            if(tableExists(conn.metaData, tableName)) {
                 logger.info("Table '$tableName' exists. Generating script to drop table")
                 val dropSql = "Drop table $tableName"
-                SqlUtils.executeDDL(conn, dropSql)
+                executeDDL(conn, dropSql)
                 logger.info("Table '$tableName' dropped")
             }
         }
+        /**
+         *  returns the string reprsentation of a row in [rs] for a given [columnList]
+         */
         fun stringifyRow(rs: ResultSet, columnList: MutableSet<String> = mutableSetOf()): String {
             val rsmd = rs.metaData
             val colCount = rsmd.columnCount
