@@ -3,13 +3,15 @@
  *
  * This generated file contains a sample Kotlin application project to get you started.
  */
+import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
     id("org.jetbrains.kotlin.jvm").version("1.3.50")
-    id ("net.researchgate.release").version("2.6.0")
-    // Apply the application plugin to add support for building a CLI application.
-    application
+    id("org.jetbrains.dokka").version("0.10.0")
+    id("net.researchgate.release").version("2.6.0")
+    id("java-library")
+    id("maven-publish")
 }
 
 //Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
@@ -57,4 +59,29 @@ dependencies {
     // Use the Kotlin JUnit integration.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.5.1")
+}
+
+tasks {
+    val dokka by getting(DokkaTask::class) {
+        outputFormat = "html"
+        outputDirectory = "$buildDir/dokka"
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "org.bradfordmiller"
+            artifactId = "deduper"
+            version = "${version}"
+            from(components["java"])
+        }
+    }
+
+    repositories {
+        maven {
+            name = "deduper"
+            url = uri("file://${buildDir}/repo")
+        }
+    }
 }
