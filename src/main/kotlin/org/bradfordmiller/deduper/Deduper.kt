@@ -19,8 +19,15 @@ import org.slf4j.LoggerFactory
 import java.sql.ResultSet
 import javax.sql.DataSource
 
+/**
+ * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
+ * sample string
+ */
 data class SampleRow(val sampleString: String, val sampleHash: String)
-
+/**
+ * summary of a dedupe operation, with total [recordCount], [hashColumns] used, [columnsFound] in the actual source
+ * query, [dupeCount], [distinctDupeCount], and [dupes] found in the dedupe process.
+ */
 data class DedupeReport(
     val recordCount: Long,
     val hashColumns: Set<String>,
@@ -38,6 +45,9 @@ data class DedupeReport(
     }
 }
 
+/**
+ * dedupes data based on [config] settings
+ */
 class Deduper(private val config: Config) {
 
     internal data class Persistors(
@@ -61,7 +71,12 @@ class Deduper(private val config: Config) {
                         Pair(CsvTargetPersistor(tgtConfigMap), deleteTarget)
                     } else {
                         val sqlJndi = config.targetJndi as SqlJNDITargetType
-                        Pair(SqlTargetPersistor(sqlJndi.targetTable, sqlJndi.jndi, sqlJndi.context, sqlJndi.varcharPadding), deleteTarget)
+                        Pair(
+                            SqlTargetPersistor(
+                                sqlJndi.targetTable, sqlJndi.jndi, sqlJndi.context, sqlJndi.varcharPadding
+                            ),
+                            deleteTarget
+                        )
                     }
                 } else {
                     Pair(null, false)
@@ -97,10 +112,21 @@ class Deduper(private val config: Config) {
                 Pair(null, false)
             }
 
-        Persistors(targetPersistor.first, targetPersistor.second, dupePersistor.first, dupePersistor.second, hashPersistor.first, hashPersistor.second)
+        Persistors(
+            targetPersistor.first,
+            targetPersistor.second,
+            dupePersistor.first,
+            dupePersistor.second,
+            hashPersistor.first,
+            hashPersistor.second
+        )
     }
 
-    val sourceDataSource: DataSource by lazy {(JNDIUtils.getDataSource(config.sourceJndi.jndiName, config.sourceJndi.context) as Left<DataSource?, String>).left!!}
+    val sourceDataSource: DataSource
+            by lazy {(JNDIUtils.getDataSource(
+                config.sourceJndi.jndiName, config.sourceJndi.context
+            ) as Left<DataSource?, String>).left!!
+            }
 
     val sqlStatement by lazy {
         if (config.sourceJndi.tableQuery.startsWith("SELECT", true)) {
@@ -113,7 +139,9 @@ class Deduper(private val config: Config) {
     companion object {
         val logger = LoggerFactory.getLogger(Deduper::class.java)
     }
-
+    /**
+     * returns a sample row representing all values in that row plus the associated hash of the row
+     */
     fun getSampleHash(): SampleRow {
 
         val hashColumns = config.sourceJndi.hashKeys
@@ -129,18 +157,34 @@ class Deduper(private val config: Config) {
             }
         }
     }
-
     /**
-     * @param commitSize
+     *  runs a dedupe process and returns a dedupe report
+     *
+     *  @param commitSize - the number of rows to write in a single transation
+     *  @param outputReportCommitSize - the number of total rows committed before logging the result
      */
     fun dedupe(commitSize: Long = 500, outputReportCommitSize: Long = 1000000): DedupeReport {
 
         logger.info("Beginning the deduping process.")
-
+        /**
+         * writes data to a persistor
+         *
+         * @param T the type of persistor being used
+         * @param writePersistor - the target persistor being leveraged for the write
+         * @param data - the data being written
+         */
         fun <T> writeData(writePersistor: WritePersistor<T>, data: MutableList<T>) {
             writePersistor.writeRows(data)
             data.clear()
         }
+        /**
+         * writes data to a persistor
+         *
+         * @param T the type of persistor being used
+         * @param count - the count of total rows processed so far
+         * @param writePersistor - the target persistor being leveraged for the write
+         * @param data - the data being written
+         */
         fun <T> writeData(count: Long, writePersistor: WritePersistor<T>, data: MutableList<T>) {
             if(count > 0 && data.size % commitSize == 0L) {
                 writeData(writePersistor, data)
@@ -160,7 +204,11 @@ class Deduper(private val config: Config) {
 
             logger.info("Seen hashes JNDI is populated. Attempting to load hashes...")
 
-            val hashSourceDataSource = (JNDIUtils.getDataSource(config.seenHashesJndi.jndiName, config.seenHashesJndi.context) as Left<DataSource?, String>).left!!
+            val hashSourceDataSource =
+                (JNDIUtils.getDataSource(
+                    config.seenHashesJndi.jndiName, config.seenHashesJndi.context
+                ) as Left<DataSource?, String>).left!!
+
             val sqlStatement =
                 "SELECT ${config.seenHashesJndi.hashColumnName} FROM ${config.seenHashesJndi.hashTableName}"
 
@@ -242,7 +290,6 @@ class Deduper(private val config: Config) {
                         logger.trace("MD-5 hash $hash generated for MD-5 values.")
                         logger.trace("Converted hash value to long value: $longHash")
 
-                        //TODO - replace seenHashes with trove collection and store the long representation of the string hash
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
 
@@ -294,7 +341,8 @@ class Deduper(private val config: Config) {
                 }
             }
         }
-        val ddReport = DedupeReport(recordCount, hashColumns, rsColumns.values.toSet(), dupeCount, distinctDupeCount, dupeMap)
+        val ddReport =
+            DedupeReport(recordCount, hashColumns, rsColumns.values.toSet(), dupeCount, distinctDupeCount, dupeMap)
         logger.info("Dedupe report: $ddReport")
         logger.info("Deduping process complete.")
         return ddReport

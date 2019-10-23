@@ -9,19 +9,37 @@ import java.io.*
 import java.nio.charset.Charset
 import java.nio.file.*
 
+/**
+ * A utility library for file operations
+ */
 class FileUtils {
     companion object {
 
         val logger = LoggerFactory.getLogger(FileUtils::class.java)
 
+        /**
+         * writes a list of [data] to a [fileName] with a specified [delimiter] and [so] standard open option
+         */
         private fun writeRowsToFile(fileName: String, delimiter: Char, data: Array<String>, so: OpenOption) {
-            Files.newBufferedWriter(Paths.get(fileName), Charset.forName("utf-8"), StandardOpenOption.CREATE, so).use { bw ->
-                CSVWriter(bw, delimiter, NO_QUOTE_CHARACTER, DEFAULT_ESCAPE_CHARACTER, DEFAULT_LINE_END).use { csvWriter ->
-                    csvWriter.writeNext(data)
+            Files.newBufferedWriter(
+                Paths.get(fileName), Charset.forName("utf-8"), StandardOpenOption.CREATE, so
+            ).use { bw ->
+                CSVWriter(bw, delimiter, NO_QUOTE_CHARACTER, DEFAULT_ESCAPE_CHARACTER, DEFAULT_LINE_END).use { csvw ->
+                    csvw.writeNext(data)
                 }
             }
         }
-        fun prepFile(targetName: String, columns: Set<String>, extension: String, delimiter: String, deleteIfExists: Boolean) {
+        /**
+         * creates a file named [targetNamd] with [columns], and settings for the file [extension] and [delimiter].
+         * [deleteIfExists] will determine if the file is deleted if it already exists before creating
+         */
+        fun prepFile(
+            targetName: String,
+            columns: Set<String>,
+            extension: String,
+            delimiter: String,
+            deleteIfExists: Boolean
+        ) {
             val fileName = "$targetName.$extension"
 
             val f = File(fileName)
@@ -35,10 +53,16 @@ class FileUtils {
             }
             writeRowsToFile(fileName, delimiter.single(), columns.toTypedArray(), StandardOpenOption.TRUNCATE_EXISTING)
         }
+        /**
+         * writes a list of [strings] to a [file] with specified [extension] and [delimiter]
+         */
         fun writeStringsToFile(strings: Array<String>, file: String, extension: String, delimiter: String) {
             val fileName = "$file.$extension"
             writeRowsToFile(fileName, delimiter.single(), strings, StandardOpenOption.APPEND)
         }
+        /**
+         *  writes a list of [strings] lists to a [file] with specified [extension] and [delimiter]
+         */
         fun writeStringsToFile(strings: Array<Array<String>>, file: String, extension: String, delimiter: String) {
             strings.forEach{s ->
                 writeStringsToFile(s, file, extension, delimiter)
