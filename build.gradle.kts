@@ -7,7 +7,6 @@
 plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
     id("org.jetbrains.kotlin.jvm").version("1.3.50")
-    id ("distribution")
     id ("net.researchgate.release").version("2.6.0")
     // Apply the application plugin to add support for building a CLI application.
     application
@@ -27,17 +26,6 @@ release {
     newVersionCommitMessage = "[Gradle Release Plugin] - new version commit: "
     tagTemplate = "${version}"
     versionPropertyFile = "gradle.properties"
-}
-
-distributions {
-    getByName("main") {
-        baseName = "deduper"
-        contents {
-            from("src/main/resources") {
-                into("conf")
-            }
-        }
-    }
 }
 
 repositories {
@@ -69,9 +57,4 @@ dependencies {
     // Use the Kotlin JUnit integration.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.5.1")
-}
-
-application {
-    // Define the main class for the application.
-    mainClassName = "org.bradfordmiller.deduper.AppKt"
 }
