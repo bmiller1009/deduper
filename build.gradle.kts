@@ -12,6 +12,7 @@ plugins {
     id("net.researchgate.release").version("2.6.0")
     id("java-library")
     id("maven-publish")
+    id("de.marcphilipp.nexus-publish").version("0.3.0")
 }
 
 //Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
@@ -68,12 +69,45 @@ tasks {
     }
 }
 
+val sourcesJar by tasks.creating(Jar::class) {
+    archiveClassifier.set("sources")
+    from(sourceSets.main.map { it.allSource })
+}
+
+val javadocJar by tasks.creating(Jar::class) {
+    archiveClassifier.set("javadoc")
+    from(tasks.dokka)
+}
+
 publishing {
     publications {
         create<MavenPublication>("maven") {
             groupId = "org.bradfordmiller"
             artifactId = "deduper"
             version = "${version}"
+
+            artifact(sourcesJar)
+            artifact(javadocJar)
+
+            pom {
+                name.set("deduper")
+                description.set(project.description)
+                inceptionYear.set("2019")
+                url.set("git@github.com:bmiller1009/deduper.git")
+                developers {
+                    developer {
+                        name.set("Bradford Miller")
+                        id.set("bmiller1009")
+                        url.set("https://github.com/bmiller1009")
+                    }
+                }
+                licenses {
+                    license {
+                        name.set("Apache License, Version 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+            }
             from(components["java"])
         }
     }
@@ -82,6 +116,14 @@ publishing {
         maven {
             name = "deduper"
             url = uri("file://${buildDir}/repo")
+        }
+    }
+}
+nexusPublishing {
+    repositories {
+        create("myNexus") {
+            nexusUrl.set(uri("https://oss.sonatype.org/service/local/staging/deploy/maven2"))
+            snapshotRepositoryUrl.set(uri("https://oss.sonatype.org/service/local/staging/deploy/maven2"))
         }
     }
 }
