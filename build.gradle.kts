@@ -93,7 +93,9 @@ publishing {
                 name.set("deduper")
                 description.set(project.description)
                 inceptionYear.set("2019")
-                url.set("git@github.com:bmiller1009/deduper.git")
+                scm {
+                    url.set("git@github.com:bmiller1009/deduper.git")
+                }
                 developers {
                     developer {
                         name.set("Bradford Miller")
