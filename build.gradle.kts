@@ -4,6 +4,7 @@
  * This generated file contains a sample Kotlin application project to get you started.
  */
 import org.jetbrains.dokka.gradle.DokkaTask
+import groovy.lang.Closure
 
 plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
@@ -11,9 +12,15 @@ plugins {
     id("org.jetbrains.dokka").version("0.10.0")
     id("net.researchgate.release").version("2.6.0")
     id("java-library")
-    id("maven-publish")
-    id("de.marcphilipp.nexus-publish").version("0.3.0")
+    id("com.bmuschko.nexus").version("2.3.1")
+    id("io.codearte.nexus-staging").version("0.11.0")
+    //id("maven-publish")
+    //id("de.marcphilipp.nexus-publish").version("0.3.0")
+    //id("io.codearte.nexus-staging").version("0.21.1")
 }
+
+group = "org.bradfordmiller"
+version = "${version}"
 
 //Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
 release {
@@ -69,6 +76,60 @@ tasks {
     }
 }
 
+val modifyPom : Closure<MavenPom> by ext
+
+modifyPom(closureOf<MavenPom>{
+    project {
+        withGroovyBuilder {
+            "name"("deduper")
+            "description"("General deduping engine for JDBC sources with output to JDBC/csv targets")
+            "url"("https://github.com/bmiller1009/deduper")
+            "inceptionYear"("2019")
+
+            "scm" {
+                "url"("git@github.com:bmiller1009/deduper.git/")
+                "connection"("scm:git@github.com:bmiller1009/deduper.git")
+            }
+
+            "licenses" {
+                "license" {
+                    "name"("The Apache Software License, Version 2.0")
+                    "url"("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    "distribution"("repo")
+                }
+            }
+
+            "developers" {
+                "developer" {
+                    "id" ("bmiller1009")
+                    "name"("Bradford Miller")
+                    "email"("bfm@bradfordmiller.org")
+                }
+            }
+        }
+    }
+})
+
+extraArchive {
+    sources = true
+    tests = true
+    javadoc = true
+}
+
+nexus {
+    sign = true
+    repositoryUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+    snapshotRepositoryUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+}
+
+
+
+
+
+
+
+
+/*
 val sourcesJar by tasks.creating(Jar::class) {
     archiveClassifier.set("sources")
     from(sourceSets.main.map { it.allSource })
@@ -121,12 +182,18 @@ publishing {
         }
     }
 }
+
+nexusStaging {
+    packageGroup = "org.bradfordmiller"
+}
+
 nexusPublishing {
     repositories {
         sonatype()
         create("myNexus") {
-            nexusUrl.set(uri("https://oss.sonatype.org/service/local/staging/deploy/maven2"))
-            snapshotRepositoryUrl.set(uri("https://oss.sonatype.org/service/local/staging/deploy/maven2"))
+            nexusUrl.set(uri("https://oss.sonatype.org/service/local/repositories/releases"))
+            snapshotRepositoryUrl.set(uri("https://oss.sonatype.org/service/local/repositories/snapshots"))
         }
     }
 }
+*/
