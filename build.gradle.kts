@@ -35,7 +35,7 @@ release {
     tagCommitMessage = "[Gradle Release Plugin] - creating tag: "
     newVersionCommitMessage = "[Gradle Release Plugin] - new version commit: "
     tagTemplate = "${version}"
-    versionPropertyFile = "gradle.properties"
+    versionPropertyFile = "version.properties"
 }
 
 repositories {
