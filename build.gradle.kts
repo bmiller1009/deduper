@@ -19,14 +19,15 @@ plugins {
     id("de.marcphilipp.nexus-publish").version("0.3.0")
 }
 
-val props = Properties()
-val inputStream = file("version.properties").inputStream()
-props.load(inputStream)
+//val props = Properties()
+//val inputStream = file("version.properties").inputStream()
+//props.load(inputStream)
 
 group = "org.bradfordmiller"
-version = properties.get("version")!!
+version = "0.0.16"
+//version = properties.get("version")!!
 
-inputStream.close()
+//inputStream.close()
 
 //Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
 release {
