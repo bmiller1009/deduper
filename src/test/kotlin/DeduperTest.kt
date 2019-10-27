@@ -216,8 +216,8 @@ class DeduperTest {
     @Test fun testDeleteSqlDeleteDupeAndTarget() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
-        val sqlTargetJndi = SqlJNDITargetType("PostGresTest", "default_ds",true,"target_data", 20)
-        val sqlDupesJndi = SqlJNDIDupeType("PostGresTest", "default_ds",true)
+        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data", 20)
+        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
         val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
         var build = Config.ConfigBuilder()

@@ -5,6 +5,8 @@
  */
 import org.jetbrains.dokka.gradle.DokkaTask
 import groovy.lang.Closure
+import org.jetbrains.kotlin.gradle.utils.loadPropertyFromResources
+import java.util.Properties
 
 plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
@@ -13,14 +15,18 @@ plugins {
     id("net.researchgate.release").version("2.6.0")
     id("java-library")
     id("com.bmuschko.nexus").version("2.3.1")
-    id("io.codearte.nexus-staging").version("0.11.0")
-    //id("maven-publish")
-    //id("de.marcphilipp.nexus-publish").version("0.3.0")
-    //id("io.codearte.nexus-staging").version("0.21.1")
+    id("io.codearte.nexus-staging").version("0.21.1")
+    id("de.marcphilipp.nexus-publish").version("0.3.0")
 }
 
+val props = Properties()
+val inputStream = file("version.properties").inputStream()
+props.load(inputStream)
+
 group = "org.bradfordmiller"
-version = "${version}"
+version = properties.get("version")!!
+
+inputStream.close()
 
 //Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
 release {
@@ -58,7 +64,6 @@ dependencies {
     implementation("org.json", "json", "20190722")
     implementation("org.apache.commons", "commons-dbcp2", "2.7.0")
     implementation("commons-io", "commons-io", "2.6")
-    implementation("org.postgresql", "postgresql", "42.2.8")
     implementation("net.sf.trove4j", "core", "3.1.0")
     implementation("com.opencsv", "opencsv", "4.6")
     // Use the Kotlin test library.
@@ -122,78 +127,26 @@ nexus {
     snapshotRepositoryUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
 }
 
-
-
-
-
-
-
-
-/*
-val sourcesJar by tasks.creating(Jar::class) {
-    archiveClassifier.set("sources")
-    from(sourceSets.main.map { it.allSource })
-}
-
-val javadocJar by tasks.creating(Jar::class) {
-    archiveClassifier.set("javadoc")
-    from(tasks.dokka)
+nexusStaging {
+    packageGroup = "org.bradfordmiller" //optional if packageGroup == project.getGroup()
 }
 
 publishing {
     publications {
-        create<MavenPublication>("maven") {
-            groupId = "org.bradfordmiller"
-            artifactId = "deduper"
-            version = "${version}"
-
-            artifact(sourcesJar)
-            artifact(javadocJar)
-
-            pom {
-                name.set("deduper")
-                description.set(project.description)
-                inceptionYear.set("2019")
-                scm {
-                    url.set("git@github.com:bmiller1009/deduper.git")
-                }
-                developers {
-                    developer {
-                        name.set("Bradford Miller")
-                        id.set("bmiller1009")
-                        url.set("https://github.com/bmiller1009")
-                    }
-                }
-                licenses {
-                    license {
-                        name.set("Apache License, Version 2.0")
-                        url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
-                    }
-                }
-            }
+        create<MavenPublication>("mavenJava") {
             from(components["java"])
         }
     }
-
-    repositories {
-        maven {
-            name = "deduper"
-            url = uri("file://${buildDir}/repo")
-        }
-    }
 }
 
-nexusStaging {
-    packageGroup = "org.bradfordmiller"
-}
+val uname: String? by project
+val pwd: String? by project
 
 nexusPublishing {
     repositories {
-        sonatype()
-        create("myNexus") {
-            nexusUrl.set(uri("https://oss.sonatype.org/service/local/repositories/releases"))
-            snapshotRepositoryUrl.set(uri("https://oss.sonatype.org/service/local/repositories/snapshots"))
-        }
+            sonatype {
+                username.set(uname)
+                password.set(pwd)
+            }
     }
 }
-*/
