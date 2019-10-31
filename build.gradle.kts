@@ -21,14 +21,25 @@ plugins {
 
 group = "org.bradfordmiller"
 
+val props = Properties()
+val inputStream = file("version.properties").inputStream()
+props.load(inputStream)
+val softwareVersion = properties.get("version")!!.toString()
+
+tasks.create("set-defaults") {
+    doFirst {
+        group = "org.bradfordmiller"
+        version = softwareVersion
+        inputStream.close()
+    }
+}
+
+tasks.build {
+    dependsOn("set-defaults")
+}
+
 //Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
 release {
-
-    val props = Properties()
-    val inputStream = file("version.properties").inputStream()
-    props.load(inputStream)
-    val softwareVersion = properties.get("version")!!.toString()
-
     failOnCommitNeeded = true
     failOnPublishNeeded = true
     failOnSnapshotDependencies = true
@@ -39,10 +50,8 @@ release {
     preTagCommitMessage = "[Gradle Release Plugin] - pre tag commit: "
     tagCommitMessage = "[Gradle Release Plugin] - creating tag: "
     newVersionCommitMessage = "[Gradle Release Plugin] - new version commit: "
-    tagTemplate = softwareVersion
+    tagTemplate = "{$version}"
     versionPropertyFile = "version.properties"
-
-    inputStream.close()
 }
 
 repositories {
@@ -76,6 +85,10 @@ dependencies {
 }
 
 tasks {
+
+    "createScmAdapter" {
+        dependsOn("set-defaults")
+    }
 
     val dokka by getting(DokkaTask::class) {
         outputFormat = "html"
