@@ -55,7 +55,7 @@ release {
     preCommitText = ""
     preTagCommitMessage = "[Gradle Release Plugin] - pre tag commit: "
     tagCommitMessage = "[Gradle Release Plugin] - creating tag: "
-    newVersionCommitMessage = "[Gradle Release Plugin] - new version commit: "
+    newVersionCommitMessage = "[Gradle Release Plugin] - new version commit: ":q
     versionPropertyFile = "version.properties"
 }
 
