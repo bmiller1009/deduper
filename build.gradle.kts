@@ -72,18 +72,22 @@ dependencies {
 
 tasks {
 
-    val defaults by creating {
-        group = "org.bradfordmiller"
-        version = softwareVersion
-        inputStream.close()
-    }
-
     val dokka by getting(DokkaTask::class) {
         outputFormat = "html"
         outputDirectory = "$buildDir/dokka"
     }
 
-    defaultTasks(defaults.name)
+    //defaultTasks(defaults.name)
+}
+
+tasks.create("set-defaults") {
+    group = "org.bradfordmiller"
+    version = softwareVersion
+    inputStream.close()
+}
+
+tasks.build {
+    dependsOn("set-defaults")
 }
 
 project.publishing.publications.withType(MavenPublication::class.java).forEach { publication ->
