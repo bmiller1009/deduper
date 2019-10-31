@@ -21,15 +21,6 @@ plugins {
 
 group = "org.bradfordmiller"
 
-val props = Properties()
-val inputStream = file("version.properties").inputStream()
-props.load(inputStream)
-val softwareVersion = properties.get("version")!!.toString()
-
-tasks.build {
-    dependsOn("set-defaults")
-}
-
 //Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
 release {
 
