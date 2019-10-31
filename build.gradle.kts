@@ -24,7 +24,7 @@ val inputStream = file("version.properties").inputStream()
 props.load(inputStream)
 val softwareVersion = properties.get("version")!!.toString()
 
-tasks.register("set-defaults") {
+tasks.create("set-defaults") {
     group = "org.bradfordmiller"
     version = softwareVersion
     inputStream.close()
