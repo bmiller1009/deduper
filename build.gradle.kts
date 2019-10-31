@@ -30,6 +30,8 @@ tasks.register("set-defaults") {
     inputStream.close()
 }
 
+defaultTasks("set-defaults")
+
 //Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
 release {
     failOnCommitNeeded = true
