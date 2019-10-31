@@ -110,36 +110,6 @@ tasks {
     }
 }
 
-project.publishing.publications.withType(MavenPublication::class.java).forEach { publication ->
-    with(publication.pom) {
-        withXml {
-            val root = asNode()
-            root.appendNode("name", "deduper")
-            root.appendNode("description", "General deduping engine for JDBC sources with output to JDBC/csv targets")
-            root.appendNode("url", "https://github.com/bmiller1009/deduper")
-        }
-
-        licenses {
-            license {
-                name.set("The Apache Software License, Version 2.0")
-                url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-                distribution.set("repo")
-            }
-        }
-        developers {
-            developer {
-                id.set("bmiller1009")
-                name.set("Bradford Miller")
-                email.set("bfm@bradfordmiller.org")
-            }
-        }
-        scm {
-            url.set("git@github.com:bmiller1009/deduper.git/")
-            connection.set("scm:git@github.com:bmiller1009/deduper.git")
-        }
-    }
-}
-
 nexusStaging {
     packageGroup = "org.bradfordmiller" //optional if packageGroup == project.getGroup()
 }
