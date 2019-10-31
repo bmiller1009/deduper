@@ -46,7 +46,7 @@ tasks.build {
 
 //Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
 release {
-    failOnCommitNeeded = false
+    failOnCommitNeeded = true
     failOnPublishNeeded = true
     failOnSnapshotDependencies = true
     failOnUnversionedFiles = true
@@ -89,9 +89,14 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.5.1")
 }
 
+tasks.matching{it.name != "set-defaults"}.forEach {t ->
+    println("Found Task: " + t.name)
+    t.dependsOn("set-defaults")
+}
+
 tasks {
 
-    "createScmAdapter" {
+    "publish" {
         dependsOn("set-defaults")
 
         doFirst {
@@ -135,65 +140,62 @@ project.publishing.publications.withType(MavenPublication::class.java).forEach {
     }
 }
 
-
-
-
-//val modifyPom : Closure<MavenPom> by ext
-
-/*modifyPom(closureOf<MavenPom>{
-    project {
-        withGroovyBuilder {
-            "name"("deduper")
-            "description"("General deduping engine for JDBC sources with output to JDBC/csv targets")
-            "url"("https://github.com/bmiller1009/deduper")
-            "inceptionYear"("2019")
-
-            "scm" {
-                "url"("git@github.com:bmiller1009/deduper.git/")
-                "connection"("scm:git@github.com:bmiller1009/deduper.git")
-            }
-
-            "licenses" {
-                "license" {
-                    "name"("The Apache Software License, Version 2.0")
-                    "url"("http://www.apache.org/licenses/LICENSE-2.0.txt")
-                    "distribution"("repo")
-                }
-            }
-
-            "developers" {
-                "developer" {
-                    "id" ("bmiller1009")
-                    "name"("Bradford Miller")
-                    "email"("bfm@bradfordmiller.org")
-                }
-            }
-        }
-    }
-})*/
-
-extraArchive {
-    sources = true
-    tests = true
-    javadoc = true
-}
-
-nexus {
-    sign = true
-    repositoryUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-    snapshotRepositoryUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
-}
-
 nexusStaging {
     packageGroup = "org.bradfordmiller" //optional if packageGroup == project.getGroup()
+}
+
+tasks.register<Jar>("sourcesJars") {
+    from(sourceSets.main.get().allJava)
+    archiveClassifier.set("sources")
+}
+
+tasks.register<Jar>("javadocJars") {
+    from(tasks.javadoc)
+    archiveClassifier.set("javadoc")
 }
 
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {
+
+            tasks.matching{it.name != "set-defaults"}.forEach {t ->
+                println("Found Task: " + t.name)
+                t.dependsOn("set-defaults")
+            }
+
+            pom {
+                name.set("deduper")
+                description.set("General deduping engine for JDBC sources with output to JDBC/csv targets")
+                url.set("https://github.com/bmiller1009/deduper")
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+                developers {
+                    developer {
+                        id.set("bmiller1009")
+                        name.set("Bradford Miller")
+                        email.set("bfm@bradfordmiller.org")
+                    }
+                }
+                scm {
+                    connection.set("scm:git@github.com:bmiller1009/deduper.git")
+                    developerConnection.set("scm:git:ssh://github.com/deduper.git")
+                    url.set("git@github.com:bmiller1009/deduper.git/")
+                }
+            }
+
             from(components["java"])
+            artifact(tasks["sourcesJars"])
+            artifact(tasks["javadocJars"])
         }
     }
+}
+
+signing {
+    sign(publishing.publications["mavenJava"])
 }
 
 val uname: String? by project
