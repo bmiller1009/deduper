@@ -7,6 +7,7 @@ import org.jetbrains.dokka.gradle.DokkaTask
 import groovy.lang.Closure
 import org.jetbrains.kotlin.gradle.utils.loadPropertyFromResources
 import java.util.Properties
+import java.io.File
 
 plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
@@ -21,16 +22,21 @@ plugins {
 
 group = "org.bradfordmiller"
 
-val props = Properties()
-val inputStream = file("version.properties").inputStream()
-props.load(inputStream)
-val softwareVersion = properties.get("version")!!.toString()
-
 tasks.create("set-defaults") {
     doFirst {
+        val props = Properties()
+        val inputStream = File("version.properties").inputStream()
+        props.load(inputStream)
+        val softwareVersion = props.get("version")!!.toString()
+
+        println("Software Version: " + softwareVersion)
+
         group = "org.bradfordmiller"
         version = softwareVersion
         inputStream.close()
+    }
+    doLast {
+        println("Current software version is $version")
     }
 }
 
@@ -40,7 +46,7 @@ tasks.build {
 
 //Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
 release {
-    failOnCommitNeeded = true
+    failOnCommitNeeded = false
     failOnPublishNeeded = true
     failOnSnapshotDependencies = true
     failOnUnversionedFiles = true
@@ -50,7 +56,6 @@ release {
     preTagCommitMessage = "[Gradle Release Plugin] - pre tag commit: "
     tagCommitMessage = "[Gradle Release Plugin] - creating tag: "
     newVersionCommitMessage = "[Gradle Release Plugin] - new version commit: "
-    tagTemplate = "{$version}"
     versionPropertyFile = "version.properties"
 }
 
@@ -88,6 +93,10 @@ tasks {
 
     "createScmAdapter" {
         dependsOn("set-defaults")
+
+        doFirst {
+            println("Defaults are set. Current software version is $version")
+        }
     }
 
     val dokka by getting(DokkaTask::class) {
