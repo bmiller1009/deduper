@@ -22,13 +22,13 @@ plugins {
 val props = Properties()
 val inputStream = file("version.properties").inputStream()
 props.load(inputStream)
-
-group = "org.bradfordmiller"
-
 val softwareVersion = properties.get("version")!!.toString()
-version = softwareVersion
 
-inputStream.close()
+tasks.register("set-defaults") {
+    group = "org.bradfordmiller"
+    version = softwareVersion
+    inputStream.close()
+}
 
 //Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
 release {
