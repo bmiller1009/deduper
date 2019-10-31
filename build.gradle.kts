@@ -24,14 +24,6 @@ val inputStream = file("version.properties").inputStream()
 props.load(inputStream)
 val softwareVersion = properties.get("version")!!.toString()
 
-tasks.create("set-defaults") {
-    group = "org.bradfordmiller"
-    version = softwareVersion
-    inputStream.close()
-}
-
-defaultTasks("set-defaults")
-
 //Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
 release {
     failOnCommitNeeded = true
@@ -79,10 +71,19 @@ dependencies {
 }
 
 tasks {
+
+    val defaults by creating {
+        group = "org.bradfordmiller"
+        version = softwareVersion
+        inputStream.close()
+    }
+
     val dokka by getting(DokkaTask::class) {
         outputFormat = "html"
         outputDirectory = "$buildDir/dokka"
     }
+
+    defaultTasks(defaults.name)
 }
 
 project.publishing.publications.withType(MavenPublication::class.java).forEach { publication ->
