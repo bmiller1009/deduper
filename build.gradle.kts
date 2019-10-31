@@ -81,9 +81,11 @@ tasks {
 }
 
 tasks.create("set-defaults") {
-    group = "org.bradfordmiller"
-    version = softwareVersion
-    inputStream.close()
+    doFirst {
+        group = "org.bradfordmiller"
+        version = softwareVersion
+        inputStream.close()
+    }
 }
 
 tasks.build {
