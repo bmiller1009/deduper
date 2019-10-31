@@ -19,15 +19,16 @@ plugins {
     id("de.marcphilipp.nexus-publish").version("0.3.0")
 }
 
-//val props = Properties()
-//val inputStream = file("version.properties").inputStream()
-//props.load(inputStream)
+val props = Properties()
+val inputStream = file("version.properties").inputStream()
+props.load(inputStream)
 
 group = "org.bradfordmiller"
-version = "0.0.16"
-//version = properties.get("version")!!
 
-//inputStream.close()
+val softwareVersion = properties.get("version")!!.toString()
+version = softwareVersion
+
+inputStream.close()
 
 //Sample gradle CLI: gradle release -Prelease.useAutomaticVersion=true
 release {
@@ -41,7 +42,7 @@ release {
     preTagCommitMessage = "[Gradle Release Plugin] - pre tag commit: "
     tagCommitMessage = "[Gradle Release Plugin] - creating tag: "
     newVersionCommitMessage = "[Gradle Release Plugin] - new version commit: "
-    tagTemplate = "${version}"
+    tagTemplate = softwareVersion
     versionPropertyFile = "version.properties"
 }
 
@@ -82,9 +83,42 @@ tasks {
     }
 }
 
-val modifyPom : Closure<MavenPom> by ext
+project.publishing.publications.withType(MavenPublication::class.java).forEach { publication ->
+    with(publication.pom) {
+        withXml {
+            val root = asNode()
+            root.appendNode("name", "deduper")
+            root.appendNode("description", "General deduping engine for JDBC sources with output to JDBC/csv targets")
+            root.appendNode("url", "https://github.com/bmiller1009/deduper")
+        }
 
-modifyPom(closureOf<MavenPom>{
+        licenses {
+            license {
+                name.set("The Apache Software License, Version 2.0")
+                url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                distribution.set("repo")
+            }
+        }
+        developers {
+            developer {
+                id.set("bmiller1009")
+                name.set("Bradford Miller")
+                email.set("bfm@bradfordmiller.org")
+            }
+        }
+        scm {
+            url.set("git@github.com:bmiller1009/deduper.git/")
+            connection.set("scm:git@github.com:bmiller1009/deduper.git")
+        }
+    }
+}
+
+
+
+
+//val modifyPom : Closure<MavenPom> by ext
+
+/*modifyPom(closureOf<MavenPom>{
     project {
         withGroovyBuilder {
             "name"("deduper")
@@ -114,7 +148,7 @@ modifyPom(closureOf<MavenPom>{
             }
         }
     }
-})
+})*/
 
 extraArchive {
     sources = true
