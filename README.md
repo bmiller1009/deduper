@@ -22,7 +22,7 @@ What things you need to install the software and how to install them
 
 If you're using [Maven](maven.apache.org) simply specify the GAV coordinate below and Maven will do the rest
 
-```
+```maven
 <dependency>
   <groupId>org.bradfordmiller</groupId>
   <artifactId>deduper</artifactId>
@@ -34,7 +34,7 @@ If you're using [Maven](maven.apache.org) simply specify the GAV coordinate belo
 
 Add this GAV coordinate to your SBT dependency list
 
-```
+```sbt
 libraryDependencies += "org.bradfordmiller" %% "deduper" % "0.0.20"
 ```
 
@@ -42,7 +42,7 @@ libraryDependencies += "org.bradfordmiller" %% "deduper" % "0.0.20"
 
 Add this GAV coordinate to your Gradle dependencies section
 
-```
+```gradle
 dependencies {
     ...
     ...
