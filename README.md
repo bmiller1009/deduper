@@ -174,7 +174,7 @@ A look at the [Sacramentorealestatetransactions.csv](https://github.com/bmiller1
 ### Deduping data against a known set of hashes
 
 This can be useful if you want to take an existing set of hashes and look for matches between the known set and the current set.  Loading in an existing hash set is simply setting a **_HashSourceJndi_** object in the configuration builder, as well as a table name for the stored hashes and the column under which the hashes are stored:
-
+```kotlin
 	import org.bradfordmiller.deduper.config.HashSourceJndi
     import org.bradfordmiller.deduper.config.SourceJndi
     import org.bradfordmiller.deduper.Deduper
@@ -194,7 +194,7 @@ This can be useful if you want to take an existing set of hashes and look for ma
     val report = deduper.dedupe()
 
     println(report)
-
+```
 Before examining the results of the run let's go over the code. There is a new property being set in the config builder which is a **_HashSourceJndi_** object. That object contains the jndi details (jndi name and context) as well as the table name (**_hashes_**) and the column in the **_hashes_** table where the hash values are stored.  In this case the column name in **_hashes_** where the hash values are stored is simply **_hash_**.
 
 The **_hashes_** table in this contains all of the unique hashes from the [Sacramentorealestatetransactions.csv](https://github.com/bmiller1009/deduper/blob/master/src/test/resources/data/Sacramentorealestatetransactions.csv) file and they are stored in the column **_hash_**.  Thus, the expected output of this run should report that **_no_** unique values were found, and that all were duplicates.  The report confirms this:
@@ -206,7 +206,7 @@ We saw earlier that the [Sacramentorealestatetransactions.csv](https://github.co
 ### Sampling the hash
 
 You can see a sample row and how it is hashed to get a sense of the hash value and the actual values being passed in:
-    
+```kotlin    
     import org.bradfordmiller.deduper.config.SourceJndi
     import org.bradfordmiller.deduper.Deduper
     import org.bradfordmiller.deduper.config.Config
@@ -225,7 +225,7 @@ You can see a sample row and how it is hashed to get a sense of the hash value a
     val sampleRow = deduper.getSampleHash()
 
     println(sampleRow)
-
+```
 The output of this call is as follows
 
     SampleRow(sampleString=3526 HIGH ST, SACRAMENTO, CA, 95838, 59222, sampleHash=B23CF69F6FC378E0A9C1AF14F2D2083C)
@@ -250,7 +250,7 @@ For the csv interface, the classes to use are **_CsvTargetPersistor_**, **_CsvDu
 Note that the csv and JDBC interfaces can be used interchangably in the same dedupe job. IE you can output dupes to a flat file and hashes to a JDBC, etc, etc.
 
 Let's look at an example:
-	 
+```kotlin	 
 	import org.bradfordmiller.deduper.Deduper
     import org.bradfordmiller.deduper.config.Config
     import org.bradfordmiller.deduper.config.HashSourceJndi
@@ -279,7 +279,7 @@ Let's look at an example:
 
     println(report)
     println(report.dupes)
-
+```
 Before examining the output, let's walk through the code.  
 
 **_SqlJNDITargetType_** is instantiated with the **jndi name, context, a boolean flag** which indicates whether or not to drop the table if it already exists, and a **table name**.
