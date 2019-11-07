@@ -95,7 +95,7 @@ The jndi name in this case is "RealEstateOutDupes".  The context is "default\_ds
 Use the **_JNDIUtils_** class in the deduper library to add jndi entries programatically
 
 Kotlin code for adding a new DataSource jndi entry to the default_ds.properties jndi file:
-
+```kotlin
     import org.bradfordmiller.deduper.jndi.JNDIUtils  
     ...  
     JNDIUtils.addJndiConnection(  
@@ -109,7 +109,7 @@ Kotlin code for adding a new DataSource jndi entry to the default_ds.properties 
                             "password" to "test_password"  
                     )  
             )  
-
+```
 ### Configuring and running a deduper process
 
 The library uses the [builder](https://www.baeldung.com/kotlin-builder-pattern) design pattern to construct the configuration to run a deduping job.  
