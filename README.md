@@ -175,7 +175,7 @@ A look at the [Sacramentorealestatetransactions.csv](https://github.com/bmiller1
 
 This can be useful if you want to take an existing set of hashes and look for matches between the known set and the current set.  Loading in an existing hash set is simply setting a **_HashSourceJndi_** object in the configuration builder, as well as a table name for the stored hashes and the column under which the hashes are stored:
 ```kotlin
-	import org.bradfordmiller.deduper.config.HashSourceJndi
+    import org.bradfordmiller.deduper.config.HashSourceJndi
     import org.bradfordmiller.deduper.config.SourceJndi
     import org.bradfordmiller.deduper.Deduper
     import org.bradfordmiller.deduper.config.Config
@@ -293,17 +293,17 @@ The report variable in the above example will be the same, but lets look at the 
 A **sql table** named **target_data** in the sqlite database.  The schema of this table will closely mirror the data types found in the source.  Note that if the source is a csv, all of the column types in the target_data table will be strings.
   
 A **sql table** named **dupes** in the sqlite database with the following schema:
-
+```sql
     CREATE TABLE dupes(hash TEXT NOT NULL, row_ids TEXT NOT NULL, first_found_row_number INTEGER NOT NULL, dupe_values TEXT NOT NULL,PRIMARY KEY(hash))
-
+```
 Here is a sample row from the **_dupes_** table from the run of the sample code above:
 
 "3230065898C61AE414BA58E7B7C99C0B","[342,984]","341",	"{"zip":"95820","baths":"1","city":"SACRAMENTO","sale_date":"Mon May 19 00:00:00 EDT 2008","street":"4734 14TH AVE","price":"68000","latitude":"38.539447","state":"CA","beds":"2","type":"Residential","sq\_\_ft":"834","longitude":"-121.450858"}"
 
 A **sql table** named **hashes** in the sqlite database with the following schema:
-
+```sql
     CREATE TABLE hashes(hash TEXT NOT NULL, json_row TEXT NULL, PRIMARY KEY(hash))
-
+```
 Here is a sample row from the **_hashes_** table from the run of the sample code above:
 
 "B23CF69F6FC378E0A9C1AF14F2D2083C","{"zip":"95838","baths":"1","city":"SACRAMENTO","sale_date":"Wed May 21 00:00:00 EDT 2008","street":"3526 HIGH ST","price":"59222","latitude":"38.631913","state":"CA","beds":"2","type":"Residential","sq\_\_ft":"836","longitude":"-121.434879"}"
@@ -336,7 +336,7 @@ and
 	RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
 
 Here is the code to output csv target data and csv dupe data:
-
+```kotlin
     val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
     val csvTargetJndi = CsvJNDITargetType("RealEstateOut", "default_ds",false)
     val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupes", "default_ds",false)
@@ -354,7 +354,7 @@ Here is the code to output csv target data and csv dupe data:
 
     println(report)
     println(report.dupes)
-
+```
 Here is the log output:
 
     Dedupe report: recordCount=986, columnsFound=[street, city, zip, state, beds, baths, sq__ft, type, sale_date, price, latitude, longitude],      hashColumns=[street, city, state, zip, price], dupeCount=4, distinctDupeCount=3
