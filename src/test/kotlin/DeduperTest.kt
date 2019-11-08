@@ -1,3 +1,4 @@
+import org.bradfordmiller.deduper.DedupeReport
 import org.bradfordmiller.deduper.Deduper
 import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.config.HashSourceJndi
@@ -6,6 +7,7 @@ import org.bradfordmiller.deduper.jndi.CsvJNDITargetType
 import org.bradfordmiller.deduper.jndi.SqlJNDIDupeType
 import org.bradfordmiller.deduper.jndi.SqlJNDIHashType
 import org.bradfordmiller.deduper.jndi.SqlJNDITargetType
+import org.bradfordmiller.deduper.persistors.Dupe
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
@@ -42,6 +44,44 @@ class DeduperTest {
         val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupes", "default_ds",false)
         val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
+        val expectedReport =
+          DedupeReport(
+            986,
+             setOf("street","city", "state", "zip", "price"),
+             setOf("street", "city", "zip", "state", "beds", "baths", "sq__ft", "type", "sale_date", "price",
+                     "latitude", "longitude"),
+                  4,
+                  3,
+             mutableMapOf(
+               "3230065898C61AE414BA58E7B7C99C0B" to
+                 Pair(
+                   mutableListOf(342L, 984L),
+                   Dupe(
+                     341L,
+                           """{"zip":"95820","baths":"1","city":"SACRAMENTO","sale_date":"Mon May 19 00:00:00 EDT 2008","street":"4734 14TH AVE","price":"68000","latitude":"38.539447","state":"CA","beds":"2","type":"Residential","sq__ft":"834","longitude":"-121.450858"}"""
+                   )
+                 )
+             ,
+             "0A3E9B5F1BDEDF777A313388B815C294" to
+               Pair(
+                 mutableListOf(404L),
+                 Dupe(
+                     403L,
+                         """{"zip":"95621","baths":"2","city":"CITRUS HEIGHTS","sale_date":"Mon May 19 00:00:00 EDT 2008","street":"8306 CURLEW CT","price":"167293","latitude":"38.715781","state":"CA","beds":"4","type":"Residential","sq__ft":"1280","longitude":"-121.298519"}"""
+                 )
+               )
+             ,
+             "C4E3F2029871080759FC1C0F878236C3" to
+               Pair(
+                 mutableListOf(601L),
+                 Dupe(
+                     600L,
+                        """{"zip":"95648","baths":"0","city":"LINCOLN","sale_date":"Mon May 19 00:00:00 EDT 2008","street":"7 CRYSTALWOOD CIR","price":"4897","latitude":"38.885962","state":"CA","beds":"0","type":"Residential","sq__ft":"0","longitude":"-121.289436"}"""
+                 )
+               )
+          )
+          )
+
         val config = Config.ConfigBuilder()
             .sourceJndi(csvSourceJndi)
             .targetJndi(csvTargetJndi)
@@ -52,7 +92,7 @@ class DeduperTest {
 
         val report = deduper.dedupe()
 
-        println(report)
+        assert(report == expectedReport)
     }
     @Test fun dedupeSqlTest() {
 
