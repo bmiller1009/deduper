@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/bmiller1009/deduper.svg?branch=master)](https://travis-ci.org/bmiller1009/deduper)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.bradfordmiller/deduper/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.bradfordmiller/deduper)
+[![github: bmiller1009/deduper](https://img.shields.io/badge/github%3A-issues-blue.svg?style=flat-square)](https://github.com/bmiller1009/deduper/issues)
 
 General deduping engine for JDBC sources with output to JDBC/csv targets 
 
