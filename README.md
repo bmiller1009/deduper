@@ -23,7 +23,7 @@ What things you need to install the software and how to install them
 
 If you're using [Maven](maven.apache.org) simply specify the GAV coordinate below and Maven will do the rest
 
-```maven
+```xml
 <dependency>
   <groupId>org.bradfordmiller</groupId>
   <artifactId>deduper</artifactId>
