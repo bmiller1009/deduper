@@ -295,7 +295,7 @@ A **sql table** named **target_data** in the sqlite database.  The schema of thi
   
 A **sql table** named **dupes** in the sqlite database with the following schema:
 ```sql
-    CREATE TABLE dupes(hash TEXT NOT NULL, row_ids TEXT NOT NULL, first_found_row_number INTEGER NOT NULL, dupe_values TEXT NOT NULL,PRIMARY KEY(hash))
+CREATE TABLE dupes(hash TEXT NOT NULL, row_ids TEXT NOT NULL, first_found_row_number INTEGER NOT NULL, dupe_values TEXT NOT NULL,PRIMARY KEY(hash))
 ```
 Here is a sample row from the **_dupes_** table from the run of the sample code above:
 
@@ -303,7 +303,7 @@ Here is a sample row from the **_dupes_** table from the run of the sample code 
 
 A **sql table** named **hashes** in the sqlite database with the following schema:
 ```sql
-    CREATE TABLE hashes(hash TEXT NOT NULL, json_row TEXT NULL, PRIMARY KEY(hash))
+CREATE TABLE hashes(hash TEXT NOT NULL, json_row TEXT NULL, PRIMARY KEY(hash))
 ```
 Here is a sample row from the **_hashes_** table from the run of the sample code above:
 
