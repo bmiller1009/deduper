@@ -73,13 +73,13 @@ Jndi property files can be dropped into the **_org.osjava.sj.root_** configured 
 Datasources are used when reading or writing data using a JDBC interface. Maps are used primarily for writing output to a flat file. These concepts will be explained in detail later.  You can see a sample jndi context file [here](https://github.com/bmiller1009/deduper/blob/master/src/test/resources/jndi/default_ds.properties).  Note the location of the context file is in the directory set in **_org.osjava.sj.root_**:  **_src/main/resources/jndi_**.  All jndi context files must be placed under this directory.
 
 Here is a sample DataSource entry for a sql lite database which is used by this projects unit tests (note that username and password are optional and depend on how the security of the database being targeted is configured):
-
+```properties
     SqliteChinook/type=javax.sql.DataSource  
     SqliteChinook/driver=org.sqlite.JDBC  
     SqliteChinook/url=jdbc:sqlite:src/test/resources/data/chinook.db  
     SqliteChinook/user=  
     SqliteChinook/password=
-
+```
 The jndi name in this case is "SqliteChinook".  The context is "default\_ds" because the name of the property file is "default_ds.properties".
 
 Here is a sample Map entry for a target csv file. Currently these are gathered in a key-value pair pattern. In addition to the "targetName" property which is the path to the csv file, other optional parameters include the file delimiter ("delimiter" property) and file extension ("extension" property). Note that the delimiter property defaults to a comma and the extension property defaults to txt if not otherwised specified in the Map entry:
