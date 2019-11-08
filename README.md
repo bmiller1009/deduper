@@ -74,20 +74,20 @@ Datasources are used when reading or writing data using a JDBC interface. Maps a
 
 Here is a sample DataSource entry for a sql lite database which is used by this projects unit tests (note that username and password are optional and depend on how the security of the database being targeted is configured):
 ```properties
-    SqliteChinook/type=javax.sql.DataSource  
-    SqliteChinook/driver=org.sqlite.JDBC  
-    SqliteChinook/url=jdbc:sqlite:src/test/resources/data/chinook.db  
-    SqliteChinook/user=  
-    SqliteChinook/password=
+SqliteChinook/type=javax.sql.DataSource  
+SqliteChinook/driver=org.sqlite.JDBC  
+SqliteChinook/url=jdbc:sqlite:src/test/resources/data/chinook.db  
+SqliteChinook/user=  
+SqliteChinook/password=
 ```
 The jndi name in this case is "SqliteChinook".  The context is "default\_ds" because the name of the property file is "default_ds.properties".
 
 Here is a sample Map entry for a target csv file. Currently these are gathered in a key-value pair pattern. In addition to the "targetName" property which is the path to the csv file, other optional parameters include the file delimiter ("delimiter" property) and file extension ("extension" property). Note that the delimiter property defaults to a comma and the extension property defaults to txt if not otherwised specified in the Map entry:
 ```properties
-    RealEstateOutDupes/type=java.util.Map   
-    RealEstateOutDupes/ext=txt   
-    RealEstateOutDupes/delimiter=|  
-    RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
+RealEstateOutDupes/type=java.util.Map   
+RealEstateOutDupes/ext=txt   
+RealEstateOutDupes/delimiter=|  
+RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
 ```
 The jndi name in this case is "RealEstateOutDupes".  The context is "default\_ds" because the name of the property file is "default_ds.properties".
 
@@ -97,19 +97,19 @@ Use the **_JNDIUtils_** class in the deduper library to add jndi entries program
 
 Kotlin code for adding a new DataSource jndi entry to the default_ds.properties jndi file:
 ```kotlin
-    import org.bradfordmiller.deduper.jndi.JNDIUtils  
-    ...  
-    JNDIUtils.addJndiConnection(  
-                    "BradTestJNDI_23",  
-                    "default_ds",  
-                     mapOf(  
-                            "type" to "javax.sql.DataSource",  
-                            "driver" to "org.sqlite.JDBC",  
-                            "url" to "jdbc:sqlite:src/test/resources/data/outputData/real_estate.db",  
-                            "user" to "test_user",  
-                            "password" to "test_password"  
-                    )  
-            )  
+import org.bradfordmiller.deduper.jndi.JNDIUtils  
+...  
+JNDIUtils.addJndiConnection(  
+	    "BradTestJNDI_23",  
+	    "default_ds",  
+	     mapOf(  
+		    "type" to "javax.sql.DataSource",  
+		    "driver" to "org.sqlite.JDBC",  
+		    "url" to "jdbc:sqlite:src/test/resources/data/outputData/real_estate.db",  
+		    "user" to "test_user",  
+		    "password" to "test_password"  
+	    )  
+    )  
 ```
 ### Configuring and running a deduper process
 
@@ -119,47 +119,47 @@ There are a bunch of options which can be configured as part of a deduper proces
 
 The only _required_ input to deduper is a JDBC souce in the form of a JNDI Connection.  This is set up using the SourceJndi class.  Here is some Kotlin code which instantiates a **_SourceJndi_** object. 
 ```kotlin
-    import org.bradfordmiller.deduper.config.SourceJndi  
-    ...  
-    val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions")
+import org.bradfordmiller.deduper.config.SourceJndi  
+...  
+val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions")
 ```
 In the above case "RealEstateIn" is the jndi name, "default\_ds" is the context name (and correlates to "default\_ds.properties"), and "Sacramentorealestatetransactions" is the table to be queried. 
 
 By default, a "SELECT *" query will be issued against the table ("Sacramentorealestatetransactions" in this case). It is also possible to pass in a query, rather than a table name, like so:
 ```kotlin
-    import org.bradfordmiller.deduper.config.SourceJndi  
-    ...  
-    val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "SELECT street from Sacramentorealestatetransactions")
+import org.bradfordmiller.deduper.config.SourceJndi  
+...  
+val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "SELECT street from Sacramentorealestatetransactions")
 ```
 Deduper is an engine which can detect duplicates, so by default it will use every value in the row to create a duplicate. The API also accepts a subset of columns in the table on which to "dedupe".  Here is some Kotlin code which demonstrates this:
 ```kotlin
-    import org.bradfordmiller.deduper.config.SourceJndi  
-    ...  
-    val hashColumns = mutableSetOf("street","city", "state", "zip", "price")  
-    val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
+import org.bradfordmiller.deduper.config.SourceJndi  
+...  
+val hashColumns = mutableSetOf("street","city", "state", "zip", "price")  
+val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
 ```
 Now only the columns specified in the column set will be considered for detecting duplicates.
 
 ### Complete example
 ```kotlin
-    import org.bradfordmiller.deduper.config.SourceJndi
-    import org.bradfordmiller.deduper.Deduper
-    import org.bradfordmiller.deduper.config.Config
-    ...
-    val hashColumns = mutableSetOf("street","city", "state", "zip", "price")  
-    val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
+import org.bradfordmiller.deduper.config.SourceJndi
+import org.bradfordmiller.deduper.Deduper
+import org.bradfordmiller.deduper.config.Config
+...
+val hashColumns = mutableSetOf("street","city", "state", "zip", "price")  
+val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
 
-    val config = 
-      Config.ConfigBuilder()
-            .sourceJndi(csvSourceJndi)
-            .build()
+val config = 
+Config.ConfigBuilder()
+    .sourceJndi(csvSourceJndi)
+    .build()
 
-    val deduper = Deduper(config)
+val deduper = Deduper(config)
 
-    val report = deduper.dedupe()
+val report = deduper.dedupe()
 
-    println(report)
-    println(report.dupes)
+println(report)
+println(report.dupes)
 ```    
 The output of this run is:
 
@@ -176,25 +176,25 @@ A look at the [Sacramentorealestatetransactions.csv](https://github.com/bmiller1
 
 This can be useful if you want to take an existing set of hashes and look for matches between the known set and the current set.  Loading in an existing hash set is simply setting a **_HashSourceJndi_** object in the configuration builder, as well as a table name for the stored hashes and the column under which the hashes are stored:
 ```kotlin
-    import org.bradfordmiller.deduper.config.HashSourceJndi
-    import org.bradfordmiller.deduper.config.SourceJndi
-    import org.bradfordmiller.deduper.Deduper
-    import org.bradfordmiller.deduper.config.Config
-    ...
-    val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
-    val sqlSourceJndi = SourceJndi("SqlLiteTest", "default_ds","real_estate", hashColumns)
-    val sqlHashSourceJndi = HashSourceJndi("SqlLiteTest", "default_ds","hashes", "hash")
+import org.bradfordmiller.deduper.config.HashSourceJndi
+import org.bradfordmiller.deduper.config.SourceJndi
+import org.bradfordmiller.deduper.Deduper
+import org.bradfordmiller.deduper.config.Config
+...
+val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+val sqlSourceJndi = SourceJndi("SqlLiteTest", "default_ds","real_estate", hashColumns)
+val sqlHashSourceJndi = HashSourceJndi("SqlLiteTest", "default_ds","hashes", "hash")
 
-    val config = Config.ConfigBuilder()
-        .sourceJndi(sqlSourceJndi)
-        .seenHashesJndi(sqlHashSourceJndi)
-        .build()
+val config = Config.ConfigBuilder()
+.sourceJndi(sqlSourceJndi)
+.seenHashesJndi(sqlHashSourceJndi)
+.build()
 
-    val deduper = Deduper(config)
+val deduper = Deduper(config)
 
-    val report = deduper.dedupe()
+val report = deduper.dedupe()
 
-    println(report)
+println(report)
 ```
 Before examining the results of the run let's go over the code. There is a new property being set in the config builder which is a **_HashSourceJndi_** object. That object contains the jndi details (jndi name and context) as well as the table name (**_hashes_**) and the column in the **_hashes_** table where the hash values are stored.  In this case the column name in **_hashes_** where the hash values are stored is simply **_hash_**.
 
@@ -208,24 +208,24 @@ We saw earlier that the [Sacramentorealestatetransactions.csv](https://github.co
 
 You can see a sample row and how it is hashed to get a sense of the hash value and the actual values being passed in:
 ```kotlin    
-    import org.bradfordmiller.deduper.config.SourceJndi
-    import org.bradfordmiller.deduper.Deduper
-    import org.bradfordmiller.deduper.config.Config
-    
-    ...
-    
-    val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
-    val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
+import org.bradfordmiller.deduper.config.SourceJndi
+import org.bradfordmiller.deduper.Deduper
+import org.bradfordmiller.deduper.config.Config
 
-    val config = Config.ConfigBuilder()
-            .sourceJndi(csvSourceJndi)
-            .build()
+...
 
-    val deduper = Deduper(config)
+val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
 
-    val sampleRow = deduper.getSampleHash()
+val config = Config.ConfigBuilder()
+    .sourceJndi(csvSourceJndi)
+    .build()
 
-    println(sampleRow)
+val deduper = Deduper(config)
+
+val sampleRow = deduper.getSampleHash()
+
+println(sampleRow)
 ```
 The output of this call is as follows
 
@@ -252,34 +252,34 @@ Note that the csv and JDBC interfaces can be used interchangably in the same ded
 
 Let's look at an example:
 ```kotlin	 
-    import org.bradfordmiller.deduper.Deduper
-    import org.bradfordmiller.deduper.config.Config
-    import org.bradfordmiller.deduper.config.HashSourceJndi
-    import org.bradfordmiller.deduper.config.SourceJndi
-    import org.bradfordmiller.deduper.jndi.CsvJNDITargetType
-    import org.bradfordmiller.deduper.jndi.SqlJNDIDupeType
-    import org.bradfordmiller.deduper.jndi.SqlJNDIHashType
-    import org.bradfordmiller.deduper.jndi.SqlJNDITargetType
-	 
-    val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
-    val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data")
-    val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
-    val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", "default_ds",true, true)
-    val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
+import org.bradfordmiller.deduper.Deduper
+import org.bradfordmiller.deduper.config.Config
+import org.bradfordmiller.deduper.config.HashSourceJndi
+import org.bradfordmiller.deduper.config.SourceJndi
+import org.bradfordmiller.deduper.jndi.CsvJNDITargetType
+import org.bradfordmiller.deduper.jndi.SqlJNDIDupeType
+import org.bradfordmiller.deduper.jndi.SqlJNDIHashType
+import org.bradfordmiller.deduper.jndi.SqlJNDITargetType
 
-    val config = Config.ConfigBuilder()
-        .sourceJndi(csvSourceJndi)
-        .targetJndi(sqlTargetJndi)
-        .dupesJndi(sqlDupesJndi)
-        .hashJndi(sqlHashJndi)
-        .build()
+val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data")
+val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
+val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", "default_ds",true, true)
+val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
-    val deduper = Deduper(config)
+val config = Config.ConfigBuilder()
+.sourceJndi(csvSourceJndi)
+.targetJndi(sqlTargetJndi)
+.dupesJndi(sqlDupesJndi)
+.hashJndi(sqlHashJndi)
+.build()
 
-    val report = deduper.dedupe()
+val deduper = Deduper(config)
 
-    println(report)
-    println(report.dupes)
+val report = deduper.dedupe()
+
+println(report)
+println(report.dupes)
 ```
 Before examining the output, let's walk through the code.  
 
@@ -315,10 +315,10 @@ Note that because the boolean flag in the hashes source class was set to true, t
 
 As mentioned earlier, csv outputs are defined in a jndi context as follows:
 ```properties
-    RealEstateOutDupes/type=java.util.Map   
-    RealEstateOutDupes/ext=txt   
-    RealEstateOutDupes/delimiter=|  
-    RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
+RealEstateOutDupes/type=java.util.Map   
+RealEstateOutDupes/ext=txt   
+RealEstateOutDupes/delimiter=|  
+RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
 ```    
 The _minimum_ information needed to configure a csv output is the **targetName** as this is a path to output file location.  If the "ext" property and "delimiter" property aren't populated then the defaults will be used, which are "txt" for "ext" and "," for "delimiter".  All csv output definitions use the **_CsvJNDITargetType_** class.  This class takes in the jndi name, context, and **_deleteIfExists_** boolean flag.  
 
@@ -338,23 +338,23 @@ RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
 ```
 Here is the code to output csv target data and csv dupe data:
 ```kotlin
-    val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
-    val csvTargetJndi = CsvJNDITargetType("RealEstateOut", "default_ds",false)
-    val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupes", "default_ds",false)
-    val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
+val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+val csvTargetJndi = CsvJNDITargetType("RealEstateOut", "default_ds",false)
+val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupes", "default_ds",false)
+val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
 
-    val config = Config.ConfigBuilder()
-        .sourceJndi(csvSourceJndi)
-        .targetJndi(csvTargetJndi)
-        .dupesJndi(csvDupesJndi)
-        .build()
+val config = Config.ConfigBuilder()
+.sourceJndi(csvSourceJndi)
+.targetJndi(csvTargetJndi)
+.dupesJndi(csvDupesJndi)
+.build()
 
-    val deduper = Deduper(config)
+val deduper = Deduper(config)
 
-    val report = deduper.dedupe()
+val report = deduper.dedupe()
 
-    println(report)
-    println(report.dupes)
+println(report)
+println(report.dupes)
 ```
 Here is the log output:
 
