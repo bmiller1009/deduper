@@ -83,12 +83,12 @@ Here is a sample DataSource entry for a sql lite database which is used by this 
 The jndi name in this case is "SqliteChinook".  The context is "default\_ds" because the name of the property file is "default_ds.properties".
 
 Here is a sample Map entry for a target csv file. Currently these are gathered in a key-value pair pattern. In addition to the "targetName" property which is the path to the csv file, other optional parameters include the file delimiter ("delimiter" property) and file extension ("extension" property). Note that the delimiter property defaults to a comma and the extension property defaults to txt if not otherwised specified in the Map entry:
-
+```properties
     RealEstateOutDupes/type=java.util.Map   
     RealEstateOutDupes/ext=txt   
     RealEstateOutDupes/delimiter=|  
     RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
-
+```
 The jndi name in this case is "RealEstateOutDupes".  The context is "default\_ds" because the name of the property file is "default_ds.properties".
 
 #### Adding Jndi entries programatically
@@ -314,28 +314,28 @@ Note that because the boolean flag in the hashes source class was set to true, t
 #### Csv output
 
 As mentioned earlier, csv outputs are defined in a jndi context as follows:
-
+```properties
     RealEstateOutDupes/type=java.util.Map   
     RealEstateOutDupes/ext=txt   
     RealEstateOutDupes/delimiter=|  
     RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
-    
+```    
 The _minimum_ information needed to configure a csv output is the **targetName** as this is a path to output file location.  If the "ext" property and "delimiter" property aren't populated then the defaults will be used, which are "txt" for "ext" and "," for "delimiter".  All csv output definitions use the **_CsvJNDITargetType_** class.  This class takes in the jndi name, context, and **_deleteIfExists_** boolean flag.  
 
 Here is an example outputting data to csv.  Here are the jndi configurations for **RealEstateOut** and **RealEstateOutDupes**:
-
+```properties
     RealEstateOut/type=java.util.Map
 	RealEstateOut/ext=txt
 	RealEstateOut/delimiter=,
 	RealEstateOut/targetName=src/test/resources/data/outputData/targetName
-
+```
 and
-	
+```properties	
 	RealEstateOutDupes/type=java.util.Map
 	RealEstateOutDupes/ext=txt
 	RealEstateOutDupes/delimiter=|
 	RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
-
+```
 Here is the code to output csv target data and csv dupe data:
 ```kotlin
     val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
