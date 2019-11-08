@@ -165,7 +165,7 @@ The output of this run is:
 
     Dedupe report: recordCount=986, columnsFound=[street, city, zip, state, beds, baths, sq__ft, type, sale_date, price, latitude, longitude], hashColumns=[street, city, state, zip, price], dupeCount=4, distinctDupeCount=3
 ```json
-    {3230065898C61AE414BA58E7B7C99C0B=([342, 984], Dupe(firstFoundRowNumber=341, dupes={"zip":"95820","baths":"1","city":"SACRAMENTO","sale_date":"Mon May 19 00:00:00 EDT 2008","street":"4734 14TH AVE","price":"68000","latitude":"38.539447","state":"CA","beds":"2","type":"Residential","sq__ft":"834","longitude":"-121.450858"})), 0A3E9B5F1BDEDF777A313388B815C294=([404], Dupe(firstFoundRowNumber=403, dupes={"zip":"95621","baths":"2","city":"CITRUS HEIGHTS","sale_date":"Mon May 19 00:00:00 EDT 2008","street":"8306 CURLEW CT","price":"167293","latitude":"38.715781","state":"CA","beds":"4","type":"Residential","sq__ft":"1280","longitude":"-121.298519"})), C4E3F2029871080759FC1C0F878236C3=([601], Dupe(firstFoundRowNumber=600, dupes={"zip":"95648","baths":"0","city":"LINCOLN","sale_date":"Mon May 19 00:00:00 EDT 2008","street":"7 CRYSTALWOOD CIR","price":"4897","latitude":"38.885962","state":"CA","beds":"0","type":"Residential","sq__ft":"0","longitude":"-121.289436"}))}
+{3230065898C61AE414BA58E7B7C99C0B=([342, 984], Dupe(firstFoundRowNumber=341, dupes={"zip":"95820","baths":"1","city":"SACRAMENTO","sale_date":"Mon May 19 00:00:00 EDT 2008","street":"4734 14TH AVE","price":"68000","latitude":"38.539447","state":"CA","beds":"2","type":"Residential","sq__ft":"834","longitude":"-121.450858"})), 0A3E9B5F1BDEDF777A313388B815C294=([404], Dupe(firstFoundRowNumber=403, dupes={"zip":"95621","baths":"2","city":"CITRUS HEIGHTS","sale_date":"Mon May 19 00:00:00 EDT 2008","street":"8306 CURLEW CT","price":"167293","latitude":"38.715781","state":"CA","beds":"4","type":"Residential","sq__ft":"1280","longitude":"-121.298519"})), C4E3F2029871080759FC1C0F878236C3=([601], Dupe(firstFoundRowNumber=600, dupes={"zip":"95648","baths":"0","city":"LINCOLN","sale_date":"Mon May 19 00:00:00 EDT 2008","street":"7 CRYSTALWOOD CIR","price":"4897","latitude":"38.885962","state":"CA","beds":"0","type":"Residential","sq__ft":"0","longitude":"-121.289436"}))}
 ```
 So this run found a total of **986** rows in the source table.  Using the columns "street, city, state, zip, price" **four** total duplicates were found.  **Three** distinct duplicates were found, meaning one duplicate actually occurred twice.  By examining the dupes object, we can see there are three unique hashes which occurred more than once.  If we take the first example, hash **3230065898C61AE414BA58E7B7C99C0B** was first seen at row **341** and was then seen again at rows **342** and **984**.
 
@@ -324,17 +324,17 @@ The _minimum_ information needed to configure a csv output is the **targetName**
 
 Here is an example outputting data to csv.  Here are the jndi configurations for **RealEstateOut** and **RealEstateOutDupes**:
 ```properties
-    RealEstateOut/type=java.util.Map
-	RealEstateOut/ext=txt
-	RealEstateOut/delimiter=,
-	RealEstateOut/targetName=src/test/resources/data/outputData/targetName
+RealEstateOut/type=java.util.Map
+RealEstateOut/ext=txt
+RealEstateOut/delimiter=,
+RealEstateOut/targetName=src/test/resources/data/outputData/targetName
 ```
 and
 ```properties	
-	RealEstateOutDupes/type=java.util.Map
-	RealEstateOutDupes/ext=txt
-	RealEstateOutDupes/delimiter=|
-	RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
+RealEstateOutDupes/type=java.util.Map
+RealEstateOutDupes/ext=txt
+RealEstateOutDupes/delimiter=|
+RealEstateOutDupes/targetName=src/test/resources/data/outputData/dupeName
 ```
 Here is the code to output csv target data and csv dupe data:
 ```kotlin
