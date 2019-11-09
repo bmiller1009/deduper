@@ -67,7 +67,7 @@ in this project. This will need to be configured and dropped into **_src/main/re
 files will be searched and loaded based upon the path in the **_org.osjava.sj.root_** property setting.  In the example file 
 for this project, you will see the path is **_src/main/resources/jndi_**.  
 
-####Configuring jndi contexts
+#### Configuring jndi contexts
 Jndi property files can be dropped into the **_org.osjava.sj.root_** configured path. In our case, that path is **_src/main/resources/jndi_**.  There are two types of contexts that deduper can handle:  A **javax.sql.DataSource** and a **java.util.Map**. 
 
 Datasources are used when reading or writing data using a JDBC interface. Maps are used primarily for writing output to a flat file. These concepts will be explained in detail later.  You can see a sample jndi context file [here](https://github.com/bmiller1009/deduper/blob/master/src/test/resources/jndi/default_ds.properties).  Note the location of the context file is in the directory set in **_org.osjava.sj.root_**:  **_src/main/resources/jndi_**.  All jndi context files must be placed under this directory.
