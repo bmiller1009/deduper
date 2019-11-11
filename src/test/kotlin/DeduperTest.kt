@@ -106,14 +106,14 @@ class DeduperTest {
             }
         }
     }
-    @Test fun dedupeCsvTest() {
+    @Test fun dedupeCsv() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
         val csvTargetJndi = CsvJNDITargetType("RealEstateOut", "default_ds",false)
         val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupes", "default_ds",false)
         val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
-        val outputDataJndi = SourceJndi("OutputDataTarget", "default_ds", "targetName", hashColumns)
-        val outputDupeJndi = SourceJndi("OutputDataDupe", "default_ds", "dupeName", hashColumns)
+        val outputDataJndi = SourceJndi("OutputDataTarget", "default_ds", "targetName")
+        val outputDupeJndi = SourceJndi("OutputDataDupe", "default_ds", "dupeName")
 
         val expectedReport = getExpectedReport()
 
@@ -160,12 +160,14 @@ class DeduperTest {
         assert(columnsDupe == expectedColumnMapDupe)
         assert(firstRowDupe.contentEquals(expectedFirstRowDupe))
     }
-    @Test fun dedupeSqlTest() {
+    @Test fun dedupeSql() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
         val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",false,"real_estate")
         val sqlDupeJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
         val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
+        val outputJndiTarget = SourceJndi("SqlLiteTest", "default_ds", "real_estate")
+        val outputJndiDupe = SourceJndi("SqlLiteTest", "default_ds", "dupes")
 
         val config = Config.ConfigBuilder()
             .sourceJndi(csvSourceJndi)
@@ -176,9 +178,43 @@ class DeduperTest {
         val deduper = Deduper(config)
 
         deduper.dedupe()
+
+        val rowCountTarget = getSourceCount(outputJndiTarget)
+        val columnsTarget = getColumnsFromSource(outputJndiTarget)
+        val firstRowTarget = getFirstRowFromSource(outputJndiTarget)
+
+        val rowCountDupe = getSourceCount(outputJndiDupe)
+        val columnsDupe = getColumnsFromSource(outputJndiDupe)
+        val firstRowDupe = getFirstRowFromSource(outputJndiDupe)
+
+        val expectedColumnMapTarget = mapOf(
+            1 to "street", 2 to "city", 3 to "zip", 4 to "state", 5 to "beds", 6 to "baths", 7 to "sq__ft", 8 to "type",
+            9 to "sale_date", 10 to "price", 11 to "latitude", 12 to "longitude"
+        )
+
+        val expectedFirstRowTarget = arrayOf(
+            "3526 HIGH ST","SACRAMENTO","95838","CA","2","1","836","Residential","Wed May 21 00:00:00 EDT 2008","59222","38.631913","-121.434879"
+        )
+
+        val expectedColumnMapDupe = mapOf(
+            1 to "hash", 2 to "row_ids", 3 to "first_found_row_number", 4 to "dupe_values"
+        )
+
+        val expectedFirstRowDupe = arrayOf(
+            "3230065898C61AE414BA58E7B7C99C0B","[342,984]","341",
+            """{"zip":"95820","baths":"1","city":"SACRAMENTO","sale_date":"Mon May 19 00:00:00 EDT 2008","street":"4734 14TH AVE","price":"68000","latitude":"38.539447","state":"CA","beds":"2","type":"Residential","sq__ft":"834","longitude":"-121.450858"}"""
+        )
+
+        assert(rowCountTarget == 982L)
+        assert(columnsTarget == expectedColumnMapTarget)
+        assert(firstRowTarget.contentEquals(expectedFirstRowTarget))
+
+        assert(rowCountDupe == 3L)
+        assert(columnsDupe == expectedColumnMapDupe)
+        assert(firstRowDupe.contentEquals(expectedFirstRowDupe))
     }
 
-    @Test fun testCsvTargetWithDefaults() {
+    @Test fun csvTargetWithDefaults() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
         val csvTargetJndi = CsvJNDITargetType("RealEstateOutTargetUseDefaults", "default_ds",false)
