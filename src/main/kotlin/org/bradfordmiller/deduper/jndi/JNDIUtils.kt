@@ -1,6 +1,7 @@
 package org.bradfordmiller.deduper.jndi
 
 import org.apache.commons.io.FilenameUtils
+import org.bradfordmiller.deduper.config.SourceJndi
 import org.bradfordmiller.deduper.utils.Either
 import org.bradfordmiller.deduper.utils.Left
 import org.bradfordmiller.deduper.utils.Right
@@ -76,7 +77,18 @@ class JNDIUtils {
             val ds = (getDataSource(jndiString, context) as Left<DataSource?, String>).left!!
             return getConnection(ds)!!
         }
-
+        /**
+         * returns [Connection] from Datasource object configured a [jndiTargetType]
+         */
+        fun getJndiConnection(jndiTargetType: JNDITargetType): Connection {
+            return getJndiConnection(jndiTargetType.jndi, jndiTargetType.context)
+        }
+        /**
+         * returns [Connection] from Datasource object configured a [jndiTargetType]
+         */
+        fun getJndiConnection(sourceJndi: SourceJndi): Connection {
+            return getJndiConnection(sourceJndi.jndiName, sourceJndi.context)
+        }
         /**
          * returns a list of all available jndi contexts found under the "org.osjava.sj.root" setting in jndi.properties
          *
