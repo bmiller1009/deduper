@@ -8,7 +8,6 @@ import org.bradfordmiller.deduper.persistors.Dupe
 import org.bradfordmiller.deduper.sql.SqlUtils
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.osjava.sj.jndi.JndiUtils
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
@@ -214,25 +213,7 @@ class DeduperTest {
         assert(firstRowDupe.contentEquals(expectedFirstRowDupe))
     }
 
-    @Test fun csvTargetWithDefaults() {
-
-        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
-        val csvTargetJndi = CsvJNDITargetType("RealEstateOutTargetUseDefaults", "default_ds",false)
-        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaults", "default_ds",false)
-        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
-
-        val config = Config.ConfigBuilder()
-            .sourceJndi(csvSourceJndi)
-            .targetJndi(csvTargetJndi)
-            .dupesJndi(csvDupesJndi)
-            .build()
-
-        val deduper = Deduper(config)
-
-        deduper.dedupe()
-    }
-
-    @Test fun testRunWithoutTarget() {
+    @Test fun justDupes() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
         val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaults", "default_ds",true)
