@@ -136,6 +136,8 @@ class Deduper(private val config: Config) {
         }
     }
 
+    val seenHashes = THashMap<String, Long>()
+
     companion object {
         val logger = LoggerFactory.getLogger(Deduper::class.java)
     }
@@ -192,13 +194,12 @@ class Deduper(private val config: Config) {
         }
 
         val hashColumns = config.sourceJndi.hashKeys
+        val dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
 
-        var recordCount = 0L
-        var dupeCount = 0L
         var distinctDupeCount = 0L
         var rsColumns = mapOf<Int, String>()
-        var seenHashes = THashMap<String, Long>()
-        var dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
+        var recordCount = 0L
+        var dupeCount = 0L
 
          if(config.seenHashesJndi != null) {
 
