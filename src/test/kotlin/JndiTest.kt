@@ -106,6 +106,5 @@ class JndiTest {
 
         assert(entryResult.first == "SqlLiteTestPW")
         assert(entryResult.second == "org.sqlite.JDBC::::jdbc:sqlite:src/test/resources/data/outputData/real_estate.db::::TestUser")
-
     }
 }
