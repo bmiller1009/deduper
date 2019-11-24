@@ -223,7 +223,6 @@ class SqlTargetPersistor(
                     conn.commit()
                 } catch (sqlEx: SQLException) {
                     logger.error("Error while inserting data: ${sqlEx.message}")
-                } finally {
                     conn.rollback()
                 }
             }
@@ -292,7 +291,6 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
                     conn.commit()
                 } catch (sqlEx: SQLException) {
                     logger.error("Error while inserting duplicate values: ${sqlEx.message}")
-                } finally {
                     conn.rollback()
                 }
             }
@@ -356,7 +354,6 @@ class SqlHashPersistor(private val hashJndi: String, private val context: String
                     conn.commit()
                 } catch (sqlEx: SQLException) {
                     logger.error("Error while inserting hash values: ${sqlEx.message}")
-                } finally {
                     conn.rollback()
                 }
             }
