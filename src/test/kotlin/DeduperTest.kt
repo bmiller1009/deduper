@@ -98,7 +98,7 @@ class DeduperTest {
         }
     }
     private fun getFirstRowFromSource(sourceJndi: SourceJndi): Array<String> {
-        return JNDIUtils.getJndiConnection(sourceJndi).use {conn ->
+        JNDIUtils.getJndiConnection(sourceJndi).use {conn ->
             val sql = "SELECT * FROM ${sourceJndi.tableQuery} LIMIT 1"
             conn.prepareStatement(sql).use {stmt ->
                 stmt.executeQuery().use {rs ->
