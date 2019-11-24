@@ -7,7 +7,13 @@ import org.bradfordmiller.deduper.sql.SqlVendorTypes
 import org.bradfordmiller.deduper.utils.FileUtils
 import org.json.JSONArray
 import org.slf4j.LoggerFactory
-import java.sql.*
+import java.io.File
+import java.nio.file.Paths
+import java.sql.ResultSet
+import java.sql.ResultSetMetaData
+import java.sql.SQLException
+
+
 /**
  * represents a simple duplicate value found by deduper.
  *
@@ -79,7 +85,30 @@ interface HashPersistor: WritePersistor<HashRow> {
  *  parser for jndi entries which are configured for csv output. Parses the values found in [config]
  */
 open class CsvPersistor(config: Map<String, String>) {
+
+    data class LockFile(val name: String, val path: String, val file: File)
+
     val ccp = CsvConfigParser(config)
+
+    private fun getLockFile(): LockFile {
+        val f = File("${ccp.targetName}.${ccp.extension}")
+        val path = f.parent
+        val name = f.name
+        val lockFileName = "$path/.LOCK_$name"
+        return LockFile(name, path, File(lockFileName))
+    }
+    fun lockFile() {
+        val lockFile = getLockFile()
+        if(lockFile.file.exists()) {
+            throw IllegalAccessError("${lockFile.name} at path ${lockFile.path} is currently locked and cannot be written to.")
+        } else {
+            lockFile.file.createNewFile()
+        }
+    }
+    fun unlockFile() {
+        val lockFile = getLockFile()
+        lockFile.file.delete()
+    }
 }
 /**
  *  create and writes out "deduped" data to csv target. target is configured in [config]
@@ -90,6 +119,7 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
      * target csv file is deleted if it already exists before creating.
      */
     override fun createTarget(rsmd: ResultSetMetaData, deleteIfTargetExists: Boolean) {
+        lockFile()
         val columns = SqlUtils.getColumnsFromRs(rsmd)
         FileUtils.prepFile(ccp.targetName, columns.values.toSet(), ccp.extension, ccp.delimiter, deleteIfTargetExists)
     }
@@ -113,6 +143,7 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
      * exists
      */
     override fun createDupe(deleteIfDupeExists: Boolean) {
+        lockFile()
         val columns = setOf("hash", "row_ids", "first_found_row_number", "dupe_values")
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter, deleteIfDupeExists)
     }
@@ -137,6 +168,7 @@ class CsvHashPersistor(config: Map<String, String>): CsvPersistor(config), HashP
      * creates a hash output csv file. [deleteIfDupeExists] determines whether the file is deleted if it already
      */
     override fun createHashTable(deleteIfHashTableExists: Boolean) {
+        lockFile()
         val columns = setOf("hash", "json_row")
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter, deleteIfHashTableExists)
     }

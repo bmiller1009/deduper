@@ -25,8 +25,13 @@ class DeduperTest {
             val dir = File(dataDir)
             val files = dir.listFiles()
             files.forEach {
-                if(!it.isHidden)
+                if(!it.isHidden) {
                     Files.delete(it.toPath())
+                } else {
+                    if(it.name != ".gitignore") {
+                        Files.delete(it.toPath())
+                    }
+                }
             }
         }
         @BeforeAll

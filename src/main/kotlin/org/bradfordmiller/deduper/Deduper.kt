@@ -332,12 +332,21 @@ class Deduper(private val config: Config) {
                     //Flush target/dupe/hash data that's in the buffer
                     if(targetIsNotNull) {
                         writeData(targetPersistor, data)
+                        if(targetPersistor is CsvTargetPersistor) {
+                            targetPersistor.unlockFile()
+                        }
                     }
                     if(dupeIsNotNull) {
                         writeData(dupePersistor, dupeMap.toList().toMutableList())
+                        if(dupePersistor is CsvDupePersistor) {
+                            dupePersistor.unlockFile()
+                        }
                     }
                     if(hashIsNotNull) {
                         writeData(hashPersistor, hashes)
+                        if(hashPersistor is CsvHashPersistor) {
+                            hashPersistor.unlockFile()
+                        }
                     }
                 }
             }
