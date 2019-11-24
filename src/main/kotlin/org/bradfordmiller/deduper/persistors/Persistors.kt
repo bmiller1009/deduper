@@ -224,6 +224,7 @@ class SqlTargetPersistor(
                 } catch (sqlEx: SQLException) {
                     logger.error("Error while inserting data: ${sqlEx.message}")
                     conn.rollback()
+                    throw sqlEx
                 }
             }
         }
@@ -292,6 +293,7 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
                 } catch (sqlEx: SQLException) {
                     logger.error("Error while inserting duplicate values: ${sqlEx.message}")
                     conn.rollback()
+                    throw sqlEx
                 }
             }
         }
@@ -355,6 +357,7 @@ class SqlHashPersistor(private val hashJndi: String, private val context: String
                 } catch (sqlEx: SQLException) {
                     logger.error("Error while inserting hash values: ${sqlEx.message}")
                     conn.rollback()
+                    throw sqlEx
                 }
             }
         }
