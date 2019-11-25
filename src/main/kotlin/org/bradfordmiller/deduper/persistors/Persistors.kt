@@ -97,7 +97,7 @@ open class CsvPersistor(config: Map<String, String>) {
         val lockFileName = "$path/.LOCK_$name"
         return LockFile(name, path, File(lockFileName))
     }
-    fun lockFile() {
+    internal fun lockFile() {
         val lockFile = getLockFile()
         if(lockFile.file.exists()) {
             throw IllegalAccessError("${lockFile.name} at path ${lockFile.path} is currently locked and cannot be written to.")

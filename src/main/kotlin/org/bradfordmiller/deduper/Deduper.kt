@@ -17,6 +17,8 @@ import org.json.JSONObject
 import org.slf4j.LoggerFactory
 
 import java.sql.ResultSet
+import java.util.concurrent.BlockingDeque
+import java.util.concurrent.BlockingQueue
 import javax.sql.DataSource
 
 /**
@@ -45,12 +47,217 @@ data class DedupeReport(
     }
 }
 
+class DeduperProducer<T>(
+  val dataQueue: BlockingQueue<MutableList<T>>,
+  val controlQueue: BlockingQueue<Long>,
+  val commitSize: Long = 500,
+  val outputReportCommitSize: Long = 1000000,
+  val config: Config,
+  val persistors: Deduper.Persistors,
+  val sourceDataSource: DataSource,
+  val sqlStatement: String
+): Runnable {
+    override fun run() {
+        Deduper.logger.info("Beginning the deduping process.")
+        /**
+         * writes data to a persistor
+         *
+         * @param T the type of persistor being used
+         * @param writePersistor - the target persistor being leveraged for the write
+         * @param data - the data being written
+         */
+        fun writeData(data: MutableList<T>) {
+            //writePersistor.writeRows(data)
+            dataQueue.put(data)
+            data.clear()
+        }
+        /**
+         * writes data to a persistor
+         *
+         * @param T the type of persistor being used
+         * @param count - the count of total rows processed so far
+         * @param writePersistor - the target persistor being leveraged for the write
+         * @param data - the data being written
+         */
+        fun writeData(count: Long, data: MutableList<T>) {
+            if(count > 0 && data.size % commitSize == 0L) {
+                writeData(data)
+            }
+        }
+
+        val seenHashes = THashMap<String, Long>()
+        val hashColumns = config.sourceJndi.hashKeys
+        val dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
+
+        var distinctDupeCount = 0L
+        var rsColumns = mapOf<Int, String>()
+        var recordCount = 0L
+        var dupeCount = 0L
+
+        if(config.seenHashesJndi != null) {
+
+            Deduper.logger.info("Seen hashes JNDI is populated. Attempting to load hashes...")
+
+            val hashSourceDataSource =
+                (JNDIUtils.getDataSource(
+                    config.seenHashesJndi.jndiName, config.seenHashesJndi.context
+                ) as Left<DataSource?, String>).left!!
+
+            val sqlStatement =
+                "SELECT ${config.seenHashesJndi.hashColumnName} FROM ${config.seenHashesJndi.hashTableName}"
+
+            Deduper.logger.info("Executing the following SQL against the seen hashes jndi: $sqlStatement")
+
+            JNDIUtils.getConnection(hashSourceDataSource)!!.use { conn ->
+                conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+                    .use { stmt ->
+                        stmt.executeQuery().use { rs ->
+                            while (rs.next()) {
+                                seenHashes.put(rs.getString(1), 0)
+                            }
+                        }
+                    }
+            }
+            Deduper.logger.info("Seen hashes loaded. ${seenHashes.size} hashes loaded into memory.")
+        }
+
+        JNDIUtils.getConnection(sourceDataSource)!!.use { conn ->
+
+            Deduper.logger.trace("The following sql statement will be run: $sqlStatement")
+
+            conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
+                stmt.executeQuery().use { rs ->
+
+                    val rsmd = rs.metaData
+                    val colCount = rsmd.columnCount
+
+                    Deduper.logger.trace("$colCount columns have been found in the result set.")
+
+                    var data: MutableList<Map<String, Any>> = mutableListOf()
+                    var hashes: MutableList<HashRow> = mutableListOf()
+
+                    rsColumns = SqlUtils.getColumnsFromRs(rsmd)
+
+                    require(rsColumns.values.containsAll(hashColumns)) {
+                        "One or more provided keys $hashColumns not contained in resultset: $rsColumns"
+                    }
+
+                    Deduper.logger.info("Using ${hashColumns.joinToString(",")} to calculate hashes")
+
+                    var targetIsNotNull: Boolean = false
+                    lateinit var targetPersistor: TargetPersistor
+                    if(persistors.targetPersistor != null) {
+                        targetIsNotNull = true
+                        targetPersistor = persistors.targetPersistor!!
+                        targetPersistor.createTarget(rsmd, persistors.deleteTargetIfExists)
+                    }
+
+                    var dupeIsNotNull: Boolean = false
+                    lateinit var dupePersistor: DupePersistor
+                    if(persistors.dupePersistor != null) {
+                        dupeIsNotNull = true
+                        dupePersistor = persistors.dupePersistor!!
+                        dupePersistor.createDupe(persistors.deleteDupeIfExists)
+                    }
+
+                    var hashIsNotNull: Boolean = false
+                    var includeJson: Boolean = false
+                    lateinit var hashPersistor: HashPersistor
+                    if(persistors.hashPersistor != null) {
+                        hashIsNotNull = true
+                        hashPersistor = persistors.hashPersistor!!
+                        includeJson = (config.hashJndi as SqlJNDIHashType).includeJson
+                        hashPersistor.createHashTable(persistors.deleteHashIfExists)
+                    }
+
+                    while (rs.next()) {
+
+                        val md5Values = SqlUtils.stringifyRow(rs, hashColumns)
+                        //Hold data in map of columns/values
+                        val rsMap = SqlUtils.getMapFromRs(rs, rsColumns)
+
+                        Deduper.logger.trace("Using the following value(s): $md5Values to calculate unique hash.")
+
+                        val hash = DigestUtils.md5Hex(md5Values).toUpperCase()
+                        val longHash = Hasher.hashString(hash)
+
+                        Deduper.logger.trace("MD-5 hash $hash generated for MD-5 values.")
+                        Deduper.logger.trace("Converted hash value to long value: $longHash")
+
+                        if (!seenHashes.containsKey(hash)) {
+                            seenHashes.put(hash, recordCount)
+
+                            if(targetIsNotNull) {
+                                data.add(rsMap)
+                                writeData(recordCount, data)
+                            }
+                            if(hashIsNotNull) {
+                                val json =
+                                    if(includeJson) {
+                                        JSONObject(rsMap).toString()
+                                    } else {
+                                        null
+                                    }
+                                hashes.add(HashRow(hash, json))
+                                writeData(recordCount, hashes)
+                            }
+                        } else {
+                            if(dupeMap.containsKey(hash)) {
+                                dupeMap[hash]?.first?.add(recordCount)
+                            } else {
+                                val firstSeenRow = seenHashes[hash]!!
+                                val dupeJson = JSONObject(rsMap).toString()
+                                val dupe = Dupe(firstSeenRow, dupeJson)
+                                dupeMap[hash] = Pair(mutableListOf(recordCount), dupe)
+
+                                distinctDupeCount += 1
+                            }
+
+                            dupeCount += 1
+                            if(dupeIsNotNull) {
+                                writeData(dupeCount, dupeMap.toList().toMutableList())
+                            }
+                        }
+                        recordCount += 1
+                        if(recordCount % outputReportCommitSize == 0L)
+                            Deduper.logger.info("$recordCount records have been processed so far.")
+                    }
+                    //Flush target/dupe/hash data that's in the buffer
+                    if(targetIsNotNull) {
+                        writeData(data)
+                        if(targetPersistor is CsvTargetPersistor) {
+                            targetPersistor.unlockFile()
+                        }
+                    }
+                    if(dupeIsNotNull) {
+                        writeData(dupeMap.toList().toMutableList())
+                        if(dupePersistor is CsvDupePersistor) {
+                            dupePersistor.unlockFile()
+                        }
+                    }
+                    if(hashIsNotNull) {
+                        writeData(hashes)
+                        if(hashPersistor is CsvHashPersistor) {
+                            hashPersistor.unlockFile()
+                        }
+                    }
+                }
+            }
+        }
+        /*val ddReport =
+            DedupeReport(recordCount, hashColumns, rsColumns.values.toSet(), dupeCount, distinctDupeCount, dupeMap)
+        Deduper.logger.info("Dedupe report: $ddReport")
+        Deduper.logger.info("Deduping process complete.")
+        return ddReport*/
+    }
+}
+
 /**
  * dedupes data based on [config] settings
  */
 class Deduper(private val config: Config) {
 
-    internal data class Persistors(
+    data class Persistors(
       val targetPersistor: TargetPersistor?,
       val deleteTargetIfExists: Boolean,
       val dupePersistor: DupePersistor?,
