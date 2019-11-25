@@ -15,6 +15,7 @@ import org.bradfordmiller.deduper.utils.Left
 
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
+import sun.jvm.hotspot.opto.Block
 
 import java.sql.ResultSet
 import java.util.concurrent.BlockingDeque
@@ -48,7 +49,9 @@ data class DedupeReport(
 }
 
 class DeduperProducer<T>(
-  val dataQueue: BlockingQueue<MutableList<T>>,
+  val dataQueue: BlockingQueue<MutableList<Map<String, Any>>>,
+  val dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>,
+  val hashQueue: BlockingQueue<MutableList<HashRow>>,
   val controlQueue: BlockingQueue<Long>,
   val commitSize: Long = 500,
   val outputReportCommitSize: Long = 1000000,
@@ -145,29 +148,20 @@ class DeduperProducer<T>(
                     Deduper.logger.info("Using ${hashColumns.joinToString(",")} to calculate hashes")
 
                     var targetIsNotNull: Boolean = false
-                    lateinit var targetPersistor: TargetPersistor
                     if(persistors.targetPersistor != null) {
                         targetIsNotNull = true
-                        targetPersistor = persistors.targetPersistor!!
-                        targetPersistor.createTarget(rsmd, persistors.deleteTargetIfExists)
                     }
 
                     var dupeIsNotNull: Boolean = false
-                    lateinit var dupePersistor: DupePersistor
                     if(persistors.dupePersistor != null) {
                         dupeIsNotNull = true
-                        dupePersistor = persistors.dupePersistor!!
-                        dupePersistor.createDupe(persistors.deleteDupeIfExists)
                     }
 
                     var hashIsNotNull: Boolean = false
                     var includeJson: Boolean = false
-                    lateinit var hashPersistor: HashPersistor
                     if(persistors.hashPersistor != null) {
                         hashIsNotNull = true
-                        hashPersistor = persistors.hashPersistor!!
                         includeJson = (config.hashJndi as SqlJNDIHashType).includeJson
-                        hashPersistor.createHashTable(persistors.deleteHashIfExists)
                     }
 
                     while (rs.next()) {
