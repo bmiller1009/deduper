@@ -60,8 +60,13 @@ class DeduperProducer<T>(
   val sourceDataSource: DataSource,
   val sqlStatement: String
 ): Runnable {
+
+    companion object {
+        val logger = LoggerFactory.getLogger(DeduperProducer::class.java)
+    }
+
     override fun run() {
-        Deduper.logger.info("Beginning the deduping process.")
+        logger.info("Beginning the deduping process.")
         /**
          * writes data to a persistor
          *
@@ -69,9 +74,8 @@ class DeduperProducer<T>(
          * @param writePersistor - the target persistor being leveraged for the write
          * @param data - the data being written
          */
-        fun writeData(data: MutableList<T>) {
-            //writePersistor.writeRows(data)
-            dataQueue.put(data)
+        fun writeData(data: MutableList<T>, queue: BlockingDeque<MutableList<T>>) {
+            queue.put(data)
             data.clear()
         }
         /**
@@ -82,9 +86,9 @@ class DeduperProducer<T>(
          * @param writePersistor - the target persistor being leveraged for the write
          * @param data - the data being written
          */
-        fun writeData(count: Long, data: MutableList<T>) {
+        fun writeData(count: Long, data: MutableList<T>, queue: BlockingDeque<MutableList<T>>) {
             if(count > 0 && data.size % commitSize == 0L) {
-                writeData(data)
+                writeData(data, queue)
             }
         }
 
@@ -99,7 +103,7 @@ class DeduperProducer<T>(
 
         if(config.seenHashesJndi != null) {
 
-            Deduper.logger.info("Seen hashes JNDI is populated. Attempting to load hashes...")
+            logger.info("Seen hashes JNDI is populated. Attempting to load hashes...")
 
             val hashSourceDataSource =
                 (JNDIUtils.getDataSource(
@@ -109,7 +113,7 @@ class DeduperProducer<T>(
             val sqlStatement =
                 "SELECT ${config.seenHashesJndi.hashColumnName} FROM ${config.seenHashesJndi.hashTableName}"
 
-            Deduper.logger.info("Executing the following SQL against the seen hashes jndi: $sqlStatement")
+            logger.info("Executing the following SQL against the seen hashes jndi: $sqlStatement")
 
             JNDIUtils.getConnection(hashSourceDataSource)!!.use { conn ->
                 conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
@@ -121,12 +125,12 @@ class DeduperProducer<T>(
                         }
                     }
             }
-            Deduper.logger.info("Seen hashes loaded. ${seenHashes.size} hashes loaded into memory.")
+            logger.info("Seen hashes loaded. ${seenHashes.size} hashes loaded into memory.")
         }
 
         JNDIUtils.getConnection(sourceDataSource)!!.use { conn ->
 
-            Deduper.logger.trace("The following sql statement will be run: $sqlStatement")
+            logger.trace("The following sql statement will be run: $sqlStatement")
 
             conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
                 stmt.executeQuery().use { rs ->
@@ -134,7 +138,7 @@ class DeduperProducer<T>(
                     val rsmd = rs.metaData
                     val colCount = rsmd.columnCount
 
-                    Deduper.logger.trace("$colCount columns have been found in the result set.")
+                    logger.trace("$colCount columns have been found in the result set.")
 
                     var data: MutableList<Map<String, Any>> = mutableListOf()
                     var hashes: MutableList<HashRow> = mutableListOf()
@@ -145,7 +149,7 @@ class DeduperProducer<T>(
                         "One or more provided keys $hashColumns not contained in resultset: $rsColumns"
                     }
 
-                    Deduper.logger.info("Using ${hashColumns.joinToString(",")} to calculate hashes")
+                    logger.info("Using ${hashColumns.joinToString(",")} to calculate hashes")
 
                     var targetIsNotNull: Boolean = false
                     if(persistors.targetPersistor != null) {
@@ -170,13 +174,13 @@ class DeduperProducer<T>(
                         //Hold data in map of columns/values
                         val rsMap = SqlUtils.getMapFromRs(rs, rsColumns)
 
-                        Deduper.logger.trace("Using the following value(s): $md5Values to calculate unique hash.")
+                        logger.trace("Using the following value(s): $md5Values to calculate unique hash.")
 
                         val hash = DigestUtils.md5Hex(md5Values).toUpperCase()
                         val longHash = Hasher.hashString(hash)
 
-                        Deduper.logger.trace("MD-5 hash $hash generated for MD-5 values.")
-                        Deduper.logger.trace("Converted hash value to long value: $longHash")
+                        logger.trace("MD-5 hash $hash generated for MD-5 values.")
+                        logger.trace("Converted hash value to long value: $longHash")
 
                         if (!seenHashes.containsKey(hash)) {
                             seenHashes.put(hash, recordCount)
@@ -214,7 +218,7 @@ class DeduperProducer<T>(
                         }
                         recordCount += 1
                         if(recordCount % outputReportCommitSize == 0L)
-                            Deduper.logger.info("$recordCount records have been processed so far.")
+                            logger.info("$recordCount records have been processed so far.")
                     }
                     //Flush target/dupe/hash data that's in the buffer
                     if(targetIsNotNull) {
