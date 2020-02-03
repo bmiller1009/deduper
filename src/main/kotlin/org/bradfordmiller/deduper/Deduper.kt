@@ -15,12 +15,11 @@ import org.bradfordmiller.deduper.utils.Left
 
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
-import sun.jvm.hotspot.opto.Block
 
 import java.sql.ResultSet
-import java.util.concurrent.BlockingDeque
 import java.util.concurrent.BlockingQueue
 import javax.sql.DataSource
+import kotlin.concurrent.thread
 
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
@@ -48,11 +47,11 @@ data class DedupeReport(
     }
 }
 
-class DeduperProducer<T>(
-  val dataQueue: BlockingQueue<MutableList<Map<String, Any>>>,
-  val dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>,
-  val hashQueue: BlockingQueue<MutableList<HashRow>>,
-  val controlQueue: BlockingQueue<Long>,
+class DeduperProducer(
+  val dataQueue: BlockingQueue<MutableList<Map<String, Any>>>?,
+  val dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>?,
+  val hashQueue: BlockingQueue<MutableList<HashRow>>?,
+  val controlQueue: BlockingQueue<DedupeReport>,
   val commitSize: Long = 500,
   val outputReportCommitSize: Long = 1000000,
   val config: Config,
@@ -74,7 +73,7 @@ class DeduperProducer<T>(
          * @param writePersistor - the target persistor being leveraged for the write
          * @param data - the data being written
          */
-        fun writeData(data: MutableList<T>, queue: BlockingDeque<MutableList<T>>) {
+        fun <T> writeData(data: MutableList<T>, queue: BlockingQueue<MutableList<T>>) {
             queue.put(data)
             data.clear()
         }
@@ -86,7 +85,7 @@ class DeduperProducer<T>(
          * @param writePersistor - the target persistor being leveraged for the write
          * @param data - the data being written
          */
-        fun writeData(count: Long, data: MutableList<T>, queue: BlockingDeque<MutableList<T>>) {
+        fun <T> writeData(count: Long, data: MutableList<T>, queue: BlockingQueue<MutableList<T>>) {
             if(count > 0 && data.size % commitSize == 0L) {
                 writeData(data, queue)
             }
@@ -187,7 +186,7 @@ class DeduperProducer<T>(
 
                             if(targetIsNotNull) {
                                 data.add(rsMap)
-                                writeData(recordCount, data)
+                                writeData(recordCount, data, dataQueue)
                             }
                             if(hashIsNotNull) {
                                 val json =
@@ -197,7 +196,7 @@ class DeduperProducer<T>(
                                         null
                                     }
                                 hashes.add(HashRow(hash, json))
-                                writeData(recordCount, hashes)
+                                writeData(recordCount, hashes, hashQueue)
                             }
                         } else {
                             if(dupeMap.containsKey(hash)) {
@@ -213,7 +212,7 @@ class DeduperProducer<T>(
 
                             dupeCount += 1
                             if(dupeIsNotNull) {
-                                writeData(dupeCount, dupeMap.toList().toMutableList())
+                                writeData(dupeCount, dupeMap.toList().toMutableList(), dupeQueue)
                             }
                         }
                         recordCount += 1
@@ -222,31 +221,33 @@ class DeduperProducer<T>(
                     }
                     //Flush target/dupe/hash data that's in the buffer
                     if(targetIsNotNull) {
-                        writeData(data)
-                        if(targetPersistor is CsvTargetPersistor) {
+                        writeData(data, dataQueue)
+                        /*if(targetPersistor is CsvTargetPersistor) {
                             targetPersistor.unlockFile()
-                        }
+                        }*/
                     }
                     if(dupeIsNotNull) {
-                        writeData(dupeMap.toList().toMutableList())
-                        if(dupePersistor is CsvDupePersistor) {
+                        writeData(dupeMap.toList().toMutableList(), dupeQueue)
+                        /*if(dupePersistor is CsvDupePersistor) {
                             dupePersistor.unlockFile()
-                        }
+                        }*/
                     }
                     if(hashIsNotNull) {
-                        writeData(hashes)
-                        if(hashPersistor is CsvHashPersistor) {
+                        writeData(hashes, hashQueue)
+                        /*if(hashPersistor is CsvHashPersistor) {
                             hashPersistor.unlockFile()
-                        }
+                        }*/
                     }
                 }
             }
         }
-        /*val ddReport =
-            DedupeReport(recordCount, hashColumns, rsColumns.values.toSet(), dupeCount, distinctDupeCount, dupeMap)
-        Deduper.logger.info("Dedupe report: $ddReport")
-        Deduper.logger.info("Deduping process complete.")
-        return ddReport*/
+
+        val ddReport =
+                DedupeReport(recordCount, hashColumns, rsColumns.values.toSet(), dupeCount, distinctDupeCount, dupeMap)
+
+        logger.info("Dedupe report: $ddReport")
+        controlQueue.put(ddReport)
+        logger.info("Deduping process complete.")
     }
 }
 
@@ -372,7 +373,40 @@ class Deduper(private val config: Config) {
      */
     fun dedupe(commitSize: Long = 500, outputReportCommitSize: Long = 1000000): DedupeReport {
 
-        logger.info("Beginning the deduping process.")
+        var threadCount = 1
+
+        if(config.targetJndi != null)
+            threadCount += 1
+
+        if(config.dupesJndi != null)
+            threadCount += 1
+
+        if(config.hashJndi != null)
+            threadCount += 1
+
+
+
+
+        /*
+        class DeduperProducer(
+          val dataQueue: BlockingQueue<MutableList<Map<String, Any>>>,
+          val dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>,
+          val hashQueue: BlockingQueue<MutableList<HashRow>>,
+          val controlQueue: BlockingQueue<DedupeReport>,
+          val commitSize: Long = 500,
+          val outputReportCommitSize: Long = 1000000,
+          val config: Config,
+          val persistors: Deduper.Persistors,
+          val sourceDataSource: DataSource,
+          val sqlStatement: String
+        ): Runnable {
+         */
+
+
+
+
+
+        /*logger.info("Beginning the deduping process.")
         /**
          * writes data to a persistor
          *
@@ -561,5 +595,6 @@ class Deduper(private val config: Config) {
         logger.info("Dedupe report: $ddReport")
         logger.info("Deduping process complete.")
         return ddReport
+        */
     }
 }
