@@ -129,7 +129,12 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
      */
     override fun writeRows(rows: MutableList<Map<String, Any>>) {
         val data = rows.map {r ->
-            r.values.map {v -> v.toString()}.toTypedArray()
+            r.values.map {v ->
+                if(v != null)
+                    v.toString()
+                else
+                    ""
+            }.toTypedArray()
         }.toTypedArray()
         FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension, ccp.delimiter)
     }
