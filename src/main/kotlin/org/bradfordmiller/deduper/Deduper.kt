@@ -17,9 +17,10 @@ import org.json.JSONObject
 import org.slf4j.LoggerFactory
 
 import java.sql.ResultSet
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
+import java.util.concurrent.Executors
 import javax.sql.DataSource
-import kotlin.concurrent.thread
 
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
@@ -73,8 +74,8 @@ class DeduperProducer(
          * @param writePersistor - the target persistor being leveraged for the write
          * @param data - the data being written
          */
-        fun <T> writeData(data: MutableList<T>, queue: BlockingQueue<MutableList<T>>) {
-            queue.put(data)
+        fun <T> writeData(data: MutableList<T>, queue: BlockingQueue<MutableList<T>>?) {
+            queue?.put(data)
             data.clear()
         }
         /**
@@ -85,7 +86,7 @@ class DeduperProducer(
          * @param writePersistor - the target persistor being leveraged for the write
          * @param data - the data being written
          */
-        fun <T> writeData(count: Long, data: MutableList<T>, queue: BlockingQueue<MutableList<T>>) {
+        fun <T> writeData(count: Long, data: MutableList<T>, queue: BlockingQueue<MutableList<T>>?) {
             if(count > 0 && data.size % commitSize == 0L) {
                 writeData(data, queue)
             }
@@ -251,6 +252,60 @@ class DeduperProducer(
     }
 }
 
+class DeduperDataConsumer(
+  val targetPersistor: TargetPersistor,
+  val dataQueue: BlockingQueue<MutableList<Map<String, Any>>>,
+  val sourceDataSource: DataSource,
+  val sqlStatement: String,
+  val deleteTargetIfExists: Boolean
+): Runnable {
+
+    companion object {
+        val logger = LoggerFactory.getLogger(DeduperDataConsumer::class.java)
+    }
+
+    override fun run() {
+
+        val finalSqlStatement =
+            if(sqlStatement.contains("WHERE")) {
+                sqlStatement + " AND 1 = 2 "
+            } else {
+                sqlStatement + " WHERE 1 = 2 "
+            }
+
+        val rsmd = JNDIUtils.getConnection(sourceDataSource)!!.use { conn ->
+            logger.trace("The following sql statement will be run: $finalSqlStatement")
+            conn.prepareStatement(finalSqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
+                stmt.executeQuery().use { rs ->
+                    rs.metaData
+                }
+            }
+        }
+
+        val firstMsg = dataQueue.take()
+        var done = if(firstMsg.isEmpty()) {
+            true
+        } else {
+            targetPersistor.createTarget(rsmd, deleteTargetIfExists)
+            targetPersistor.writeRows(firstMsg)
+            false
+        }
+
+        while(!done) {
+            val data = dataQueue.take()
+            if(data.isEmpty()) {
+                done = true
+            } else {
+                targetPersistor.writeRows(data)
+            }
+        }
+
+        if(targetPersistor is CsvTargetPersistor) {
+            targetPersistor.unlockFile()
+        }
+    }
+}
+
 /**
  * dedupes data based on [config] settings
  */
@@ -375,37 +430,58 @@ class Deduper(private val config: Config) {
 
         var threadCount = 1
 
-        if(config.targetJndi != null)
+        var dataQueue: BlockingQueue<MutableList<Map<String, Any>>>? = null
+        var dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>? = null
+        var hashQueue: BlockingQueue<MutableList<HashRow>>? =  null
+
+        if(config.targetJndi != null) {
             threadCount += 1
+            dataQueue = ArrayBlockingQueue<MutableList<Map<String, Any>>>(100)
+        }
 
-        if(config.dupesJndi != null)
+        if(config.dupesJndi != null) {
             threadCount += 1
+            dupeQueue = ArrayBlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>(100)
+        }
 
-        if(config.hashJndi != null)
+        if(config.hashJndi != null) {
             threadCount += 1
+            hashQueue = ArrayBlockingQueue<MutableList<HashRow>>(100)
+        }
 
+        val executorService = Executors.newFixedThreadPool(threadCount)
 
+        val controlQueue = ArrayBlockingQueue<DedupeReport>(10)
 
+        val producer =
+          DeduperProducer(
+            dataQueue,
+            dupeQueue,
+            hashQueue,
+            controlQueue,
+            commitSize,
+            outputReportCommitSize,
+            config,
+            persistors,
+            sourceDataSource,
+            sqlStatement
+          )
 
-        /*
-        class DeduperProducer(
-          val dataQueue: BlockingQueue<MutableList<Map<String, Any>>>,
-          val dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>,
-          val hashQueue: BlockingQueue<MutableList<HashRow>>,
-          val controlQueue: BlockingQueue<DedupeReport>,
-          val commitSize: Long = 500,
-          val outputReportCommitSize: Long = 1000000,
-          val config: Config,
-          val persistors: Deduper.Persistors,
-          val sourceDataSource: DataSource,
-          val sqlStatement: String
-        ): Runnable {
-         */
+        executorService.execute(producer)
 
+        if(persistors.targetPersistor != null) {
+            val targetConsumer =
+                    DeduperDataConsumer(
+                            persistors.targetPersistor!!,
+                            dataQueue!!,
+                            sourceDataSource,
+                            sqlStatement,
+                            persistors.deleteTargetIfExists
+                    )
+            executorService.execute(targetConsumer)
+        }
 
-
-
-
+        executorService.shutdown()
         /*logger.info("Beginning the deduping process.")
         /**
          * writes data to a persistor
@@ -596,5 +672,7 @@ class Deduper(private val config: Config) {
         logger.info("Deduping process complete.")
         return ddReport
         */
+
+        return DedupeReport(0, emptySet(), emptySet(), 0, 0, mutableMapOf())
     }
 }
