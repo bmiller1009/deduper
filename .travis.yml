@@ -2,6 +2,7 @@ language: java
 jdk:
   - openjdk11
 before_install:
+  - gradle wrapper
   - chmod +x gradlew
   - chmod +x gradle/wrapper/gradle-wrapper.jar
   - chmod +rw src/test/resources/data/outputData
