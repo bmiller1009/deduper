@@ -481,7 +481,18 @@ class Deduper(private val config: Config) {
             executorService.execute(targetConsumer)
         }
 
+        var streamComplete = false
+        lateinit var dedupeReport: DedupeReport
+
+        while(!streamComplete) {
+            dedupeReport = controlQueue.take()
+            streamComplete = true
+        }
+
         executorService.shutdown()
+
+        return dedupeReport
+
         /*logger.info("Beginning the deduping process.")
         /**
          * writes data to a persistor
