@@ -256,6 +256,23 @@ class DeduperTest {
         assert(!File("src/test/resources/data/outputData/targetName.txt").exists())
     }
 
+    @Test fun targetOnly() {
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
+        val csvTargetJndi = CsvJNDITargetType("RealEstateOut", "default_ds",false)
+
+        val config = Config.ConfigBuilder()
+                .sourceJndi(csvSourceJndi)
+                .targetJndi(csvTargetJndi)
+                .build()
+
+        val deduper = Deduper(config)
+
+        val deduperReport = deduper.dedupe()
+
+        println(deduperReport)
+    }
+
     @Test fun withoutTargetAndDupe() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")

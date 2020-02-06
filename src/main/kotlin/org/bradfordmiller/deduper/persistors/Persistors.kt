@@ -36,7 +36,7 @@ interface WritePersistor<T> {
     /**
      *  writes list of data contained in [rows] to output
      */
-    fun writeRows(rows: MutableList<T>)
+    fun writeRows(rows: MutableList<T>): Long
 }
 /**
  * definition for writing out deduped data to a target flat file or sql table
@@ -46,7 +46,7 @@ interface TargetPersistor: WritePersistor<Map<String, Any>> {
      * writes out a list of key/value pairs contained in [rows]. The key is the column name, and the value is the data
      * value for the column
      */
-    override fun writeRows(rows: MutableList<Map<String, Any>>)
+    override fun writeRows(rows: MutableList<Map<String, Any>>): Long
     /**
      *  writes out target file or sql table based on [rsmd]. [deleteIfTargetExists] determines if the target is deleted
      *  before populating it with data
@@ -60,7 +60,7 @@ interface DupePersistor: WritePersistor<Pair<String, Pair<MutableList<Long>, Dup
     /**
      * writes out a list of duplicate data contained in [rows].
      */
-    override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>)
+    override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>): Long
     /**
      * creates the duplicate file or sql table. [deleteIfDupeExists] determines if the duplicate file/table is
      * deleted/dropped before creation.
@@ -74,7 +74,7 @@ interface HashPersistor: WritePersistor<HashRow> {
     /**
      * writes out list of hash values contained in [rows]
      */
-    override fun writeRows(rows: MutableList<HashRow>)
+    override fun writeRows(rows: MutableList<HashRow>): Long
     /**
      * creates the hash file or sql table. [deleteIfDupeExists] determines if the hash file/table is deleted/dropped
      * before creation.
@@ -127,8 +127,10 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
      * writes out a list of key/value pairs contained in [rows] to a csv. The key is the column name, and the value is
      * the data value for the column
      */
-    override fun writeRows(rows: MutableList<Map<String, Any>>) {
-        val data = rows.map {r ->
+    override fun writeRows(rows: MutableList<Map<String, Any>>): Long {
+        val copyRows = mutableListOf<Map<String, Any>>()
+        copyRows.addAll(rows)
+        val data = copyRows.map {r ->
             r.values.map {v ->
                 if(v != null)
                     v.toString()
@@ -137,6 +139,7 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
             }.toTypedArray()
         }.toTypedArray()
         FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension, ccp.delimiter)
+        return data.size.toLong()
     }
 }
 /**
@@ -156,13 +159,14 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
      * writes out a list of duplicate data [rows] to a csv.
      */
     //TODO: Clean this up.  The pair syntax second.second.blah is clunky and hard to read
-    override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>) {
+    override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>): Long {
         val data = rows.map {
             val list = it.second.first
             val json = JSONArray(list).toString()
             arrayOf(it.first, json, it.second.second.firstFoundRowNumber.toString(), it.second.second.dupes)
         }.toTypedArray()
         FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension, ccp.delimiter)
+        return data.size.toLong()
     }
 }
 /**
@@ -180,11 +184,12 @@ class CsvHashPersistor(config: Map<String, String>): CsvPersistor(config), HashP
     /**
      * writes out a list of hash data [rows] to a csv.
      */
-    override fun writeRows(rows: MutableList<HashRow>) {
+    override fun writeRows(rows: MutableList<HashRow>): Long {
         val data = rows.map {hr ->
             arrayOf(hr.hash, hr.hash_json.orEmpty())
         }.toTypedArray()
         FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension, ccp.delimiter)
+        return data.size.toLong()
     }
 }
 
@@ -237,7 +242,7 @@ class SqlTargetPersistor(
     /**
      * writes out a list of data [rows] to a a sql table.
      */
-    override fun writeRows(rows: MutableList<Map<String, Any>>) {
+    override fun writeRows(rows: MutableList<Map<String, Any>>): Long {
         val sql = dbInfo.first
         val columnMap = dbInfo.second
         JNDIUtils.getJndiConnection(targetJndi, context).use { conn ->
@@ -255,9 +260,10 @@ class SqlTargetPersistor(
                         pstmt.executeBatch()
                     } catch(sqlEx: SQLException) {
                         logger.error("Error committing batch: ${sqlEx.message}")
-                        return
+                        throw sqlEx
                     }
                     conn.commit()
+                    return rows.size.toLong()
                 } catch (sqlEx: SQLException) {
                     logger.error("Error while inserting data: ${sqlEx.message}")
                     conn.rollback()
@@ -308,7 +314,7 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
      * writes out a list of duplicate data [rows] to a a sql table.
      */
     //TODO: Clean this up.  The pair syntax second.second.blah is clunky and hard to read
-    override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>) {
+    override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>): Long {
         JNDIUtils.getJndiConnection(dupesJndi, context).use {conn ->
             conn.autoCommit = false
             conn.prepareStatement(insertStatement).use {pstmt ->
@@ -324,9 +330,10 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
                         pstmt.executeBatch()
                     } catch(sqlEx: SQLException) {
                         logger.error("Error committing batch: ${sqlEx.message}")
-                        return
+                        throw sqlEx
                     }
                     conn.commit()
+                    return rows.size.toLong()
                 } catch (sqlEx: SQLException) {
                     logger.error("Error while inserting duplicate values: ${sqlEx.message}")
                     conn.rollback()
@@ -374,7 +381,7 @@ class SqlHashPersistor(private val hashJndi: String, private val context: String
     /**
      * writes out a list of duplicate data [rows] to a a sql table.
      */
-    override fun writeRows(rows: MutableList<HashRow>) {
+    override fun writeRows(rows: MutableList<HashRow>): Long {
         JNDIUtils.getJndiConnection(hashJndi, context).use { conn ->
             conn.autoCommit = false
             conn.prepareStatement(insertStatement).use { pstmt ->
@@ -388,9 +395,10 @@ class SqlHashPersistor(private val hashJndi: String, private val context: String
                         pstmt.executeBatch()
                     } catch (sqlEx: SQLException) {
                         logger.error("Error committing batch: ${sqlEx.message}")
-                        return
+                        throw sqlEx
                     }
                     conn.commit()
+                    return rows.size.toLong()
                 } catch (sqlEx: SQLException) {
                     logger.error("Error while inserting hash values: ${sqlEx.message}")
                     conn.rollback()
