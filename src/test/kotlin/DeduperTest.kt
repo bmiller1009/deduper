@@ -269,8 +269,6 @@ class DeduperTest {
         val deduper = Deduper(config)
 
         val deduperReport = deduper.dedupe()
-
-        println(deduperReport)
     }
 
     @Test fun withoutTargetAndDupe() {

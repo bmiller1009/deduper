@@ -22,6 +22,9 @@ import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Executors
 import javax.sql.DataSource
 
+import org.bradfordmiller.deduper.consumers.DeduperDataConsumer
+import java.util.concurrent.TimeUnit
+
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
  * sample string
@@ -53,6 +56,7 @@ class DeduperProducer(
   val dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>?,
   val hashQueue: BlockingQueue<MutableList<HashRow>>?,
   val controlQueue: BlockingQueue<DedupeReport>,
+  val targetQueue: BlockingQueue<DedupeReport>,
   val commitSize: Long = 500,
   val outputReportCommitSize: Long = 1000000,
   val config: Config,
@@ -75,8 +79,10 @@ class DeduperProducer(
          * @param data - the data being written
          */
         fun <T> writeData(data: MutableList<T>, queue: BlockingQueue<MutableList<T>>?) {
-            queue?.put(data)
-            //data.clear()
+            val dataCopy = mutableListOf<T>()
+            dataCopy.addAll(data)
+            queue?.put(dataCopy)
+            data.clear()
         }
         /**
          * writes data to a persistor
@@ -247,79 +253,8 @@ class DeduperProducer(
 
         logger.info("Dedupe report: $ddReport")
         controlQueue.put(ddReport)
+        targetQueue.put(ddReport)
         logger.info("Deduping process complete.")
-    }
-}
-
-class DeduperDataConsumer(
-        val targetPersistor: TargetPersistor,
-        val dataQueue: BlockingQueue<MutableList<Map<String, Any>>>,
-        val controlQueue: BlockingQueue<DedupeReport>,
-        val sourceDataSource: DataSource,
-        val sqlStatement: String,
-        val deleteTargetIfExists: Boolean
-): Runnable {
-
-    companion object {
-        val logger = LoggerFactory.getLogger(DeduperDataConsumer::class.java)
-    }
-
-    override fun run() {
-
-        var totalRowsWritten = 0L
-
-        val finalSqlStatement =
-            if(sqlStatement.contains("WHERE")) {
-                sqlStatement + " AND 1 = 2 "
-            } else {
-                sqlStatement + " WHERE 1 = 2 "
-            }
-
-        val rsmd = JNDIUtils.getConnection(sourceDataSource)!!.use { conn ->
-            logger.info("The following sql statement will be run: $finalSqlStatement")
-            conn.prepareStatement(finalSqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
-                stmt.executeQuery().use { rs ->
-                    rs.metaData
-                }
-            }
-        }
-
-        val firstMsg = dataQueue.take()
-        var done = if(firstMsg.isEmpty()) {
-            logger.info("First message is empty, stream complete.")
-            true
-        } else {
-            logger.info("Initializing target consumer")
-            targetPersistor.createTarget(rsmd, deleteTargetIfExists)
-            totalRowsWritten += targetPersistor.writeRows(firstMsg)
-            logger.info("First data packet written to target.  $totalRowsWritten rows written so far.")
-            false
-        }
-
-        while(!done) {
-            val data = dataQueue.take()
-            //Empty record hit, means stream is complete
-            if(data.isEmpty()) {
-                done = true
-            } else {
-                totalRowsWritten += targetPersistor.writeRows(data)
-                //TODO: Parameterize this
-                if(totalRowsWritten % 100 == 0L) {
-                    logger.info("Total rows written to target: $totalRowsWritten")
-                }
-            }
-        }
-
-        if(targetPersistor is CsvTargetPersistor) {
-            targetPersistor.unlockFile()
-            logger.info("Target file unlocked.")
-        }
-
-        val dedupeReport = controlQueue.take()
-        //Check that dedupe report publish numbers match persisted numbers
-        if(totalRowsWritten != dedupeReport.recordCount) {
-            logger.error("Dedupe report records published (${dedupeReport.recordCount}) does not match rows persisted by the target persistor (${totalRowsWritten})")
-        }
     }
 }
 
@@ -329,12 +264,12 @@ class DeduperDataConsumer(
 class Deduper(private val config: Config) {
 
     data class Persistors(
-            val targetPersistor: TargetPersistor?,
-            val deleteTargetIfExists: Boolean,
-            val dupePersistor: DupePersistor?,
-            val deleteDupeIfExists: Boolean,
-            val hashPersistor: HashPersistor?,
-            val deleteHashIfExists: Boolean
+        val targetPersistor: TargetPersistor?,
+        val deleteTargetIfExists: Boolean,
+        val dupePersistor: DupePersistor?,
+        val deleteDupeIfExists: Boolean,
+        val hashPersistor: HashPersistor?,
+        val deleteHashIfExists: Boolean
     )
 
     private val persistors: Persistors by lazy {
@@ -391,21 +326,21 @@ class Deduper(private val config: Config) {
                 }
 
         Persistors(
-                targetPersistor.first,
-                targetPersistor.second,
-                dupePersistor.first,
-                dupePersistor.second,
-                hashPersistor.first,
-                hashPersistor.second
+            targetPersistor.first,
+            targetPersistor.second,
+            dupePersistor.first,
+            dupePersistor.second,
+            hashPersistor.first,
+            hashPersistor.second
         )
     }
 
     val sourceDataSource: DataSource
-            by lazy {
-                (JNDIUtils.getDataSource(
-                        config.sourceJndi.jndiName, config.sourceJndi.context
-                ) as Left<DataSource?, String>).left!!
-            }
+        by lazy {
+            (JNDIUtils.getDataSource(
+                    config.sourceJndi.jndiName, config.sourceJndi.context
+            ) as Left<DataSource?, String>).left!!
+        }
 
     val sqlStatement by lazy {
         if (config.sourceJndi.tableQuery.startsWith("SELECT", true)) {
@@ -471,21 +406,23 @@ class Deduper(private val config: Config) {
 
         val executorService = Executors.newFixedThreadPool(threadCount)
 
-        val controlQueue = ArrayBlockingQueue<DedupeReport>(10)
+        val controlQueue = ArrayBlockingQueue<DedupeReport>(1)
+        val targetQueue = ArrayBlockingQueue<DedupeReport>(1)
 
         val producer =
-                DeduperProducer(
-                        dataQueue,
-                        dupeQueue,
-                        hashQueue,
-                        controlQueue,
-                        commitSize,
-                        outputReportCommitSize,
-                        config,
-                        persistors,
-                        sourceDataSource,
-                        sqlStatement
-                )
+            DeduperProducer(
+                dataQueue,
+                dupeQueue,
+                hashQueue,
+                controlQueue,
+                targetQueue,
+                commitSize,
+                outputReportCommitSize,
+                config,
+                persistors,
+                sourceDataSource,
+                sqlStatement
+            )
 
         executorService.execute(producer)
 
@@ -494,7 +431,7 @@ class Deduper(private val config: Config) {
                     DeduperDataConsumer(
                             persistors.targetPersistor!!,
                             dataQueue!!,
-                            controlQueue,
+                            targetQueue,
                             sourceDataSource,
                             sqlStatement,
                             persistors.deleteTargetIfExists
@@ -511,6 +448,18 @@ class Deduper(private val config: Config) {
         }
 
         executorService.shutdown()
+        try {
+            if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+                executorService.shutdownNow()
+            }
+        } catch(iex:InterruptedException) {
+            executorService.shutdownNow()
+            Thread.currentThread().interrupt()
+            logger.error(iex.message)
+            throw iex
+        }
+
+        logger.info("All consuming services are complete....shutting down.")
 
         return dedupeReport
     }

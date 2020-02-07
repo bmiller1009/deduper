@@ -86,6 +86,10 @@ interface HashPersistor: WritePersistor<HashRow> {
  */
 open class CsvPersistor(config: Map<String, String>) {
 
+    companion object {
+        val logger = LoggerFactory.getLogger(CsvPersistor::class.java)
+    }
+
     data class LockFile(val name: String, val path: String, val file: File)
 
     val ccp = CsvConfigParser(config)
@@ -95,14 +99,19 @@ open class CsvPersistor(config: Map<String, String>) {
         val path = f.parent
         val name = f.name
         val lockFileName = "$path/.LOCK_$name"
+        logger.info("Lock file established: $lockFileName")
         return LockFile(name, path, File(lockFileName))
     }
     internal fun lockFile() {
+        logger.info("Locking target file.")
         val lockFile = getLockFile()
         if(lockFile.file.exists()) {
-            throw IllegalAccessError("${lockFile.name} at path ${lockFile.path} is currently locked and cannot be written to.")
+            val message = "${lockFile.name} at path ${lockFile.path} is currently locked and cannot be written to."
+            logger.error(message)
+            throw IllegalAccessError(message)
         } else {
             lockFile.file.createNewFile()
+            logger.info("Lock file created.")
         }
     }
     fun unlockFile() {
@@ -128,6 +137,7 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
      * the data value for the column
      */
     override fun writeRows(rows: MutableList<Map<String, Any>>): Long {
+        logger.info("Writing ${rows.size} rows to ${ccp.targetName}")
         val copyRows = mutableListOf<Map<String, Any>>()
         copyRows.addAll(rows)
         val data = copyRows.map {r ->
@@ -139,6 +149,7 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
             }.toTypedArray()
         }.toTypedArray()
         FileUtils.writeStringsToFile(data, ccp.targetName, ccp.extension, ccp.delimiter)
+        logger.info("Writing complete.")
         return data.size.toLong()
     }
 }
