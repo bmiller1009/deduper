@@ -1,3 +1,4 @@
+import gnu.trove.map.hash.THashMap
 import org.bradfordmiller.deduper.DedupeReport
 import org.bradfordmiller.deduper.Deduper
 import org.bradfordmiller.deduper.config.Config
@@ -48,6 +49,7 @@ class DeduperTest {
                 "latitude", "longitude"),
             4,
             3,
+            982,
             mutableMapOf(
                 "3230065898C61AE414BA58E7B7C99C0B" to
                 Pair(
@@ -346,18 +348,16 @@ class DeduperTest {
     }
 
     @Test fun nullsInSource() {
-        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data")
-        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
-        val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", "default_ds",true, true)
+        val csvTargetJndi = CsvJNDITargetType("RealEstateOut", "default_ds",true)
+        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupes", "default_ds",true)
         val sqlSourceJndi = SourceJndi("SqliteChinook", "default_ds","tracks")
         val sourceTestNulls = SourceJndi("SqlLiteTest", "default_ds","target_data")
         val sourceTestNullsFirstRow = SourceJndi("SqlLiteTest", "default_ds","target_data WHERE TrackId = 2")
 
         val config = Config.ConfigBuilder()
                 .sourceJndi(sqlSourceJndi)
-                .targetJndi(sqlTargetJndi)
-                .dupesJndi(sqlDupesJndi)
-                .hashJndi(sqlHashJndi)
+                .targetJndi(csvTargetJndi)
+                .dupesJndi(csvDupesJndi)
                 .build()
 
         val deduper = Deduper(config)
@@ -401,7 +401,7 @@ class DeduperTest {
 
         val report = deduper.dedupe()
 
-        assert(deduper.seenHashes.size == 982)
+        assert(report.hashCount == 982L)
         assert(report.recordCount == 982L)
         assert(report.dupeCount == 982L)
         assert(report.distinctDupeCount == 982L)

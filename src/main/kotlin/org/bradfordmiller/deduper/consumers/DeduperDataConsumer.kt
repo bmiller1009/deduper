@@ -44,6 +44,7 @@ class DeduperDataConsumer(
 
         val firstMsg = dataQueue.take()
         var done = if(firstMsg.isEmpty()) {
+            //This should never happen
             logger.info("First message is empty, stream complete.")
             true
         } else {
@@ -74,9 +75,13 @@ class DeduperDataConsumer(
         }
 
         val dedupeReport = controlQueue.take()
+        val dedupeCount = dedupeReport.recordCount - dedupeReport.dupeCount
         //Check that dedupe report publish numbers match persisted numbers
-        if(totalRowsWritten != (dedupeReport.recordCount - dedupeReport.dupeCount)) {
-            logger.error("Dedupe report records published (${dedupeReport.recordCount}) does not match rows persisted by the target persistor (${totalRowsWritten})")
+        if(totalRowsWritten != dedupeCount) {
+            logger.error(
+                "Dedupe report records published (${dedupeCount}) does not match rows persisted by the target persistor " +
+                        "(${totalRowsWritten})"
+            )
         }
     }
 }

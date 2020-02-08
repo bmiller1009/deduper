@@ -23,6 +23,8 @@ import java.util.concurrent.Executors
 import javax.sql.DataSource
 
 import org.bradfordmiller.deduper.consumers.DeduperDataConsumer
+import org.bradfordmiller.deduper.consumers.DeduperDupeConsumer
+import org.bradfordmiller.deduper.consumers.DeduperHashConsumer
 import java.util.concurrent.TimeUnit
 
 /**
@@ -40,6 +42,7 @@ data class DedupeReport(
     val columnsFound: Set<String>,
     val dupeCount: Long,
     val distinctDupeCount: Long,
+    val hashCount: Long,
     var dupes: MutableMap<String, Pair<MutableList<Long>, Dupe>>
 ) {
     override fun toString(): String {
@@ -47,7 +50,8 @@ data class DedupeReport(
                 "columnsFound=$columnsFound, " +
                 "hashColumns=$hashColumns, " +
                 "dupeCount=$dupeCount, " +
-                "distinctDupeCount=$distinctDupeCount"
+                "distinctDupeCount=$distinctDupeCount, " +
+                "hashCount=$hashCount"
     }
 }
 
@@ -56,7 +60,9 @@ class DeduperProducer(
   val dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>?,
   val hashQueue: BlockingQueue<MutableList<HashRow>>?,
   val controlQueue: BlockingQueue<DedupeReport>,
-  val targetQueue: BlockingQueue<DedupeReport>,
+  val targetControlQueue: BlockingQueue<DedupeReport>?,
+  val dupeControlQueue: BlockingQueue<DedupeReport>?,
+  val hashControlQueue: BlockingQueue<DedupeReport>?,
   val commitSize: Long = 500,
   val outputReportCommitSize: Long = 1000000,
   val config: Config,
@@ -155,7 +161,13 @@ class DeduperProducer(
                         "One or more provided keys $hashColumns not contained in resultset: $rsColumns"
                     }
 
-                    logger.info("Using ${hashColumns.joinToString(",")} to calculate hashes")
+                    val columns =
+                        if(hashColumns.isEmpty())
+                            rsColumns.values.joinToString(",")
+                        else
+                            hashColumns.joinToString(",")
+
+                    logger.info("Using $columns to calculate hashes")
 
                     var targetIsNotNull: Boolean = false
                     if(persistors.targetPersistor != null) {
@@ -203,6 +215,7 @@ class DeduperProducer(
                                         null
                                     }
                                 hashes.add(HashRow(hash, json))
+
                                 writeData(recordCount, hashes, hashQueue)
                             }
                         } else {
@@ -234,26 +247,34 @@ class DeduperProducer(
                     }
                     if(dupeIsNotNull) {
                         writeData(dupeMap.toList().toMutableList(), dupeQueue)
-                        /*if(dupePersistor is CsvDupePersistor) {
-                            dupePersistor.unlockFile()
-                        }*/
+                        //Write empty list value to indicate the data stream is complete
+                        writeData(mutableListOf(), dupeQueue)
                     }
                     if(hashIsNotNull) {
                         writeData(hashes, hashQueue)
-                        /*if(hashPersistor is CsvHashPersistor) {
-                            hashPersistor.unlockFile()
-                        }*/
+                        //Write empty list value to indicate the data stream is complete
+                        writeData(mutableListOf(), hashQueue)
                     }
                 }
             }
         }
 
         val ddReport =
-                DedupeReport(recordCount, hashColumns, rsColumns.values.toSet(), dupeCount, distinctDupeCount, dupeMap)
+          DedupeReport(
+              recordCount,
+              hashColumns,
+              rsColumns.values.toSet(),
+              dupeCount,
+              distinctDupeCount,
+              seenHashes.size.toLong(),
+              dupeMap
+          )
 
         logger.info("Dedupe report: $ddReport")
         controlQueue.put(ddReport)
-        targetQueue.put(ddReport)
+        targetControlQueue?.put(ddReport)
+        dupeControlQueue?.put(ddReport)
+        hashControlQueue?.put(ddReport)
         logger.info("Deduping process complete.")
     }
 }
@@ -350,7 +371,7 @@ class Deduper(private val config: Config) {
         }
     }
 
-    val seenHashes = THashMap<String, Long>()
+    //val seenHashes = THashMap<String, Long>()
 
     companion object {
         val logger = LoggerFactory.getLogger(Deduper::class.java)
@@ -407,7 +428,9 @@ class Deduper(private val config: Config) {
         val executorService = Executors.newFixedThreadPool(threadCount)
 
         val controlQueue = ArrayBlockingQueue<DedupeReport>(1)
-        val targetQueue = ArrayBlockingQueue<DedupeReport>(1)
+        val targetControlQueue = ArrayBlockingQueue<DedupeReport>(1)
+        val dupeControlQueue = ArrayBlockingQueue<DedupeReport>(1)
+        val hashControlQueue = ArrayBlockingQueue<DedupeReport>(1)
 
         val producer =
             DeduperProducer(
@@ -415,7 +438,9 @@ class Deduper(private val config: Config) {
                 dupeQueue,
                 hashQueue,
                 controlQueue,
-                targetQueue,
+                targetControlQueue,
+                dupeControlQueue,
+                hashControlQueue,
                 commitSize,
                 outputReportCommitSize,
                 config,
@@ -428,15 +453,37 @@ class Deduper(private val config: Config) {
 
         if (persistors.targetPersistor != null) {
             val targetConsumer =
-                    DeduperDataConsumer(
-                            persistors.targetPersistor!!,
-                            dataQueue!!,
-                            targetQueue,
-                            sourceDataSource,
-                            sqlStatement,
-                            persistors.deleteTargetIfExists
-                    )
+                DeduperDataConsumer(
+                    persistors.targetPersistor!!,
+                    dataQueue!!,
+                    targetControlQueue,
+                    sourceDataSource,
+                    sqlStatement,
+                    persistors.deleteTargetIfExists
+                )
             executorService.execute(targetConsumer)
+        }
+
+        if(persistors.dupePersistor != null) {
+            val dupeConsumer =
+                DeduperDupeConsumer(
+                    persistors.dupePersistor!!,
+                    dupeQueue!!,
+                    dupeControlQueue,
+                    persistors.deleteDupeIfExists
+                )
+            executorService.execute(dupeConsumer)
+        }
+
+        if(persistors.hashPersistor != null) {
+            val hashConsumer =
+                DeduperHashConsumer(
+                    persistors.hashPersistor!!,
+                    hashQueue!!,
+                    hashControlQueue,
+                    persistors.deleteHashIfExists
+                )
+            executorService.execute(hashConsumer)
         }
 
         var streamComplete = false
