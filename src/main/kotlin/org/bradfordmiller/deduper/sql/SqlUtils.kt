@@ -1,10 +1,8 @@
 package org.bradfordmiller.deduper.sql
 
 import org.bradfordmiller.deduper.consumers.DeduperDataConsumer
-import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.slf4j.LoggerFactory
 import java.sql.*
-import javax.sql.DataSource
 
 data class QueryMetadata(
   val columnIndex: Int,

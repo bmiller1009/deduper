@@ -6,7 +6,6 @@ import org.bradfordmiller.deduper.persistors.CsvTargetPersistor
 import org.bradfordmiller.deduper.persistors.TargetPersistor
 import org.bradfordmiller.deduper.sql.SqlUtils
 import org.slf4j.LoggerFactory
-import java.sql.ResultSet
 import java.util.concurrent.BlockingQueue
 import javax.sql.DataSource
 

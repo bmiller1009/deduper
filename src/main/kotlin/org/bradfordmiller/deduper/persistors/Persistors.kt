@@ -9,9 +9,6 @@ import org.bradfordmiller.deduper.utils.FileUtils
 import org.json.JSONArray
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.nio.file.Paths
-import java.sql.ResultSet
-import java.sql.ResultSetMetaData
 import java.sql.SQLException
 
 
