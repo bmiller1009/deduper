@@ -4,6 +4,7 @@ import org.bradfordmiller.deduper.DedupeReport
 import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.persistors.CsvTargetPersistor
 import org.bradfordmiller.deduper.persistors.TargetPersistor
+import org.bradfordmiller.deduper.sql.SqlUtils
 import org.slf4j.LoggerFactory
 import java.sql.ResultSet
 import java.util.concurrent.BlockingQueue
@@ -33,14 +34,10 @@ class DeduperDataConsumer(
                 sqlStatement + " WHERE 1 = 2 "
             }
 
-        val rsmd = JNDIUtils.getConnection(sourceDataSource)!!.use { conn ->
-            logger.info("The following sql statement will be run: $finalSqlStatement")
-            conn.prepareStatement(finalSqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
-                stmt.executeQuery().use { rs ->
-                    rs.metaData
-                }
-            }
-        }
+        val qi =
+          JNDIUtils.getConnection(sourceDataSource)!!.use { conn ->
+              SqlUtils.getQueryInfo(finalSqlStatement, conn)
+          }
 
         val firstMsg = dataQueue.take()
         var done = if(firstMsg.isEmpty()) {
@@ -49,7 +46,7 @@ class DeduperDataConsumer(
             true
         } else {
             logger.info("Initializing target consumer")
-            targetPersistor.createTarget(rsmd, deleteTargetIfExists)
+            targetPersistor.createTarget(qi, deleteTargetIfExists)
             totalRowsWritten += targetPersistor.writeRows(firstMsg)
             logger.info("First data packet written to target.  $totalRowsWritten rows written so far.")
             false

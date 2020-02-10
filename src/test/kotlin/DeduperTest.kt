@@ -266,7 +266,11 @@ class DeduperTest {
 
         val deduper = Deduper(config)
 
-        val deduperReport = deduper.dedupe()
+        val report = deduper.dedupe()
+
+        val expectedReport = getExpectedReport()
+
+        assert(report == expectedReport)
     }
     @Test fun withoutTargetAndDupe() {
 
@@ -340,16 +344,18 @@ class DeduperTest {
         assert(sourceFirstRow[1].isNullOrBlank())
     }
     @Test fun nullsInSource() {
-        val csvTargetJndi = CsvJNDITargetType("RealEstateOut", "default_ds",true)
-        val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupes", "default_ds",true)
+        val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data")
+        val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
+        val sqlHashJndi = SqlJNDIHashType("SqlLiteTest", "default_ds",true, true)
         val sqlSourceJndi = SourceJndi("SqliteChinook", "default_ds","tracks")
         val sourceTestNulls = SourceJndi("SqlLiteTest", "default_ds","target_data")
         val sourceTestNullsFirstRow = SourceJndi("SqlLiteTest", "default_ds","target_data WHERE TrackId = 2")
 
         val config = Config.ConfigBuilder()
                 .sourceJndi(sqlSourceJndi)
-                .targetJndi(csvTargetJndi)
-                .dupesJndi(csvDupesJndi)
+                .targetJndi(sqlTargetJndi)
+                .dupesJndi(sqlDupesJndi)
+                .hashJndi(sqlHashJndi)
                 .build()
 
         val deduper = Deduper(config)
@@ -362,18 +368,18 @@ class DeduperTest {
 
         assert(sourceCount == 3503L)
         assert(
-          sourceColumns ==
-          mapOf(
-            1 to "TrackId",
-            2 to "Name",
-            3 to "AlbumId",
-            4 to "MediaTypeId",
-            5 to "GenreId",
-            6 to "Composer",
-            7 to "Milliseconds",
-            8 to "Bytes",
-            9 to "UnitPrice"
-          )
+            sourceColumns ==
+                mapOf(
+                        1 to "TrackId",
+                        2 to "Name",
+                        3 to "AlbumId",
+                        4 to "MediaTypeId",
+                        5 to "GenreId",
+                        6 to "Composer",
+                        7 to "Milliseconds",
+                        8 to "Bytes",
+                        9 to "UnitPrice"
+                )
         )
         assert(sourceFirstRow[5].isNullOrBlank())
     }

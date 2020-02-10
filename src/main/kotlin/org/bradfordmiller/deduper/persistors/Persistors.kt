@@ -2,6 +2,7 @@ package org.bradfordmiller.deduper.persistors
 
 import org.bradfordmiller.deduper.csv.CsvConfigParser
 import org.bradfordmiller.deduper.jndi.JNDIUtils
+import org.bradfordmiller.deduper.sql.QueryInfo
 import org.bradfordmiller.deduper.sql.SqlUtils
 import org.bradfordmiller.deduper.sql.SqlVendorTypes
 import org.bradfordmiller.deduper.utils.FileUtils
@@ -51,7 +52,7 @@ interface TargetPersistor: WritePersistor<Map<String, Any>> {
      *  writes out target file or sql table based on [rsmd]. [deleteIfTargetExists] determines if the target is deleted
      *  before populating it with data
      */
-    fun createTarget(rsmd: ResultSetMetaData, deleteIfTargetExists: Boolean)
+    fun createTarget(qi: QueryInfo, deleteIfTargetExists: Boolean)
 }
 /**
  *  definition for writing out duplicate data to a target flat file or sql table
@@ -127,9 +128,9 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
      * creates the target csv file based on the metadata found in [rsmd]. [deleteIfTargetExists] determines whether the
      * target csv file is deleted if it already exists before creating.
      */
-    override fun createTarget(rsmd: ResultSetMetaData, deleteIfTargetExists: Boolean) {
+    override fun createTarget(qi: QueryInfo, deleteIfTargetExists: Boolean) {
         lockFile()
-        val columns = SqlUtils.getColumnsFromRs(rsmd)
+        val columns = SqlUtils.getColumnsFromRs(qi)
         FileUtils.prepFile(ccp.targetName, columns.values.toSet(), ccp.extension, ccp.delimiter, deleteIfTargetExists)
     }
     /**
@@ -222,22 +223,18 @@ class SqlTargetPersistor(
     private val dbInfo by lazy {
         val sql = "SELECT * FROM $targetName"
         JNDIUtils.getJndiConnection(targetJndi, context).use { conn ->
-            conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
-                stmt.executeQuery().use { rs ->
-                    val metadata = rs.metaData
-                    Pair(
-                        SqlUtils.generateInsert(targetName, metadata, conn.metaData.databaseProductName),
-                        SqlUtils.getColumnIdxFromRs(metadata)
-                    )
-                }
-            }
+            val qi = SqlUtils.getQueryInfo(sql, conn)
+            Pair(
+                SqlUtils.generateInsert(targetName, qi, conn.metaData.databaseProductName),
+                SqlUtils.getColumnIdxFromRs(qi)
+            )
         }
     }
     /**
      * creates a target sql table based on the [rsmd] found in the source. [deleteIfTargetExists] will drop the table if
      * it already exists before attempting to create it
      */
-    override fun createTarget(rsmd: ResultSetMetaData, deleteIfTargetExists: Boolean) {
+    override fun createTarget(qi: QueryInfo, deleteIfTargetExists: Boolean) {
         JNDIUtils.getJndiConnection(targetJndi, context).use { conn ->
             if (deleteIfTargetExists) {
                 logger.info(
@@ -246,7 +243,7 @@ class SqlTargetPersistor(
                 SqlUtils.deleteTableIfExists(conn, targetName)
             }
             val vendor = conn.metaData.databaseProductName
-            val ddl = SqlUtils.generateDDL(targetName, rsmd, vendor, varcharPadding)
+            val ddl = SqlUtils.generateDDL(targetName, qi, vendor, varcharPadding)
             SqlUtils.executeDDL(conn, ddl)
         }
     }
