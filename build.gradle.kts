@@ -8,15 +8,16 @@ import groovy.lang.Closure
 import org.jetbrains.kotlin.gradle.utils.loadPropertyFromResources
 import java.util.Properties
 import java.io.File
+import java.time.Duration
 
 plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
-    id("org.jetbrains.kotlin.jvm").version("1.3.50")
+    id("org.jetbrains.kotlin.jvm").version("1.3.61")
     id("org.jetbrains.dokka").version("0.10.0")
     id("net.researchgate.release").version("2.6.0")
     id("java-library")
     id("com.bmuschko.nexus").version("2.3.1")
-    id("io.codearte.nexus-staging").version("0.21.1")
+    id("io.codearte.nexus-staging").version("0.21.2")
     id("de.marcphilipp.nexus-publish").version("0.3.0")
 }
 
@@ -178,4 +179,6 @@ nexusPublishing {
                 password.set(pwd)
             }
     }
+    //val duration: java.time.Duration? = Duration.ofSeconds(900)
+    clientTimeout.set(Duration.ofSeconds(900))
 }
