@@ -25,7 +25,6 @@ import javax.sql.DataSource
 import org.bradfordmiller.deduper.consumers.DeduperDataConsumer
 import org.bradfordmiller.deduper.consumers.DeduperDupeConsumer
 import org.bradfordmiller.deduper.consumers.DeduperHashConsumer
-import java.util.concurrent.TimeUnit
 
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
@@ -371,8 +370,6 @@ class Deduper(private val config: Config) {
         }
     }
 
-    //val seenHashes = THashMap<String, Long>()
-
     companion object {
         val logger = LoggerFactory.getLogger(Deduper::class.java)
     }
@@ -501,8 +498,7 @@ class Deduper(private val config: Config) {
 
         executorService.shutdown()
         try {
-            //TODO: Make the timeout information an input parameter to the builder
-            if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+            if (!executorService.awaitTermination(config.executionServiceTimeout.interval, config.executionServiceTimeout.timeUnit)) {
                 executorService.shutdownNow()
             }
         } catch(iex:InterruptedException) {

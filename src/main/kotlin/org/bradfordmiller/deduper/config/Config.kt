@@ -3,6 +3,7 @@ package org.bradfordmiller.deduper.config
 import org.apache.commons.lang.NullArgumentException
 import org.bradfordmiller.deduper.jndi.JNDITargetType
 import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 
 /**
  * A source jndi entity
@@ -40,6 +41,11 @@ data class HashSourceJndi(
     val hashColumnName: String
 )
 
+data class ExecutionServiceTimeout(
+    val interval: Long,
+    val timeUnit: TimeUnit
+)
+
 /**
  * Configuration for a deduper process
  *
@@ -52,6 +58,7 @@ data class HashSourceJndi(
  */
 class Config private constructor(
     val sourceJndi: SourceJndi,
+    val executionServiceTimeout: ExecutionServiceTimeout,
     val seenHashesJndi: HashSourceJndi?,
     val targetJndi: JNDITargetType?,
     val dupesJndi: JNDITargetType?,
@@ -71,7 +78,8 @@ class Config private constructor(
         private var seenHashesJndi: HashSourceJndi? = null,
         private var targetJndi: JNDITargetType? = null,
         private var dupesJndi: JNDITargetType? = null,
-        private var hashJndi: JNDITargetType? = null
+        private var hashJndi: JNDITargetType? = null,
+        private var executionServiceTimeout: ExecutionServiceTimeout = ExecutionServiceTimeout(60, TimeUnit.SECONDS)
     ) {
         companion object {
             private val logger = LoggerFactory.getLogger(ConfigBuilder::class.java)
@@ -96,17 +104,20 @@ class Config private constructor(
          * sets the [hashJndi] for the builder object
          */
         fun hashJndi(jndiTargetType: JNDITargetType) = apply {this.hashJndi = jndiTargetType}
+
+        fun executionServiceTimeout(executionServiceTimeout: ExecutionServiceTimeout) = apply {this.executionServiceTimeout = executionServiceTimeout}
         /**
          * returns [Config] object with builder options set
          */
         fun build(): Config {
             val sourceJndi = sourceJndi ?: throw NullArgumentException("Source JNDI must be set")
+            val executionServiceTimeout = executionServiceTimeout
             val seenHashesJndi = seenHashesJndi
             val finalTargetJndi = targetJndi
             val finalDupesJndi = dupesJndi
             val finalHashJndi = hashJndi
             val config =
-              Config(sourceJndi, seenHashesJndi, finalTargetJndi, finalDupesJndi, finalHashJndi)
+              Config(sourceJndi, executionServiceTimeout, seenHashesJndi, finalTargetJndi, finalDupesJndi, finalHashJndi)
             logger.trace("Built config object $config")
             return config
         }

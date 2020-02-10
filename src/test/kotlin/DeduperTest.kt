@@ -1,6 +1,7 @@
 import org.bradfordmiller.deduper.DedupeReport
 import org.bradfordmiller.deduper.Deduper
 import org.bradfordmiller.deduper.config.Config
+import org.bradfordmiller.deduper.config.ExecutionServiceTimeout
 import org.bradfordmiller.deduper.config.HashSourceJndi
 import org.bradfordmiller.deduper.config.SourceJndi
 import org.bradfordmiller.deduper.jndi.*
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.TimeUnit
 
 class DeduperTest {
 
@@ -419,5 +421,23 @@ class DeduperTest {
 
         assert(sampleRow.sampleString == "3526 HIGH ST, SACRAMENTO, CA, 95838, 59222")
         assert(sampleRow.sampleHash == "B23CF69F6FC378E0A9C1AF14F2D2083C")
+    }
+    @Test fun setExecutionTimeout() {
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
+        val executionServiceTimeout = ExecutionServiceTimeout(120, TimeUnit.SECONDS)
+
+        val config = Config.ConfigBuilder()
+                .sourceJndi(csvSourceJndi)
+                .executionServiceTimeout(executionServiceTimeout)
+                .build()
+
+        val deduper = Deduper(config)
+
+        val report = deduper.dedupe()
+
+        val expectedReport = getExpectedReport()
+
+        assert(report == expectedReport)
     }
 }
