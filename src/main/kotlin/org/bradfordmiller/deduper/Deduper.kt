@@ -451,6 +451,8 @@ class Deduper(private val config: Config) {
 
         executorService.execute(producer)
 
+        logger.info("Producer thread started")
+
         if (persistors.targetPersistor != null) {
             val targetConsumer =
                 DeduperDataConsumer(
@@ -462,6 +464,7 @@ class Deduper(private val config: Config) {
                     persistors.deleteTargetIfExists
                 )
             executorService.execute(targetConsumer)
+            logger.info("Data consumer thread started")
         }
 
         if(persistors.dupePersistor != null) {
@@ -473,6 +476,7 @@ class Deduper(private val config: Config) {
                     persistors.deleteDupeIfExists
                 )
             executorService.execute(dupeConsumer)
+            logger.info("Duplicates consumer thread started")
         }
 
         if(persistors.hashPersistor != null) {
@@ -484,6 +488,7 @@ class Deduper(private val config: Config) {
                     persistors.deleteHashIfExists
                 )
             executorService.execute(hashConsumer)
+            logger.info("Hash consumer thread started")
         }
 
         var streamComplete = false
@@ -496,6 +501,7 @@ class Deduper(private val config: Config) {
 
         executorService.shutdown()
         try {
+            //TODO: Make the timeout information an input parameter to the builder
             if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
                 executorService.shutdownNow()
             }

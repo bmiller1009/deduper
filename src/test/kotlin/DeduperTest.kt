@@ -1,4 +1,3 @@
-import gnu.trove.map.hash.THashMap
 import org.bradfordmiller.deduper.DedupeReport
 import org.bradfordmiller.deduper.Deduper
 import org.bradfordmiller.deduper.config.Config
@@ -12,7 +11,6 @@ import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
-import kotlin.math.exp
 
 class DeduperTest {
 
@@ -220,7 +218,6 @@ class DeduperTest {
         assert(columnsDupe == expectedColumnMapDupe)
         assert(firstRowDupe.contentEquals(expectedFirstRowDupe))
     }
-
     @Test fun justDupes() {
 
         File("src/test/resources/data/outputData/targetName.txt").delete()
@@ -257,7 +254,6 @@ class DeduperTest {
         assert(firstRowDupe.contentEquals(expectedFirstRowDupe))
         assert(!File("src/test/resources/data/outputData/targetName.txt").exists())
     }
-
     @Test fun targetOnly() {
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
         val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
@@ -272,7 +268,6 @@ class DeduperTest {
 
         val deduperReport = deduper.dedupe()
     }
-
     @Test fun withoutTargetAndDupe() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
@@ -290,7 +285,6 @@ class DeduperTest {
 
         assert(report == expectedReport)
     }
-
     @Test fun hashPersistor() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
@@ -321,7 +315,6 @@ class DeduperTest {
         assert(sourceFirstRow[0] == "B23CF69F6FC378E0A9C1AF14F2D2083C")
         assert(sourceFirstRow[1] == "{\"zip\":\"95838\",\"baths\":\"1\",\"city\":\"SACRAMENTO\",\"sale_date\":\"Wed May 21 00:00:00 EDT 2008\",\"street\":\"3526 HIGH ST\",\"price\":\"59222\",\"latitude\":\"38.631913\",\"state\":\"CA\",\"beds\":\"2\",\"type\":\"Residential\",\"sq__ft\":\"836\",\"longitude\":\"-121.434879\"}")
     }
-
     @Test fun hashPersistorNoJson() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
@@ -346,7 +339,6 @@ class DeduperTest {
 
         assert(sourceFirstRow[1].isNullOrBlank())
     }
-
     @Test fun nullsInSource() {
         val csvTargetJndi = CsvJNDITargetType("RealEstateOut", "default_ds",true)
         val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupes", "default_ds",true)
@@ -385,7 +377,6 @@ class DeduperTest {
         )
         assert(sourceFirstRow[5].isNullOrBlank())
     }
-
     @Test fun sourceHashTable() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
@@ -407,7 +398,6 @@ class DeduperTest {
         assert(report.distinctDupeCount == 982L)
         assert(report.dupes.size == 982)
     }
-
     @Test fun sampleHash() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
