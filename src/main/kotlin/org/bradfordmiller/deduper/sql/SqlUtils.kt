@@ -1,7 +1,24 @@
 package org.bradfordmiller.deduper.sql
 
+import org.bradfordmiller.deduper.consumers.DeduperDataConsumer
+import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.slf4j.LoggerFactory
 import java.sql.*
+import javax.sql.DataSource
+
+data class QueryMetadata(
+  val columnIndex: Int,
+  val columnName: String,
+  val columnType: Int,
+  val columnTypeName: String,
+  val columnDisplaySize: Int,
+  val isColumnNull: Boolean
+)
+
+data class QueryInfo(
+  val columnCount: Int,
+  val columnSet: Set<QueryMetadata>
+)
 
 /**
  * Sql operations utility class
@@ -23,6 +40,14 @@ class SqlUtils {
         /**
          *  returns column list with index and column name from [rsmd]
          */
+        fun getColumnsFromRs(qi: QueryInfo): Map<Int, String> {
+            return qi.columnSet.map {qm ->
+                qm.columnIndex to qm.columnName
+            }.toMap()
+        }
+        /**
+         *  returns column list with index and column name from [rsmd]
+         */
         fun getColumnsFromRs(rsmd: ResultSetMetaData): Map<Int, String> {
             val colCount = rsmd.columnCount
 
@@ -33,11 +58,10 @@ class SqlUtils {
         /**
          * returns a list of columns and their indices from [rsmd]
          */
-        fun getColumnIdxFromRs(rsmd: ResultSetMetaData): Map<String, Int> {
-            val colCount = rsmd.columnCount
-
-            return (1..colCount).toList().map {i ->
-                rsmd.getColumnName(i) to i
+        //TODO: This should really be called off of the QueryInfo object
+        fun getColumnIdxFromRs(qi: QueryInfo): Map<String, Int> {
+            return qi.columnSet.map {qm ->
+                qm.columnName to qm.columnIndex
             }.toMap()
         }
         /**
@@ -60,21 +84,19 @@ class SqlUtils {
          * [includeNullability]
          */
         private fun getColumnsCommaDelimited(
-            rsmd: ResultSetMetaData,
+            queryInfo: QueryInfo,
             vendor: String,
             varcharPadding: Int = 0,
             includeType: Boolean = false,
             includeNullability: Boolean = false
         ): String {
-            val colCount = rsmd.columnCount
-            return (1..colCount).map { c ->
-                val colName = rsmd.getColumnName(c)
-                val type = rsmd.getColumnType(c)
-                val typeName = JDBCType.valueOf(type).name
-                val size = rsmd.getColumnDisplaySize(c) + varcharPadding
+            return queryInfo.columnSet.map { qi ->
+                val colName = qi.columnName
+                val typeName = qi.columnTypeName
+                val size = qi.columnDisplaySize + varcharPadding
                 val isNull =
                     if(includeNullability) {
-                        if (rsmd.isNullable(c) == ResultSetMetaData.columnNullable) {
+                        if (qi.isColumnNull) {
                             "NULL"
                         } else {
                             "NOT NULL"
@@ -84,7 +106,7 @@ class SqlUtils {
                     }
                 val sqlType =
                     if(includeType) {
-                        getType(vendor, typeName, type, size)
+                        getType(vendor, typeName, qi.columnType, size)
                     } else {
                         ""
                     }
@@ -95,11 +117,10 @@ class SqlUtils {
          * returns a string representing a parameterized INSERT sql statement based on the [tableName] which is the
          * target of the INSERT, [rsmd], and the database [vendor]
          */
-        fun generateInsert(tableName: String, rsmd: ResultSetMetaData, vendor: String): String {
-            val colCount = rsmd.columnCount
+        fun generateInsert(tableName: String, qi: QueryInfo, vendor: String): String {
             val insertClause = "INSERT INTO $tableName "
-            val wildcards = (1..colCount).map {"?"}.joinToString(",")
-            val columnsComma = getColumnsCommaDelimited(rsmd, vendor)
+            val wildcards = (1..qi.columnCount).map {"?"}.joinToString(",")
+            val columnsComma = getColumnsCommaDelimited(qi, vendor)
             val insertSql = "$insertClause ($columnsComma) VALUES ($wildcards)"
             logger.trace("Insert SQL $insertSql has been generated.")
             return insertSql
@@ -107,9 +128,9 @@ class SqlUtils {
         /**
          * returns a CREATE TABLE sql DDL based on the [tableName], [rsmd], [vendor], and [varcharPadding]
          */
-        fun generateDDL(tableName: String, rsmd: ResultSetMetaData, vendor: String, varcharPadding: Int): String {
+        fun generateDDL(tableName: String, qi: QueryInfo, vendor: String, varcharPadding: Int): String {
             val ctClause = "CREATE TABLE $tableName "
-            val columnsComma = getColumnsCommaDelimited(rsmd, vendor, varcharPadding, true)
+            val columnsComma = getColumnsCommaDelimited(qi, vendor, varcharPadding, true)
             val ddl = "$ctClause ($columnsComma)"
             logger.trace("DDL $ddl has been generated.")
             return ddl
@@ -153,6 +174,27 @@ class SqlUtils {
                 columnList.map { rs.getString(it) }.joinToString()
             } else {
                 (1..colCount).toList().map { rs.getString(it) }.joinToString()
+            }
+        }
+        fun getQueryInfo(sql: String, conn: Connection): QueryInfo {
+            DeduperDataConsumer.logger.info("The following sql statement will be run: $sql")
+            conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
+                stmt.executeQuery().use { rs ->
+                    val rsmd = rs.metaData
+                    val columnCount = rsmd.columnCount
+                    val queryMetadata = (1..columnCount).map { i ->
+                        val type = rsmd.getColumnType(i)
+                        QueryMetadata(
+                                i,
+                                rsmd.getColumnName(i),
+                                type,
+                                JDBCType.valueOf(type).name,
+                                rsmd.getColumnDisplaySize(i),
+                                rsmd.isNullable(i) == ResultSetMetaData.columnNullable
+                        )
+                    }.toMutableSet()
+                    return QueryInfo(columnCount, queryMetadata)
+                }
             }
         }
     }

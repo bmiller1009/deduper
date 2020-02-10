@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
-import kotlin.math.exp
 
 class DeduperTest {
 
@@ -48,6 +47,7 @@ class DeduperTest {
                 "latitude", "longitude"),
             4,
             3,
+            982,
             mutableMapOf(
                 "3230065898C61AE414BA58E7B7C99C0B" to
                 Pair(
@@ -218,7 +218,6 @@ class DeduperTest {
         assert(columnsDupe == expectedColumnMapDupe)
         assert(firstRowDupe.contentEquals(expectedFirstRowDupe))
     }
-
     @Test fun justDupes() {
 
         File("src/test/resources/data/outputData/targetName.txt").delete()
@@ -255,7 +254,24 @@ class DeduperTest {
         assert(firstRowDupe.contentEquals(expectedFirstRowDupe))
         assert(!File("src/test/resources/data/outputData/targetName.txt").exists())
     }
+    @Test fun targetOnly() {
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
+        val csvTargetJndi = CsvJNDITargetType("RealEstateOut", "default_ds",false)
 
+        val config = Config.ConfigBuilder()
+                .sourceJndi(csvSourceJndi)
+                .targetJndi(csvTargetJndi)
+                .build()
+
+        val deduper = Deduper(config)
+
+        val report = deduper.dedupe()
+
+        val expectedReport = getExpectedReport()
+
+        assert(report == expectedReport)
+    }
     @Test fun withoutTargetAndDupe() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
@@ -273,7 +289,6 @@ class DeduperTest {
 
         assert(report == expectedReport)
     }
-
     @Test fun hashPersistor() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
@@ -304,7 +319,6 @@ class DeduperTest {
         assert(sourceFirstRow[0] == "B23CF69F6FC378E0A9C1AF14F2D2083C")
         assert(sourceFirstRow[1] == "{\"zip\":\"95838\",\"baths\":\"1\",\"city\":\"SACRAMENTO\",\"sale_date\":\"Wed May 21 00:00:00 EDT 2008\",\"street\":\"3526 HIGH ST\",\"price\":\"59222\",\"latitude\":\"38.631913\",\"state\":\"CA\",\"beds\":\"2\",\"type\":\"Residential\",\"sq__ft\":\"836\",\"longitude\":\"-121.434879\"}")
     }
-
     @Test fun hashPersistorNoJson() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
@@ -329,7 +343,6 @@ class DeduperTest {
 
         assert(sourceFirstRow[1].isNullOrBlank())
     }
-
     @Test fun nullsInSource() {
         val sqlTargetJndi = SqlJNDITargetType("SqlLiteTest", "default_ds",true,"target_data")
         val sqlDupesJndi = SqlJNDIDupeType("SqlLiteTest", "default_ds",true)
@@ -355,22 +368,21 @@ class DeduperTest {
 
         assert(sourceCount == 3503L)
         assert(
-          sourceColumns ==
-          mapOf(
-            1 to "TrackId",
-            2 to "Name",
-            3 to "AlbumId",
-            4 to "MediaTypeId",
-            5 to "GenreId",
-            6 to "Composer",
-            7 to "Milliseconds",
-            8 to "Bytes",
-            9 to "UnitPrice"
-          )
+            sourceColumns ==
+                mapOf(
+                        1 to "TrackId",
+                        2 to "Name",
+                        3 to "AlbumId",
+                        4 to "MediaTypeId",
+                        5 to "GenreId",
+                        6 to "Composer",
+                        7 to "Milliseconds",
+                        8 to "Bytes",
+                        9 to "UnitPrice"
+                )
         )
         assert(sourceFirstRow[5].isNullOrBlank())
     }
-
     @Test fun sourceHashTable() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
@@ -386,13 +398,12 @@ class DeduperTest {
 
         val report = deduper.dedupe()
 
-        assert(deduper.seenHashes.size == 982)
+        assert(report.hashCount == 982L)
         assert(report.recordCount == 982L)
         assert(report.dupeCount == 982L)
         assert(report.distinctDupeCount == 982L)
         assert(report.dupes.size == 982)
     }
-
     @Test fun sampleHash() {
 
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
