@@ -22,9 +22,7 @@ import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Executors
 import javax.sql.DataSource
 
-import org.bradfordmiller.deduper.consumers.DeduperDataConsumer
-import org.bradfordmiller.deduper.consumers.DeduperDupeConsumer
-import org.bradfordmiller.deduper.consumers.DeduperHashConsumer
+import org.bradfordmiller.deduper.consumers.*
 
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
@@ -456,9 +454,9 @@ class Deduper(private val config: Config) {
                     persistors.targetPersistor!!,
                     dataQueue!!,
                     targetControlQueue,
+                    persistors.deleteTargetIfExists,
                     sourceDataSource,
-                    sqlStatement,
-                    persistors.deleteTargetIfExists
+                    sqlStatement
                 )
             executorService.execute(targetConsumer)
             logger.info("Data consumer thread started")

@@ -2,30 +2,21 @@ package org.bradfordmiller.deduper.consumers
 
 import org.bradfordmiller.deduper.DedupeReport
 import org.bradfordmiller.deduper.jndi.JNDIUtils
-import org.bradfordmiller.deduper.persistors.CsvTargetPersistor
 import org.bradfordmiller.deduper.persistors.TargetPersistor
 import org.bradfordmiller.deduper.sql.SqlUtils
-import org.slf4j.LoggerFactory
 import java.util.concurrent.BlockingQueue
 import javax.sql.DataSource
 
 class DeduperDataConsumer(
     val targetPersistor: TargetPersistor,
-    val dataQueue: BlockingQueue<MutableList<Map<String, Any>>>,
-    val controlQueue: BlockingQueue<DedupeReport>,
+    dataQueue: BlockingQueue<MutableList<Map<String, Any>>>,
+    controlQueue: BlockingQueue<DedupeReport>,
+    deleteIfExists: Boolean,
     val sourceDataSource: DataSource,
-    val sqlStatement: String,
-    val deleteTargetIfExists: Boolean
-): Runnable {
+    val sqlStatement: String
+): BaseConsumer<Map<String, Any>>(targetPersistor, dataQueue, controlQueue, deleteIfExists) {
 
-    companion object {
-        val logger = LoggerFactory.getLogger(DeduperDataConsumer::class.java)
-    }
-
-    override fun run() {
-
-        var totalRowsWritten = 0L
-
+    override fun createTarget(deleteIfExists: Boolean) {
         val finalSqlStatement =
             if(sqlStatement.contains("WHERE")) {
                 sqlStatement + " AND 1 = 2 "
@@ -34,50 +25,13 @@ class DeduperDataConsumer(
             }
 
         val qi =
-          JNDIUtils.getConnection(sourceDataSource)!!.use { conn ->
-              SqlUtils.getQueryInfo(finalSqlStatement, conn)
-          }
-
-        val firstMsg = dataQueue.take()
-        var done = if(firstMsg.isEmpty()) {
-            //This should never happen
-            logger.info("First message is empty, stream complete.")
-            true
-        } else {
-            logger.info("Initializing target consumer")
-            targetPersistor.createTarget(qi, deleteTargetIfExists)
-            totalRowsWritten += targetPersistor.writeRows(firstMsg)
-            logger.info("First data packet written to target.  $totalRowsWritten rows written so far.")
-            false
-        }
-
-        while(!done) {
-            val data = dataQueue.take()
-            //Empty record hit, means stream is complete
-            if(data.isEmpty()) {
-                done = true
-            } else {
-                totalRowsWritten += targetPersistor.writeRows(data)
-                //TODO: Parameterize this
-                if(totalRowsWritten % 100 == 0L) {
-                    logger.info("Total rows written to target: $totalRowsWritten")
-                }
+            JNDIUtils.getConnection(sourceDataSource)!!.use { conn ->
+                SqlUtils.getQueryInfo(finalSqlStatement, conn)
             }
-        }
 
-        if(targetPersistor is CsvTargetPersistor) {
-            targetPersistor.unlockFile()
-            logger.info("Target file unlocked.")
-        }
-
-        val dedupeReport = controlQueue.take()
-        val dedupeCount = dedupeReport.recordCount - dedupeReport.dupeCount
-        //Check that dedupe report publish numbers match persisted numbers
-        if(totalRowsWritten != dedupeCount) {
-            logger.error(
-                "Dedupe report records published (${dedupeCount}) does not match rows persisted by the target persistor " +
-                        "(${totalRowsWritten})"
-            )
-        }
+        targetPersistor.createTarget(qi, deleteIfExists)
+    }
+    override fun getDeduperReportCount(dedupeReport: DedupeReport): Long {
+        return dedupeReport.recordCount - dedupeReport.dupeCount
     }
 }

@@ -175,7 +175,7 @@ class SqlUtils {
             }
         }
         fun getQueryInfo(sql: String, conn: Connection): QueryInfo {
-            DeduperDataConsumer.logger.info("The following sql statement will be run: $sql")
+            logger.info("The following sql statement will be run: $sql")
             conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
                 stmt.executeQuery().use { rs ->
                     val rsmd = rs.metaData
