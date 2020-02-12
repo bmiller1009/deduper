@@ -41,6 +41,14 @@ data class HashSourceJndi(
     val hashColumnName: String
 )
 
+/**
+ * Settings for the Execution Service timeout. Once a deduper has published all data to the blocking queues of all
+ * consumers, consumers will have a dynamic timeout set (defaults to 60 seconds) for all consumers to finish persisting
+ * data
+ *
+ * @property interval the numeric value of time (IE, 60)
+ * @property timeUnit the unit of time represented by the [interval]
+ */
 data class ExecutionServiceTimeout(
     val interval: Long,
     val timeUnit: TimeUnit
@@ -51,6 +59,7 @@ data class ExecutionServiceTimeout(
  *
  * @constructor creates a new instance of the Config class
  * @property sourceJndi a [SourceJndi] object
+ * @property executionServiceTimeout a [ExecutionServiceTimeout] object
  * @property seenHashesJndi a [HashSourceJndi] object
  * @property targetJndi a nullable [JNDITargetType] for writing out deduped data
  * @property dupesJndi a nullable [JNDITargetType] for writing out duplicate data
@@ -72,6 +81,7 @@ class Config private constructor(
      * @property targetJndi a nullable [JNDITargetType] for writing out deduped data
      * @property dupesJndi a nullable [JNDITargetType] for writing out duplicate data
      * @property hashJndi a nullable [JNDITargetType] for writing out hashes from a deduper process
+     * @property executionServiceTimeout a [ExecutionServiceTimeout] object which defaults to 60 seconds
      */
     data class ConfigBuilder(
         private var sourceJndi: SourceJndi? = null,
@@ -104,7 +114,9 @@ class Config private constructor(
          * sets the [hashJndi] for the builder object
          */
         fun hashJndi(jndiTargetType: JNDITargetType) = apply {this.hashJndi = jndiTargetType}
-
+        /**
+         * Sets the [executionServiceTimeout] for the builder object
+         */
         fun executionServiceTimeout(executionServiceTimeout: ExecutionServiceTimeout) = apply {this.executionServiceTimeout = executionServiceTimeout}
         /**
          * returns [Config] object with builder options set

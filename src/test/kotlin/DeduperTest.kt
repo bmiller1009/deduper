@@ -226,7 +226,7 @@ class DeduperTest {
         val dir = File("src/test/resources/data/outputData/")
         val ext = arrayOf("txt")
         FileUtils.listFiles(dir, ext, false).forEach{f -> f.delete()}
-        
+
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
         val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaultsWithPipes", "default_ds",true)
         val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)

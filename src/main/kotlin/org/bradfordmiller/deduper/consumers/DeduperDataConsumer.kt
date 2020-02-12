@@ -3,10 +3,22 @@ package org.bradfordmiller.deduper.consumers
 import org.bradfordmiller.deduper.DedupeReport
 import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.persistors.TargetPersistor
+import org.bradfordmiller.deduper.persistors.WritePersistor
 import org.bradfordmiller.deduper.sql.SqlUtils
 import java.util.concurrent.BlockingQueue
 import javax.sql.DataSource
 
+/**
+ * Consumer for processing and persisting target data, IE "deduped" data
+ *
+ * @property targetPersistor - a [WritePersistor]
+ * @property dataQueue - queue where persistor receives data to persist
+ * @property controlQueue - queue where persistor receives [DedupeReport]
+ * @property deleteIfExists - determines whether persistent object (table or file) is dropped before being recreated
+ * @property sourceDataSource - the data source used by the publisher. This is needed to build a persistent store which
+ * mirrors the published data
+ * @property sqlStatement - SQL statement used by the publisher
+ */
 class DeduperDataConsumer(
     targetPersistor: TargetPersistor,
     dataQueue: BlockingQueue<MutableList<Map<String, Any>>>,
@@ -16,6 +28,11 @@ class DeduperDataConsumer(
     val sqlStatement: String
 ): BaseConsumer<Map<String, Any>, TargetPersistor>(targetPersistor, dataQueue, controlQueue, deleteIfExists) {
 
+    /**
+     *  create/prep target persistence - can be database table or flat file
+     *
+     *  [deleteIfExists] indicates whether to delete the [targetPersistor] table/flat file if it already exists
+     */
     override fun createTarget(deleteIfExists: Boolean, persistor: TargetPersistor) {
         val finalSqlStatement =
             if(sqlStatement.contains("WHERE")) {
@@ -32,6 +49,9 @@ class DeduperDataConsumer(
         persistor.createTarget(qi, deleteIfExists)
     }
 
+    /**
+     * gets the deduped count from [dedupeReport]
+     */
     override fun getDeduperReportCount(dedupeReport: DedupeReport): Long {
         return dedupeReport.recordCount - dedupeReport.dupeCount
     }

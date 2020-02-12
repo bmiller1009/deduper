@@ -6,6 +6,16 @@ import org.bradfordmiller.deduper.persistors.WritePersistor
 import org.slf4j.LoggerFactory
 import java.util.concurrent.BlockingQueue
 
+/**
+ * Base definition of a runnable Consumer. Consumers are responsible for persisting data to disk
+ *
+ * @param T - the type of data being persisted
+ * @param P - the type of [WritePersistor]
+ * @property persistor - a [WritePersistor]
+ * @property dataQueue - queue where persistor receives data to persist
+ * @property controlQueue - queue where persistor receives [DedupeReport]
+ * @property deleteIfExists - determines whether persistent object (table or file) is dropped before being recreated
+ */
 abstract class BaseConsumer<T, P: WritePersistor<T>>(
   val persistor: P,
   val dataQueue: BlockingQueue<MutableList<T>>,
@@ -19,9 +29,24 @@ abstract class BaseConsumer<T, P: WritePersistor<T>>(
 
     var totalRowsWritten = 0L
 
+    /**
+     * creates the target - either flat file or database table
+     *
+     * [deleteIfExists] determines whether persistent object (table or file) is dropped before being recreated
+     * the [persistor] writing the data
+     */
     abstract fun createTarget(deleteIfExists: Boolean, persistor: P)
+
+    /**
+     * the report metric in the [dedupeReport] to check
+     *
+     * the [dedupeReport] delivered from the publisher
+     */
     abstract fun getDeduperReportCount(dedupeReport: DedupeReport): Long
 
+    /**
+     * pulls/processes the first message off of the [dataQueue] and returns whether or not the message is empty
+     */
     fun processFirstMessage(): Boolean {
         val firstMsg = dataQueue.take()
         return if(firstMsg.isEmpty()) {
@@ -38,6 +63,10 @@ abstract class BaseConsumer<T, P: WritePersistor<T>>(
             false
         }
     }
+
+    /**
+     * loops over the queue consuming messages until [doneFlag] is set to true, meaning the last message was empty
+     */
     fun processQueueData(doneFlag: Boolean) {
         var done = doneFlag
         while(!done) {
@@ -54,12 +83,22 @@ abstract class BaseConsumer<T, P: WritePersistor<T>>(
             }
         }
     }
+
+    /**
+     * removes the lock file from a flat file once persistence to file is complete
+     */
     fun unlockCsvFile() {
         if(persistor is CsvTargetPersistor) {
             persistor.unlockFile()
             logger.info("${this.javaClass.canonicalName}:: Target file unlocked.")
         }
     }
+
+    /**
+     * consumes the [controlQueue] for a [DedupeReport], indicating the publishing of all data is complete
+     *
+     * returns a [DedupeReport]
+     */
     fun processDeduperReport(): DedupeReport {
         val dedupeReport = controlQueue.take()
         val dedupeCount = getDeduperReportCount(dedupeReport)
@@ -72,6 +111,10 @@ abstract class BaseConsumer<T, P: WritePersistor<T>>(
         }
         return dedupeReport
     }
+
+    /**
+     * launches consumer as a runnable
+     */
     override fun run() {
         val complete = processFirstMessage()
         processQueueData(complete)

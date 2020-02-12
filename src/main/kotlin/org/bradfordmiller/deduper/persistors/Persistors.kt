@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.sql.SQLException
 
-
 /**
  * represents a simple duplicate value found by deduper.
  *
@@ -33,7 +32,7 @@ data class HashRow(val hash: String, val hash_json: String?)
  */
 interface WritePersistor<T> {
     /**
-     *  writes list of data contained in [rows] to output
+     *  writes list of data contained in [rows] to output and returns the number of rows written
      */
     fun writeRows(rows: MutableList<T>): Long
 }
@@ -47,7 +46,7 @@ interface TargetPersistor: WritePersistor<Map<String, Any>> {
      */
     override fun writeRows(rows: MutableList<Map<String, Any>>): Long
     /**
-     *  writes out target file or sql table based on [rsmd]. [deleteIfTargetExists] determines if the target is deleted
+     *  writes out target file or sql table based on [qi]. [deleteIfTargetExists] determines if the target is deleted
      *  before populating it with data
      */
     fun createTarget(qi: QueryInfo, deleteIfTargetExists: Boolean)
@@ -89,10 +88,20 @@ open class CsvPersistor(config: Map<String, String>) {
         val logger = LoggerFactory.getLogger(CsvPersistor::class.java)
     }
 
+    /**
+     * represents a lock file for a csv file
+     *
+     * @property name name of the lock file
+     * @property path path of the file to be locked
+     * @property file the lock file
+     */
     data class LockFile(val name: String, val path: String, val file: File)
 
     val ccp = CsvConfigParser(config)
 
+    /**
+     * returns a [LockFile]
+     */
     private fun getLockFile(): LockFile {
         val f = File("${ccp.targetName}.${ccp.extension}")
         val path = f.parent
@@ -101,6 +110,12 @@ open class CsvPersistor(config: Map<String, String>) {
         logger.info("Lock file established: $lockFileName")
         return LockFile(name, path, File(lockFileName))
     }
+
+    /**
+     *  Locks a file based on a [LockFile] definition
+     *
+     *  @throws IllegalAccessError if an attempt is made to lock a file which is already locked
+     */
     internal fun lockFile() {
         logger.info("Locking target file.")
         val lockFile = getLockFile()
@@ -113,6 +128,10 @@ open class CsvPersistor(config: Map<String, String>) {
             logger.info("Lock file created.")
         }
     }
+
+    /**
+     * Unlocks a file by removing it's associated lock file
+     */
     fun unlockFile() {
         val lockFile = getLockFile()
         lockFile.file.delete()
@@ -123,7 +142,7 @@ open class CsvPersistor(config: Map<String, String>) {
  */
 class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), TargetPersistor {
     /**
-     * creates the target csv file based on the metadata found in [rsmd]. [deleteIfTargetExists] determines whether the
+     * creates the target csv file based on the metadata found in [qi]. [deleteIfTargetExists] determines whether the
      * target csv file is deleted if it already exists before creating.
      */
     override fun createTarget(qi: QueryInfo, deleteIfTargetExists: Boolean) {
@@ -133,7 +152,7 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
     }
     /**
      * writes out a list of key/value pairs contained in [rows] to a csv. The key is the column name, and the value is
-     * the data value for the column
+     * the data value for the column. Returns the number of rows written.
      */
     override fun writeRows(rows: MutableList<Map<String, Any>>): Long {
         logger.info("Writing ${rows.size} rows to ${ccp.targetName}")
@@ -166,7 +185,7 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter, deleteIfDupeExists)
     }
     /**
-     * writes out a list of duplicate data [rows] to a csv.
+     * writes out a list of duplicate data [rows] to a csv and returns the number of rows written
      */
     //TODO: Clean this up.  The pair syntax second.second.blah is clunky and hard to read
     override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>): Long {
@@ -192,7 +211,7 @@ class CsvHashPersistor(config: Map<String, String>): CsvPersistor(config), HashP
         FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter, deleteIfHashTableExists)
     }
     /**
-     * writes out a list of hash data [rows] to a csv.
+     * writes out a list of hash data [rows] to a csv and returns the number of rows written
      */
     override fun writeRows(rows: MutableList<HashRow>): Long {
         val data = rows.map {hr ->
@@ -229,7 +248,7 @@ class SqlTargetPersistor(
         }
     }
     /**
-     * creates a target sql table based on the [rsmd] found in the source. [deleteIfTargetExists] will drop the table if
+     * creates a target sql table based on the [qi] found in the source. [deleteIfTargetExists] will drop the table if
      * it already exists before attempting to create it
      */
     override fun createTarget(qi: QueryInfo, deleteIfTargetExists: Boolean) {
@@ -246,7 +265,7 @@ class SqlTargetPersistor(
         }
     }
     /**
-     * writes out a list of data [rows] to a a sql table.
+     * writes out a list of data [rows] to a a sql table and returns the number of rows written
      */
     override fun writeRows(rows: MutableList<Map<String, Any>>): Long {
         val sql = dbInfo.first
@@ -292,7 +311,7 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
     private val insertStatement =
         "INSERT INTO dupes(hash, row_ids, first_found_row_number, dupe_values) VALUES (?,?,?,?)"
     /**
-     * creates a sql table for persisting duplicates found in a deduper process. [deleteIfTargetExists] will drop the
+     * creates a sql table for persisting duplicates found in a deduper process. [deleteIfDupeExists] will drop the
      * table if it already exists before attempting to create it
      */
     override fun createDupe(deleteIfDupeExists: Boolean) {
@@ -317,7 +336,7 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
         }
     }
     /**
-     * writes out a list of duplicate data [rows] to a a sql table.
+     * writes out a list of duplicate data [rows] to a a sql table and returns the number of rows written
      */
     //TODO: Clean this up.  The pair syntax second.second.blah is clunky and hard to read
     override fun writeRows(rows: MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>): Long {
@@ -361,7 +380,7 @@ class SqlHashPersistor(private val hashJndi: String, private val context: String
 
     private val insertStatement = "INSERT INTO hashes(hash, json_row) VALUES (?,?)"
     /**
-     * creates a sql table for persisting hash rows found in a deduper process. [deleteIfTargetExists] will drop the
+     * creates a sql table for persisting hash rows found in a deduper process. [deleteIfHashTableExists] will drop the
      * table if it already exists before attempting to create it
      */
     override fun createHashTable(deleteIfHashTableExists: Boolean) {
@@ -385,7 +404,7 @@ class SqlHashPersistor(private val hashJndi: String, private val context: String
         }
     }
     /**
-     * writes out a list of duplicate data [rows] to a a sql table.
+     * writes out a list of duplicate data [rows] to a a sql table and returns number of rows written
      */
     override fun writeRows(rows: MutableList<HashRow>): Long {
         JNDIUtils.getJndiConnection(hashJndi, context).use { conn ->

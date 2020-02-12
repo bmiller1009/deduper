@@ -1,6 +1,7 @@
 package org.bradfordmiller.deduper
 
 import gnu.trove.map.hash.THashMap
+import oracle.jvm.hotspot.jfr.Producer
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.csv.CsvConfigParser
@@ -23,6 +24,7 @@ import java.util.concurrent.Executors
 import javax.sql.DataSource
 
 import org.bradfordmiller.deduper.consumers.*
+import javax.naming.ldap.Control
 
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
@@ -56,10 +58,11 @@ class DeduperProducer(
   val dataQueue: BlockingQueue<MutableList<Map<String, Any>>>?,
   val dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>?,
   val hashQueue: BlockingQueue<MutableList<HashRow>>?,
-  val controlQueue: BlockingQueue<DedupeReport>,
+  /*val controlQueue: BlockingQueue<DedupeReport>,
   val targetControlQueue: BlockingQueue<DedupeReport>?,
   val dupeControlQueue: BlockingQueue<DedupeReport>?,
-  val hashControlQueue: BlockingQueue<DedupeReport>?,
+  val hashControlQueue: BlockingQueue<DedupeReport>?,*/
+  val controlQueues: ArrayList<BlockingQueue<DedupeReport>?>,
   val commitSize: Long = 500,
   val outputReportCommitSize: Long = 1000000,
   val config: Config,
@@ -281,6 +284,8 @@ class DeduperProducer(
  */
 class Deduper(private val config: Config) {
 
+    enum class ControlQueue { Producer, Target, Dupes, Hashes }
+
     data class Persistors(
         val targetPersistor: TargetPersistor?,
         val deleteTargetIfExists: Boolean,
@@ -405,9 +410,13 @@ class Deduper(private val config: Config) {
         var dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>? = null
         var hashQueue: BlockingQueue<MutableList<HashRow>>? = null
 
+        var controlQueues = emptyMap<ControlQueue, ArrayBlockingQueue<DedupeReport>>()
+        controlQueues += ControlQueue.Producer to ArrayBlockingQueue<DedupeReport>(1)
+
         if (config.targetJndi != null) {
             threadCount += 1
             dataQueue = ArrayBlockingQueue<MutableList<Map<String, Any>>>(100)
+            
         }
 
         if (config.dupesJndi != null) {
@@ -422,10 +431,10 @@ class Deduper(private val config: Config) {
 
         val executorService = Executors.newFixedThreadPool(threadCount)
 
-        val controlQueue = ArrayBlockingQueue<DedupeReport>(1)
+        /*val controlQueue = ArrayBlockingQueue<DedupeReport>(1)
         val targetControlQueue = ArrayBlockingQueue<DedupeReport>(1)
         val dupeControlQueue = ArrayBlockingQueue<DedupeReport>(1)
-        val hashControlQueue = ArrayBlockingQueue<DedupeReport>(1)
+        val hashControlQueue = ArrayBlockingQueue<DedupeReport>(1)*/
 
         val producer =
             DeduperProducer(

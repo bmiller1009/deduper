@@ -1,9 +1,18 @@
 package org.bradfordmiller.deduper.sql
 
-import org.bradfordmiller.deduper.consumers.DeduperDataConsumer
 import org.slf4j.LoggerFactory
 import java.sql.*
 
+/**
+ * represents the metadata found in a particular SQL query
+ *
+ * @property columnIndex the positional index of a column within the SQL query
+ * @property columnName the name of the column
+ * @property columnType the integer representation of the data type of the column
+ * @property columnType the stringified representation of the data type of the column
+ * @property columnDisplaySize the size of the column
+ * @property isColumnNull the nullability of a column
+ */
 data class QueryMetadata(
   val columnIndex: Int,
   val columnName: String,
@@ -13,6 +22,9 @@ data class QueryMetadata(
   val isColumnNull: Boolean
 )
 
+/**
+ * the metadata about a particular SQL query comprised of the [columnCount] and the [columnSet] of [QueryInfo]
+ */
 data class QueryInfo(
   val columnCount: Int,
   val columnSet: Set<QueryMetadata>
@@ -27,7 +39,7 @@ class SqlUtils {
 
         private val logger = LoggerFactory.getLogger(SqlUtils::class.java)
         /**
-         * returns a map of column names and associated values from rs and list of column names contained in [colNames]
+         * returns a map of column names and associated values from [rs] and list of column names contained in [colNames]
          */
         fun getMapFromRs(rs: ResultSet, colNames: Map<Int, String>): Map<String, Any> {
             return (1..colNames.size).map{
@@ -36,7 +48,7 @@ class SqlUtils {
             }.toMap()
         }
         /**
-         *  returns column list with index and column name from [rsmd]
+         *  returns column list with index and column name from [qi]
          */
         fun getColumnsFromRs(qi: QueryInfo): Map<Int, String> {
             return qi.columnSet.map {qm ->
@@ -54,7 +66,7 @@ class SqlUtils {
             }.toMap()
         }
         /**
-         * returns a list of columns and their indices from [rsmd]
+         * returns a list of columns and their indices from [qi]
          */
         //TODO: This should really be called off of the QueryInfo object
         fun getColumnIdxFromRs(qi: QueryInfo): Map<String, Int> {
@@ -78,7 +90,7 @@ class SqlUtils {
             }
         }
         /**
-         * returns a stringified list of columns based on [rsmd], [vendor], [varcharPadding], [includeType], and
+         * returns a stringified list of columns based on [queryInfo], [vendor], [varcharPadding], [includeType], and
          * [includeNullability]
          */
         private fun getColumnsCommaDelimited(
@@ -113,7 +125,7 @@ class SqlUtils {
         }
         /**
          * returns a string representing a parameterized INSERT sql statement based on the [tableName] which is the
-         * target of the INSERT, [rsmd], and the database [vendor]
+         * target of the INSERT, [qi], and the database [vendor]
          */
         fun generateInsert(tableName: String, qi: QueryInfo, vendor: String): String {
             val insertClause = "INSERT INTO $tableName "
@@ -124,7 +136,7 @@ class SqlUtils {
             return insertSql
         }
         /**
-         * returns a CREATE TABLE sql DDL based on the [tableName], [rsmd], [vendor], and [varcharPadding]
+         * returns a CREATE TABLE sql DDL based on the [tableName], [qi], [vendor], and [varcharPadding]
          */
         fun generateDDL(tableName: String, qi: QueryInfo, vendor: String, varcharPadding: Int): String {
             val ctClause = "CREATE TABLE $tableName "
@@ -163,7 +175,7 @@ class SqlUtils {
             }
         }
         /**
-         *  returns the string reprsentation of a row in [rs] for a given [columnList]
+         *  returns the string representation of a row in [rs] for a given [columnList]
          */
         fun stringifyRow(rs: ResultSet, columnList: MutableSet<String> = mutableSetOf()): String {
             val rsmd = rs.metaData
@@ -174,6 +186,10 @@ class SqlUtils {
                 (1..colCount).toList().map { rs.getString(it) }.joinToString()
             }
         }
+
+        /**
+         * returns the [QueryInfo] of a [sql] query based on a specific [conn]
+         */
         fun getQueryInfo(sql: String, conn: Connection): QueryInfo {
             logger.info("The following sql statement will be run: $sql")
             conn.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
