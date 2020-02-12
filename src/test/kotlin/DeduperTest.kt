@@ -1,3 +1,4 @@
+import org.apache.commons.io.FileUtils
 import org.bradfordmiller.deduper.DedupeReport
 import org.bradfordmiller.deduper.Deduper
 import org.bradfordmiller.deduper.config.Config
@@ -8,7 +9,6 @@ import org.bradfordmiller.deduper.jndi.*
 import org.bradfordmiller.deduper.persistors.Dupe
 import org.bradfordmiller.deduper.sql.SqlUtils
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -36,7 +36,8 @@ class DeduperTest {
                 }
             }
         }
-        @BeforeEach
+        @JvmStatic
+        @BeforeAll
         fun cleanUpBefore() {
             clearDataDir()
         }
@@ -222,8 +223,10 @@ class DeduperTest {
     }
     @Test fun justDupes() {
 
-        File("src/test/resources/data/outputData/targetName.txt").delete()
-
+        val dir = File("src/test/resources/data/outputData/")
+        val ext = arrayOf("txt")
+        FileUtils.listFiles(dir, ext, false).forEach{f -> f.delete()}
+        
         val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
         val csvDupesJndi = CsvJNDITargetType("RealEstateOutDupesUseDefaultsWithPipes", "default_ds",true)
         val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
