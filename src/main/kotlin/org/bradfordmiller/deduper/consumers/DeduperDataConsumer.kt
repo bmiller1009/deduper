@@ -8,15 +8,15 @@ import java.util.concurrent.BlockingQueue
 import javax.sql.DataSource
 
 class DeduperDataConsumer(
-    val targetPersistor: TargetPersistor,
+    targetPersistor: TargetPersistor,
     dataQueue: BlockingQueue<MutableList<Map<String, Any>>>,
     controlQueue: BlockingQueue<DedupeReport>,
     deleteIfExists: Boolean,
     val sourceDataSource: DataSource,
     val sqlStatement: String
-): BaseConsumer<Map<String, Any>>(targetPersistor, dataQueue, controlQueue, deleteIfExists) {
+): BaseConsumer<Map<String, Any>, TargetPersistor>(targetPersistor, dataQueue, controlQueue, deleteIfExists) {
 
-    override fun createTarget(deleteIfExists: Boolean) {
+    override fun createTarget(deleteIfExists: Boolean, persistor: TargetPersistor) {
         val finalSqlStatement =
             if(sqlStatement.contains("WHERE")) {
                 sqlStatement + " AND 1 = 2 "
@@ -29,8 +29,9 @@ class DeduperDataConsumer(
                 SqlUtils.getQueryInfo(finalSqlStatement, conn)
             }
 
-        targetPersistor.createTarget(qi, deleteIfExists)
+        persistor.createTarget(qi, deleteIfExists)
     }
+
     override fun getDeduperReportCount(dedupeReport: DedupeReport): Long {
         return dedupeReport.recordCount - dedupeReport.dupeCount
     }

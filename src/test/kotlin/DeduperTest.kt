@@ -8,6 +8,7 @@ import org.bradfordmiller.deduper.jndi.*
 import org.bradfordmiller.deduper.persistors.Dupe
 import org.bradfordmiller.deduper.sql.SqlUtils
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -35,8 +36,7 @@ class DeduperTest {
                 }
             }
         }
-        @BeforeAll
-        @JvmStatic
+        @BeforeEach
         fun cleanUpBefore() {
             clearDataDir()
         }

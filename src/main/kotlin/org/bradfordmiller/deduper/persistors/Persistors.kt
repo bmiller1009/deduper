@@ -26,6 +26,7 @@ data class Dupe(val firstFoundRowNumber: Long, val dupes: String)
  * @property hash_json an optional json representation of the data which comprises the hash value
  */
 data class HashRow(val hash: String, val hash_json: String?)
+
 /**
  * base definition for writing out output data
  * @param T type of row list persisting output data

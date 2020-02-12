@@ -6,8 +6,8 @@ import org.bradfordmiller.deduper.persistors.WritePersistor
 import org.slf4j.LoggerFactory
 import java.util.concurrent.BlockingQueue
 
-abstract class BaseConsumer<T>(
-  val persistor: WritePersistor<T>,
+abstract class BaseConsumer<T, P: WritePersistor<T>>(
+  val persistor: P,
   val dataQueue: BlockingQueue<MutableList<T>>,
   val controlQueue: BlockingQueue<DedupeReport>,
   val deleteIfExists: Boolean
@@ -19,7 +19,7 @@ abstract class BaseConsumer<T>(
 
     var totalRowsWritten = 0L
 
-    abstract fun createTarget(deleteIfExists: Boolean)
+    abstract fun createTarget(deleteIfExists: Boolean, persistor: P)
     abstract fun getDeduperReportCount(dedupeReport: DedupeReport): Long
 
     fun processFirstMessage(): Boolean {
@@ -29,10 +29,12 @@ abstract class BaseConsumer<T>(
             logger.info("First message is empty, stream complete.")
             true
         } else {
-            logger.info("Initializing target consumer")
-            createTarget(deleteIfExists)
+            logger.info("${this.javaClass.canonicalName}:: Initializing target consumer")
+            createTarget(deleteIfExists, persistor)
             totalRowsWritten += persistor.writeRows(firstMsg)
-            logger.info("First data packet written to target.  $totalRowsWritten rows written so far.")
+            logger.info("${this.javaClass.canonicalName}:: First data packet written to target.  $totalRowsWritten " +
+                    "rows written" +
+                    " so far.")
             false
         }
     }
@@ -47,7 +49,7 @@ abstract class BaseConsumer<T>(
                 totalRowsWritten += persistor.writeRows(data)
                 //TODO: Parameterize this
                 if(totalRowsWritten % 100 == 0L) {
-                    logger.info("Total rows written to target: $totalRowsWritten")
+                    logger.info("${this.javaClass.canonicalName}:: Total rows written to target: $totalRowsWritten")
                 }
             }
         }
@@ -55,7 +57,7 @@ abstract class BaseConsumer<T>(
     fun unlockCsvFile() {
         if(persistor is CsvTargetPersistor) {
             persistor.unlockFile()
-            logger.info("Target file unlocked.")
+            logger.info("${this.javaClass.canonicalName}:: Target file unlocked.")
         }
     }
     fun processDeduperReport(): DedupeReport {
