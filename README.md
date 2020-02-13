@@ -51,11 +51,9 @@ dependencies {
 }
 ```
 
-## Building from source
-
-Gradle Build instructions will go here
-
 ## Using the library
+
+API docs were generated using [dokka](https://github.com/Kotlin/dokka) and are hosted [here](https://bmiller1009.github.io/deduper/).
 
 Configuation information is stored using the [simple-jndi](https://github.com/h-thurow/Simple-JNDI)
 API so a [jndi.properties](https://github.com/bmiller1009/deduper/blob/master/src/test/resources/jndi.properties) file will need to be present
