@@ -5,6 +5,7 @@ import org.bradfordmiller.deduper.jndi.JNDIUtils
 import org.bradfordmiller.deduper.persistors.TargetPersistor
 import org.bradfordmiller.deduper.persistors.WritePersistor
 import org.bradfordmiller.deduper.sql.SqlUtils
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 import javax.sql.DataSource
 
@@ -22,7 +23,7 @@ import javax.sql.DataSource
 class DeduperDataConsumer(
     targetPersistor: TargetPersistor,
     dataQueue: BlockingQueue<MutableList<Map<String, Any>>>,
-    controlQueue: BlockingQueue<DedupeReport>,
+    controlQueue: ArrayBlockingQueue<DedupeReport>,
     deleteIfExists: Boolean,
     val sourceDataSource: DataSource,
     val sqlStatement: String

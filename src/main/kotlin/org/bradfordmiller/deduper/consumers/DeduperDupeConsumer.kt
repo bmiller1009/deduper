@@ -2,6 +2,7 @@ package org.bradfordmiller.deduper.consumers
 
 import org.bradfordmiller.deduper.DedupeReport
 import org.bradfordmiller.deduper.persistors.*
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 
 /**
@@ -15,7 +16,7 @@ import java.util.concurrent.BlockingQueue
 class DeduperDupeConsumer(
     dupePersistor: DupePersistor,
     dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>,
-    controlQueue: BlockingQueue<DedupeReport>,
+    controlQueue: ArrayBlockingQueue<DedupeReport>,
     deleteDupeIfExists: Boolean
 ): BaseConsumer<Pair<String, Pair<MutableList<Long>, Dupe>>, DupePersistor>(dupePersistor, dupeQueue, controlQueue,
     deleteDupeIfExists) {

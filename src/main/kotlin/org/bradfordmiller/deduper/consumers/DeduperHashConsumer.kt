@@ -2,6 +2,7 @@ package org.bradfordmiller.deduper.consumers
 
 import org.bradfordmiller.deduper.DedupeReport
 import org.bradfordmiller.deduper.persistors.*
+import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 
 /**
@@ -15,7 +16,7 @@ import java.util.concurrent.BlockingQueue
 class DeduperHashConsumer(
     hashPersistor: HashPersistor,
     hashQueue: BlockingQueue<MutableList<HashRow>>,
-    controlQueue: BlockingQueue<DedupeReport>,
+    controlQueue: ArrayBlockingQueue<DedupeReport>,
     deleteIfExists: Boolean
 ): BaseConsumer<HashRow, HashPersistor>(hashPersistor, hashQueue, controlQueue, deleteIfExists) {
 

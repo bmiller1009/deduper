@@ -1,7 +1,6 @@
 package org.bradfordmiller.deduper
 
 import gnu.trove.map.hash.THashMap
-import oracle.jvm.hotspot.jfr.Producer
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.csv.CsvConfigParser
@@ -24,7 +23,6 @@ import java.util.concurrent.Executors
 import javax.sql.DataSource
 
 import org.bradfordmiller.deduper.consumers.*
-import javax.naming.ldap.Control
 
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
@@ -46,29 +44,25 @@ data class DedupeReport(
 ) {
     override fun toString(): String {
         return "recordCount=$recordCount, " +
-                "columnsFound=$columnsFound, " +
-                "hashColumns=$hashColumns, " +
-                "dupeCount=$dupeCount, " +
-                "distinctDupeCount=$distinctDupeCount, " +
-                "hashCount=$hashCount"
+            "columnsFound=$columnsFound, " +
+            "hashColumns=$hashColumns, " +
+            "dupeCount=$dupeCount, " +
+            "distinctDupeCount=$distinctDupeCount, " +
+            "hashCount=$hashCount"
     }
 }
 
 class DeduperProducer(
-  val dataQueue: BlockingQueue<MutableList<Map<String, Any>>>?,
-  val dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>?,
-  val hashQueue: BlockingQueue<MutableList<HashRow>>?,
-  /*val controlQueue: BlockingQueue<DedupeReport>,
-  val targetControlQueue: BlockingQueue<DedupeReport>?,
-  val dupeControlQueue: BlockingQueue<DedupeReport>?,
-  val hashControlQueue: BlockingQueue<DedupeReport>?,*/
-  val controlQueues: ArrayList<BlockingQueue<DedupeReport>?>,
-  val commitSize: Long = 500,
-  val outputReportCommitSize: Long = 1000000,
-  val config: Config,
-  val persistors: Deduper.Persistors,
-  val sourceDataSource: DataSource,
-  val sqlStatement: String
+    val dataQueue: BlockingQueue<MutableList<Map<String, Any>>>?,
+    val dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>?,
+    val hashQueue: BlockingQueue<MutableList<HashRow>>?,
+    val controlQueues: Map<Deduper.ControlQueue, ArrayBlockingQueue<DedupeReport>>,
+    val commitSize: Long = 500,
+    val outputReportCommitSize: Long = 1000000,
+    val config: Config,
+    val persistors: Deduper.Persistors,
+    val sourceDataSource: DataSource,
+    val sqlStatement: String
 ): Runnable {
 
     companion object {
@@ -271,10 +265,7 @@ class DeduperProducer(
           )
 
         logger.info("Dedupe report: $ddReport")
-        controlQueue.put(ddReport)
-        targetControlQueue?.put(ddReport)
-        dupeControlQueue?.put(ddReport)
-        hashControlQueue?.put(ddReport)
+        controlQueues.values.forEach{cq -> cq.put(ddReport)}
         logger.info("Deduping process complete.")
     }
 }
@@ -411,40 +402,35 @@ class Deduper(private val config: Config) {
         var hashQueue: BlockingQueue<MutableList<HashRow>>? = null
 
         var controlQueues = emptyMap<ControlQueue, ArrayBlockingQueue<DedupeReport>>()
-        controlQueues += ControlQueue.Producer to ArrayBlockingQueue<DedupeReport>(1)
+        val controlQueue = ArrayBlockingQueue<DedupeReport>(1)
+        controlQueues += ControlQueue.Producer to controlQueue
 
         if (config.targetJndi != null) {
             threadCount += 1
             dataQueue = ArrayBlockingQueue<MutableList<Map<String, Any>>>(100)
-            
+            controlQueues += ControlQueue.Target to ArrayBlockingQueue(1)
         }
 
         if (config.dupesJndi != null) {
             threadCount += 1
             dupeQueue = ArrayBlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>(100)
+            controlQueues += ControlQueue.Dupes to ArrayBlockingQueue(1)
         }
 
         if (config.hashJndi != null) {
             threadCount += 1
             hashQueue = ArrayBlockingQueue<MutableList<HashRow>>(100)
+            controlQueues += ControlQueue.Hashes to ArrayBlockingQueue(1)
         }
 
         val executorService = Executors.newFixedThreadPool(threadCount)
-
-        /*val controlQueue = ArrayBlockingQueue<DedupeReport>(1)
-        val targetControlQueue = ArrayBlockingQueue<DedupeReport>(1)
-        val dupeControlQueue = ArrayBlockingQueue<DedupeReport>(1)
-        val hashControlQueue = ArrayBlockingQueue<DedupeReport>(1)*/
 
         val producer =
             DeduperProducer(
                 dataQueue,
                 dupeQueue,
                 hashQueue,
-                controlQueue,
-                targetControlQueue,
-                dupeControlQueue,
-                hashControlQueue,
+                controlQueues,
                 commitSize,
                 outputReportCommitSize,
                 config,
@@ -462,7 +448,7 @@ class Deduper(private val config: Config) {
                 DeduperDataConsumer(
                     persistors.targetPersistor!!,
                     dataQueue!!,
-                    targetControlQueue,
+                    controlQueues[ControlQueue.Target] ?: error(""),
                     persistors.deleteTargetIfExists,
                     sourceDataSource,
                     sqlStatement
@@ -476,7 +462,7 @@ class Deduper(private val config: Config) {
                 DeduperDupeConsumer(
                     persistors.dupePersistor!!,
                     dupeQueue!!,
-                    dupeControlQueue,
+                    controlQueues[ControlQueue.Dupes] ?: error(""),
                     persistors.deleteDupeIfExists
                 )
             executorService.execute(dupeConsumer)
@@ -488,7 +474,7 @@ class Deduper(private val config: Config) {
                 DeduperHashConsumer(
                     persistors.hashPersistor!!,
                     hashQueue!!,
-                    hashControlQueue,
+                    controlQueues[ControlQueue.Hashes] ?: error(""),
                     persistors.deleteHashIfExists
                 )
             executorService.execute(hashConsumer)

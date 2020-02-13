@@ -5,6 +5,7 @@ import org.bradfordmiller.deduper.persistors.CsvTargetPersistor
 import org.bradfordmiller.deduper.persistors.WritePersistor
 import org.slf4j.LoggerFactory
 import java.util.concurrent.BlockingQueue
+import java.util.concurrent.ArrayBlockingQueue
 
 /**
  * Base definition of a runnable Consumer. Consumers are responsible for persisting data to disk
@@ -19,7 +20,7 @@ import java.util.concurrent.BlockingQueue
 abstract class BaseConsumer<T, P: WritePersistor<T>>(
   val persistor: P,
   val dataQueue: BlockingQueue<MutableList<T>>,
-  val controlQueue: BlockingQueue<DedupeReport>,
+  val controlQueue: ArrayBlockingQueue<DedupeReport>,
   val deleteIfExists: Boolean
 ): Runnable {
 
