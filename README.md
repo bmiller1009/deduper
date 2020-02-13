@@ -68,7 +68,7 @@ for this project, you will see the path is **_src/main/resources/jndi_**.
 #### Configuring jndi contexts
 Jndi property files can be dropped into the **_org.osjava.sj.root_** configured path. In our case, that path is **_src/main/resources/jndi_**.  There are two types of contexts that deduper can handle:  A **javax.sql.DataSource** and a **java.util.Map**. 
 
-Datasources are used when reading or writing data using a JDBC interface. Maps are used primarily for writing output to a flat file. These concepts will be explained in detail later.  You can see a sample jndi context file [here](https://github.com/bmiller1009/deduper/blob/master/src/test/resources/jndi/default_ds.properties).  Note the location of the context file is in the directory set in **_org.osjava.sj.root_**:  **_src/main/resources/jndi_**.  All jndi context files must be placed under this directory.
+Datasources are used when reading or writing data using a JDBC interface. Maps are used primarily for writing output to a flat file. These concepts will be explained in detail later.  You can see a sample jndi context file [here](https://github.com/bmiller1009/deduper/blob/master/src/test/resources/jndi/default_ds.properties).  Note the location of the context file is in the directory set in **_org.osjava.sj.root_**:  **_src/test/resources/jndi_**.  All jndi context files must be placed under this directory.
 
 Here is a sample DataSource entry for a sql lite database which is used by this projects unit tests (note that username and password are optional and depend on how the security of the database being targeted is configured):
 ```properties
@@ -361,6 +361,28 @@ Here is the log output:
     recordCount=986, columnsFound=[street, city, zip, state, beds, baths, sq__ft, type, sale_date, price, latitude, longitude], hashColumns=[street, city, state, zip, price], dupeCount=4, distinctDupeCount=3
 
 Also produced were two files, in the **_src/test/resources/data/outputData_** directory:  dupeName.txt (which contains the duplicates found) and targetName.txt (which contains the deduped data set).  A similar method can be used to persist "found" hashes to a csv.
+
+### Tweaking the performance of the execution of the engine
+The deduper software is fully asynchronous with regards to how publishing data and persisting data are handled. The deduper process will process all duplicates and produce a deduper report on one thread. Each persistor, be it _JNDITargetType_, _JNDIDupeType_, or _JNDIHashType_ are each individually run on separate threads if they are configured as part of the dedupe process. Once all duplicates are detected and all data is published, there is a timeout which begins as soon as the _DeduperReport_ is published. The default for this setting is **60 seconds**.  What this means is that once a dedupe process is complete there will be a 60 second time period for all of the persistence operations to complete, whether it is writing "deduped" data, duplicate data, or MD-5 hash data.  Once the time period has finished, the shutdown of the persisters will begin, and this may not be long enough if for instance the target database is slow.  This value is configurable in the deduper API as follows:
+
+```kotlin
+val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
+val executionServiceTimeout = ExecutionServiceTimeout(120, TimeUnit.SECONDS)
+
+val config = Config.ConfigBuilder()
+	.sourceJndi(csvSourceJndi)
+	.executionServiceTimeout(executionServiceTimeout)
+	.build()
+
+val deduper = Deduper(config)
+
+val report = deduper.dedupe()
+
+val expectedReport = getExpectedReport()
+
+assert(report == expectedReport)
+```
 
 ## Built With
 
