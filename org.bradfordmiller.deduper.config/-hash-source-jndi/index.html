@@ -1,0 +1,67 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>HashSourceJndi - deduper</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">deduper</a>&nbsp;/&nbsp;<a href="../index.html">org.bradfordmiller.deduper.config</a>&nbsp;/&nbsp;<a href="./index.html">HashSourceJndi</a><br/>
+<br/>
+<h1>HashSourceJndi</h1>
+<code><span class="keyword">data</span> <span class="keyword">class </span><span class="identifier">HashSourceJndi</span></code>
+<p>A hash source jndi entity. This is used when configuring a specific set of existing hashes to "dedupe" against</p>
+<h3>Constructors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="-init-.html">&lt;init&gt;</a></h4>
+</td>
+<td>
+<p>A hash source jndi entity. This is used when configuring a specific set of existing hashes to "dedupe" against</p>
+<code><span class="identifier">HashSourceJndi</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.config.HashSourceJndi$<init>(kotlin.String, kotlin.String, kotlin.String, kotlin.String)/jndiName">jndiName</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.config.HashSourceJndi$<init>(kotlin.String, kotlin.String, kotlin.String, kotlin.String)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.config.HashSourceJndi$<init>(kotlin.String, kotlin.String, kotlin.String, kotlin.String)/hashTableName">hashTableName</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.config.HashSourceJndi$<init>(kotlin.String, kotlin.String, kotlin.String, kotlin.String)/hashColumnName">hashColumnName</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">)</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Properties</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="context.html">context</a></h4>
+</td>
+<td>
+<p>the context name for the jndi name, which basically maps to a properties file of the same name
+IE if context = "test" then there should be a corresponding test.properties file present in the org.osjava.sj.root
+defined directory in jndi.properties.  In the above example, if the context = "test" and org.osjava.sj.root =
+src/main/resources/jndi then the jndi name will be searched for in src/main/resources/jndi/test.properties</p>
+<code><span class="keyword">val </span><span class="identifier">context</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="hash-column-name.html">hashColumnName</a></h4>
+</td>
+<td>
+<p>the name of the column in <a href="hash-table-name.html">hashTableName</a> which contains the hashes</p>
+<code><span class="keyword">val </span><span class="identifier">hashColumnName</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="hash-table-name.html">hashTableName</a></h4>
+</td>
+<td>
+<p>the name of the table found in the <a href="jndi-name.html">jndiName</a> which contains the existing hashes</p>
+<code><span class="keyword">val </span><span class="identifier">hashTableName</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="jndi-name.html">jndiName</a></h4>
+</td>
+<td>
+<p>the jndi name defined in the simple-jndi properties file</p>
+<code><span class="keyword">val </span><span class="identifier">jndiName</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

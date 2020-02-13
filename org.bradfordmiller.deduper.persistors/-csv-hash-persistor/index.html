@@ -1,0 +1,48 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>CsvHashPersistor - deduper</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">deduper</a>&nbsp;/&nbsp;<a href="../index.html">org.bradfordmiller.deduper.persistors</a>&nbsp;/&nbsp;<a href="./index.html">CsvHashPersistor</a><br/>
+<br/>
+<h1>CsvHashPersistor</h1>
+<code><span class="keyword">class </span><span class="identifier">CsvHashPersistor</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="../-csv-persistor/index.html"><span class="identifier">CsvPersistor</span></a><span class="symbol">, </span><a href="../-hash-persistor/index.html"><span class="identifier">HashPersistor</span></a></code>
+<p>creates and writes out hash values found in a deduper process to a csv defined in <a href="#">config</a></p>
+<h3>Constructors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="-init-.html">&lt;init&gt;</a></h4>
+</td>
+<td>
+<p>creates and writes out hash values found in a deduper process to a csv defined in <a href="#">config</a></p>
+<code><span class="identifier">CsvHashPersistor</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.persistors.CsvHashPersistor$<init>(kotlin.collections.Map((kotlin.String, )))/config">config</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html"><span class="identifier">Map</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">,</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">&gt;</span><span class="symbol">)</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="create-hash-table.html">createHashTable</a></h4>
+</td>
+<td>
+<p>creates a hash output csv file. <a href="#">deleteIfDupeExists</a> determines whether the file is deleted if it already</p>
+<code><span class="keyword">fun </span><span class="identifier">createHashTable</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.persistors.CsvHashPersistor$createHashTable(kotlin.Boolean)/deleteIfHashTableExists">deleteIfHashTableExists</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html"><span class="identifier">Unit</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="write-rows.html">writeRows</a></h4>
+</td>
+<td>
+<p>writes out a list of hash data <a href="write-rows.html#org.bradfordmiller.deduper.persistors.CsvHashPersistor$writeRows(kotlin.collections.MutableList((org.bradfordmiller.deduper.persistors.HashRow)))/rows">rows</a> to a csv and returns the number of rows written</p>
+<code><span class="keyword">fun </span><span class="identifier">writeRows</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.persistors.CsvHashPersistor$writeRows(kotlin.collections.MutableList((org.bradfordmiller.deduper.persistors.HashRow)))/rows">rows</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-list/index.html"><span class="identifier">MutableList</span></a><span class="symbol">&lt;</span><a href="../-hash-row/index.html"><span class="identifier">HashRow</span></a><span class="symbol">&gt;</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

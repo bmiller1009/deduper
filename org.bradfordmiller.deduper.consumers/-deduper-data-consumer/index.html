@@ -1,0 +1,72 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>DeduperDataConsumer - deduper</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">deduper</a>&nbsp;/&nbsp;<a href="../index.html">org.bradfordmiller.deduper.consumers</a>&nbsp;/&nbsp;<a href="./index.html">DeduperDataConsumer</a><br/>
+<br/>
+<h1>DeduperDataConsumer</h1>
+<code><span class="keyword">class </span><span class="identifier">DeduperDataConsumer</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="../-base-consumer/index.html"><span class="identifier">BaseConsumer</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html"><span class="identifier">Map</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">,</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">&gt;</span><span class="symbol">,</span>&nbsp;<a href="../../org.bradfordmiller.deduper.persistors/-target-persistor/index.html"><span class="identifier">TargetPersistor</span></a><span class="symbol">&gt;</span></code>
+<p>Consumer for processing and persisting target data, IE "deduped" data</p>
+<h3>Constructors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="-init-.html">&lt;init&gt;</a></h4>
+</td>
+<td>
+<p>Consumer for processing and persisting target data, IE "deduped" data</p>
+<code><span class="identifier">DeduperDataConsumer</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.consumers.DeduperDataConsumer$<init>(org.bradfordmiller.deduper.persistors.TargetPersistor, java.util.concurrent.BlockingQueue((kotlin.collections.MutableList((kotlin.collections.Map((kotlin.String, kotlin.Any)))))), java.util.concurrent.ArrayBlockingQueue((org.bradfordmiller.deduper.DedupeReport)), kotlin.Boolean, javax.sql.DataSource, kotlin.String)/targetPersistor">targetPersistor</span><span class="symbol">:</span>&nbsp;<a href="../../org.bradfordmiller.deduper.persistors/-target-persistor/index.html"><span class="identifier">TargetPersistor</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.consumers.DeduperDataConsumer$<init>(org.bradfordmiller.deduper.persistors.TargetPersistor, java.util.concurrent.BlockingQueue((kotlin.collections.MutableList((kotlin.collections.Map((kotlin.String, kotlin.Any)))))), java.util.concurrent.ArrayBlockingQueue((org.bradfordmiller.deduper.DedupeReport)), kotlin.Boolean, javax.sql.DataSource, kotlin.String)/dataQueue">dataQueue</span><span class="symbol">:</span>&nbsp;<a href="https://docs.oracle.com/javase/6/docs/api/java/util/concurrent/BlockingQueue.html"><span class="identifier">BlockingQueue</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-list/index.html"><span class="identifier">MutableList</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html"><span class="identifier">Map</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">,</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">&gt;</span><span class="symbol">&gt;</span><span class="symbol">&gt;</span><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.consumers.DeduperDataConsumer$<init>(org.bradfordmiller.deduper.persistors.TargetPersistor, java.util.concurrent.BlockingQueue((kotlin.collections.MutableList((kotlin.collections.Map((kotlin.String, kotlin.Any)))))), java.util.concurrent.ArrayBlockingQueue((org.bradfordmiller.deduper.DedupeReport)), kotlin.Boolean, javax.sql.DataSource, kotlin.String)/controlQueue">controlQueue</span><span class="symbol">:</span>&nbsp;<a href="https://docs.oracle.com/javase/6/docs/api/java/util/concurrent/ArrayBlockingQueue.html"><span class="identifier">ArrayBlockingQueue</span></a><span class="symbol">&lt;</span><a href="../../org.bradfordmiller.deduper/-dedupe-report/index.html"><span class="identifier">DedupeReport</span></a><span class="symbol">&gt;</span><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.consumers.DeduperDataConsumer$<init>(org.bradfordmiller.deduper.persistors.TargetPersistor, java.util.concurrent.BlockingQueue((kotlin.collections.MutableList((kotlin.collections.Map((kotlin.String, kotlin.Any)))))), java.util.concurrent.ArrayBlockingQueue((org.bradfordmiller.deduper.DedupeReport)), kotlin.Boolean, javax.sql.DataSource, kotlin.String)/deleteIfExists">deleteIfExists</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.consumers.DeduperDataConsumer$<init>(org.bradfordmiller.deduper.persistors.TargetPersistor, java.util.concurrent.BlockingQueue((kotlin.collections.MutableList((kotlin.collections.Map((kotlin.String, kotlin.Any)))))), java.util.concurrent.ArrayBlockingQueue((org.bradfordmiller.deduper.DedupeReport)), kotlin.Boolean, javax.sql.DataSource, kotlin.String)/sourceDataSource">sourceDataSource</span><span class="symbol">:</span>&nbsp;<a href="https://docs.oracle.com/javase/6/docs/api/javax/sql/DataSource.html"><span class="identifier">DataSource</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.consumers.DeduperDataConsumer$<init>(org.bradfordmiller.deduper.persistors.TargetPersistor, java.util.concurrent.BlockingQueue((kotlin.collections.MutableList((kotlin.collections.Map((kotlin.String, kotlin.Any)))))), java.util.concurrent.ArrayBlockingQueue((org.bradfordmiller.deduper.DedupeReport)), kotlin.Boolean, javax.sql.DataSource, kotlin.String)/sqlStatement">sqlStatement</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">)</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Properties</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="source-data-source.html">sourceDataSource</a></h4>
+</td>
+<td>
+<ul><li>the data source used by the publisher. This is needed to build a persistent store which
+mirrors the published data</li>
+</ul>
+<code><span class="keyword">val </span><span class="identifier">sourceDataSource</span><span class="symbol">: </span><a href="https://docs.oracle.com/javase/6/docs/api/javax/sql/DataSource.html"><span class="identifier">DataSource</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="sql-statement.html">sqlStatement</a></h4>
+</td>
+<td>
+<ul><li>SQL statement used by the publisher</li>
+</ul>
+<code><span class="keyword">val </span><span class="identifier">sqlStatement</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="create-target.html">createTarget</a></h4>
+</td>
+<td>
+<p>create/prep target persistence - can be database table or flat file</p>
+<code><span class="keyword">fun </span><span class="identifier">createTarget</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.consumers.DeduperDataConsumer$createTarget(kotlin.Boolean, org.bradfordmiller.deduper.persistors.TargetPersistor)/deleteIfExists">deleteIfExists</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.consumers.DeduperDataConsumer$createTarget(kotlin.Boolean, org.bradfordmiller.deduper.persistors.TargetPersistor)/persistor">persistor</span><span class="symbol">:</span>&nbsp;<a href="../../org.bradfordmiller.deduper.persistors/-target-persistor/index.html"><span class="identifier">TargetPersistor</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html"><span class="identifier">Unit</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="get-deduper-report-count.html">getDeduperReportCount</a></h4>
+</td>
+<td>
+<p>gets the deduped count from <a href="get-deduper-report-count.html#org.bradfordmiller.deduper.consumers.DeduperDataConsumer$getDeduperReportCount(org.bradfordmiller.deduper.DedupeReport)/dedupeReport">dedupeReport</a></p>
+<code><span class="keyword">fun </span><span class="identifier">getDeduperReportCount</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.consumers.DeduperDataConsumer$getDeduperReportCount(org.bradfordmiller.deduper.DedupeReport)/dedupeReport">dedupeReport</span><span class="symbol">:</span>&nbsp;<a href="../../org.bradfordmiller.deduper/-dedupe-report/index.html"><span class="identifier">DedupeReport</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

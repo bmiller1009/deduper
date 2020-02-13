@@ -1,0 +1,80 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>SqlVendorTypes - deduper</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">deduper</a>&nbsp;/&nbsp;<a href="../index.html">org.bradfordmiller.deduper.sql</a>&nbsp;/&nbsp;<a href="./index.html">SqlVendorTypes</a><br/>
+<br/>
+<h1>SqlVendorTypes</h1>
+<code><span class="keyword">class </span><span class="identifier">SqlVendorTypes</span></code>
+<p>class for returning correctly formatted types based on a specific database <a href="#">vendor</a></p>
+<h3>Constructors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="-init-.html">&lt;init&gt;</a></h4>
+</td>
+<td>
+<p>class for returning correctly formatted types based on a specific database <a href="#">vendor</a></p>
+<code><span class="identifier">SqlVendorTypes</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.sql.SqlVendorTypes$<init>(kotlin.String)/vendor">vendor</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">)</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="get-decimal-type.html">getDecimalType</a></h4>
+</td>
+<td>
+<p>returns the formatted decimal <a href="get-decimal-type.html#org.bradfordmiller.deduper.sql.SqlVendorTypes$getDecimalType(kotlin.String)/type">type</a> based on database vendor</p>
+<code><span class="keyword">fun </span><span class="identifier">getDecimalType</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.sql.SqlVendorTypes$getDecimalType(kotlin.String)/type">type</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="get-long-type.html">getLongType</a></h4>
+</td>
+<td>
+<p>returns the formatted long type based on database vendor</p>
+<code><span class="keyword">fun </span><span class="identifier">getLongType</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="get-primary-key-syntax.html">getPrimaryKeySyntax</a></h4>
+</td>
+<td>
+<p>returns correct DDL for primary key based on vendor and <a href="get-primary-key-syntax.html#org.bradfordmiller.deduper.sql.SqlVendorTypes$getPrimaryKeySyntax(kotlin.String)/column">column</a> name</p>
+<code><span class="keyword">fun </span><span class="identifier">getPrimaryKeySyntax</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.sql.SqlVendorTypes$getPrimaryKeySyntax(kotlin.String)/column">column</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="get-string-max-size.html">getStringMaxSize</a></h4>
+</td>
+<td>
+<p>returns a specific string type (IE MAX) base on database vendor</p>
+<code><span class="keyword">fun </span><span class="identifier">getStringMaxSize</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="get-string-size.html">getStringSize</a></h4>
+</td>
+<td>
+<p>returns the formatted <a href="get-string-size.html#org.bradfordmiller.deduper.sql.SqlVendorTypes$getStringSize(kotlin.Int)/size">size</a> of a string</p>
+<code><span class="keyword">fun </span><span class="identifier">getStringSize</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.sql.SqlVendorTypes$getStringSize(kotlin.Int)/size">size</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="get-string-type.html">getStringType</a></h4>
+</td>
+<td>
+<p>returns a specific string type (IE TEXT, VARCHAR, etc) base on database vendor</p>
+<code><span class="keyword">fun </span><span class="identifier">getStringType</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

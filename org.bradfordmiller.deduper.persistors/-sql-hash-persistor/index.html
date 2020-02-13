@@ -1,0 +1,63 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>SqlHashPersistor - deduper</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">deduper</a>&nbsp;/&nbsp;<a href="../index.html">org.bradfordmiller.deduper.persistors</a>&nbsp;/&nbsp;<a href="./index.html">SqlHashPersistor</a><br/>
+<br/>
+<h1>SqlHashPersistor</h1>
+<code><span class="keyword">class </span><span class="identifier">SqlHashPersistor</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="../-hash-persistor/index.html"><span class="identifier">HashPersistor</span></a></code>
+<p>creates a sql table for persisting hashed data rows. This is configured using the <a href="https://docs.oracle.com/javase/6/docs/api/javax/sql/DataSource.html">hashJndi</a>
+contained in the associated <a href="#">context</a></p>
+<h3>Constructors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="-init-.html">&lt;init&gt;</a></h4>
+</td>
+<td>
+<p>creates a sql table for persisting hashed data rows. This is configured using the <a href="https://docs.oracle.com/javase/6/docs/api/javax/sql/DataSource.html">hashJndi</a>
+contained in the associated <a href="#">context</a></p>
+<code><span class="identifier">SqlHashPersistor</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.persistors.SqlHashPersistor$<init>(kotlin.String, kotlin.String)/hashJndi">hashJndi</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.persistors.SqlHashPersistor$<init>(kotlin.String, kotlin.String)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">)</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="create-hash-table.html">createHashTable</a></h4>
+</td>
+<td>
+<p>creates a sql table for persisting hash rows found in a deduper process. <a href="create-hash-table.html#org.bradfordmiller.deduper.persistors.SqlHashPersistor$createHashTable(kotlin.Boolean)/deleteIfHashTableExists">deleteIfHashTableExists</a> will drop the
+table if it already exists before attempting to create it</p>
+<code><span class="keyword">fun </span><span class="identifier">createHashTable</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.persistors.SqlHashPersistor$createHashTable(kotlin.Boolean)/deleteIfHashTableExists">deleteIfHashTableExists</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html"><span class="identifier">Unit</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="write-rows.html">writeRows</a></h4>
+</td>
+<td>
+<p>writes out a list of duplicate data <a href="write-rows.html#org.bradfordmiller.deduper.persistors.SqlHashPersistor$writeRows(kotlin.collections.MutableList((org.bradfordmiller.deduper.persistors.HashRow)))/rows">rows</a> to a a sql table and returns number of rows written</p>
+<code><span class="keyword">fun </span><span class="identifier">writeRows</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.persistors.SqlHashPersistor$writeRows(kotlin.collections.MutableList((org.bradfordmiller.deduper.persistors.HashRow)))/rows">rows</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-list/index.html"><span class="identifier">MutableList</span></a><span class="symbol">&lt;</span><a href="../-hash-row/index.html"><span class="identifier">HashRow</span></a><span class="symbol">&gt;</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Companion Object Properties</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="logger.html">logger</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">logger</span><span class="symbol">: </span><span class="identifier">Logger</span><span class="symbol">!</span></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

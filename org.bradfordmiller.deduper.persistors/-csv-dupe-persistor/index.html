@@ -1,0 +1,49 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>CsvDupePersistor - deduper</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">deduper</a>&nbsp;/&nbsp;<a href="../index.html">org.bradfordmiller.deduper.persistors</a>&nbsp;/&nbsp;<a href="./index.html">CsvDupePersistor</a><br/>
+<br/>
+<h1>CsvDupePersistor</h1>
+<code><span class="keyword">class </span><span class="identifier">CsvDupePersistor</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="../-csv-persistor/index.html"><span class="identifier">CsvPersistor</span></a><span class="symbol">, </span><a href="../-dupe-persistor/index.html"><span class="identifier">DupePersistor</span></a></code>
+<p>creates and writes out duplicate data to csv target. duplicate target is configured in <a href="#">config</a></p>
+<h3>Constructors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="-init-.html">&lt;init&gt;</a></h4>
+</td>
+<td>
+<p>creates and writes out duplicate data to csv target. duplicate target is configured in <a href="#">config</a></p>
+<code><span class="identifier">CsvDupePersistor</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.persistors.CsvDupePersistor$<init>(kotlin.collections.Map((kotlin.String, )))/config">config</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html"><span class="identifier">Map</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">,</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">&gt;</span><span class="symbol">)</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="create-dupe.html">createDupe</a></h4>
+</td>
+<td>
+<p>creates duplicate output csv file. <a href="create-dupe.html#org.bradfordmiller.deduper.persistors.CsvDupePersistor$createDupe(kotlin.Boolean)/deleteIfDupeExists">deleteIfDupeExists</a> determines whether the file is deleted if it already
+exists</p>
+<code><span class="keyword">fun </span><span class="identifier">createDupe</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.persistors.CsvDupePersistor$createDupe(kotlin.Boolean)/deleteIfDupeExists">deleteIfDupeExists</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-unit/index.html"><span class="identifier">Unit</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="write-rows.html">writeRows</a></h4>
+</td>
+<td>
+<p>writes out a list of duplicate data <a href="write-rows.html#org.bradfordmiller.deduper.persistors.CsvDupePersistor$writeRows(kotlin.collections.MutableList((kotlin.Pair((kotlin.String, kotlin.Pair((kotlin.collections.MutableList((kotlin.Long)), org.bradfordmiller.deduper.persistors.Dupe)))))))/rows">rows</a> to a csv and returns the number of rows written</p>
+<code><span class="keyword">fun </span><span class="identifier">writeRows</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.persistors.CsvDupePersistor$writeRows(kotlin.collections.MutableList((kotlin.Pair((kotlin.String, kotlin.Pair((kotlin.collections.MutableList((kotlin.Long)), org.bradfordmiller.deduper.persistors.Dupe)))))))/rows">rows</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-list/index.html"><span class="identifier">MutableList</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-pair/index.html"><span class="identifier">Pair</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">,</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-pair/index.html"><span class="identifier">Pair</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-list/index.html"><span class="identifier">MutableList</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">&gt;</span><span class="symbol">,</span>&nbsp;<a href="../-dupe/index.html"><span class="identifier">Dupe</span></a><span class="symbol">&gt;</span><span class="symbol">&gt;</span><span class="symbol">&gt;</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

@@ -1,0 +1,95 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>DedupeReport - deduper</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">deduper</a>&nbsp;/&nbsp;<a href="../index.html">org.bradfordmiller.deduper</a>&nbsp;/&nbsp;<a href="./index.html">DedupeReport</a><br/>
+<br/>
+<h1>DedupeReport</h1>
+<code><span class="keyword">data</span> <span class="keyword">class </span><span class="identifier">DedupeReport</span></code>
+<p>summary of a dedupe operation, with total <a href="record-count.html">recordCount</a>, <a href="hash-columns.html">hashColumns</a> used, <a href="columns-found.html">columnsFound</a> in the actual source
+query, <a href="dupe-count.html">dupeCount</a>, <a href="distinct-dupe-count.html">distinctDupeCount</a>, and <a href="dupes.html">dupes</a> found in the dedupe process.</p>
+<h3>Constructors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="-init-.html">&lt;init&gt;</a></h4>
+</td>
+<td>
+<p>summary of a dedupe operation, with total <a href="record-count.html">recordCount</a>, <a href="hash-columns.html">hashColumns</a> used, <a href="columns-found.html">columnsFound</a> in the actual source
+query, <a href="dupe-count.html">dupeCount</a>, <a href="distinct-dupe-count.html">distinctDupeCount</a>, and <a href="dupes.html">dupes</a> found in the dedupe process.</p>
+<code><span class="identifier">DedupeReport</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.DedupeReport$<init>(kotlin.Long, kotlin.collections.Set((kotlin.String)), kotlin.collections.Set((kotlin.String)), kotlin.Long, kotlin.Long, kotlin.Long, kotlin.collections.MutableMap((kotlin.String, kotlin.Pair((kotlin.collections.MutableList((kotlin.Long)), org.bradfordmiller.deduper.persistors.Dupe)))))/recordCount">recordCount</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.DedupeReport$<init>(kotlin.Long, kotlin.collections.Set((kotlin.String)), kotlin.collections.Set((kotlin.String)), kotlin.Long, kotlin.Long, kotlin.Long, kotlin.collections.MutableMap((kotlin.String, kotlin.Pair((kotlin.collections.MutableList((kotlin.Long)), org.bradfordmiller.deduper.persistors.Dupe)))))/hashColumns">hashColumns</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-set/index.html"><span class="identifier">Set</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">&gt;</span><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.DedupeReport$<init>(kotlin.Long, kotlin.collections.Set((kotlin.String)), kotlin.collections.Set((kotlin.String)), kotlin.Long, kotlin.Long, kotlin.Long, kotlin.collections.MutableMap((kotlin.String, kotlin.Pair((kotlin.collections.MutableList((kotlin.Long)), org.bradfordmiller.deduper.persistors.Dupe)))))/columnsFound">columnsFound</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-set/index.html"><span class="identifier">Set</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">&gt;</span><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.DedupeReport$<init>(kotlin.Long, kotlin.collections.Set((kotlin.String)), kotlin.collections.Set((kotlin.String)), kotlin.Long, kotlin.Long, kotlin.Long, kotlin.collections.MutableMap((kotlin.String, kotlin.Pair((kotlin.collections.MutableList((kotlin.Long)), org.bradfordmiller.deduper.persistors.Dupe)))))/dupeCount">dupeCount</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.DedupeReport$<init>(kotlin.Long, kotlin.collections.Set((kotlin.String)), kotlin.collections.Set((kotlin.String)), kotlin.Long, kotlin.Long, kotlin.Long, kotlin.collections.MutableMap((kotlin.String, kotlin.Pair((kotlin.collections.MutableList((kotlin.Long)), org.bradfordmiller.deduper.persistors.Dupe)))))/distinctDupeCount">distinctDupeCount</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.DedupeReport$<init>(kotlin.Long, kotlin.collections.Set((kotlin.String)), kotlin.collections.Set((kotlin.String)), kotlin.Long, kotlin.Long, kotlin.Long, kotlin.collections.MutableMap((kotlin.String, kotlin.Pair((kotlin.collections.MutableList((kotlin.Long)), org.bradfordmiller.deduper.persistors.Dupe)))))/hashCount">hashCount</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.DedupeReport$<init>(kotlin.Long, kotlin.collections.Set((kotlin.String)), kotlin.collections.Set((kotlin.String)), kotlin.Long, kotlin.Long, kotlin.Long, kotlin.collections.MutableMap((kotlin.String, kotlin.Pair((kotlin.collections.MutableList((kotlin.Long)), org.bradfordmiller.deduper.persistors.Dupe)))))/dupes">dupes</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-map/index.html"><span class="identifier">MutableMap</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">,</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-pair/index.html"><span class="identifier">Pair</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-list/index.html"><span class="identifier">MutableList</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">&gt;</span><span class="symbol">,</span>&nbsp;<a href="../../org.bradfordmiller.deduper.persistors/-dupe/index.html"><span class="identifier">Dupe</span></a><span class="symbol">&gt;</span><span class="symbol">&gt;</span><span class="symbol">)</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Properties</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="columns-found.html">columnsFound</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">columnsFound</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-set/index.html"><span class="identifier">Set</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">&gt;</span></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="distinct-dupe-count.html">distinctDupeCount</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">distinctDupeCount</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="dupe-count.html">dupeCount</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">dupeCount</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="dupes.html">dupes</a></h4>
+</td>
+<td>
+<code><span class="keyword">var </span><span class="identifier">dupes</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-map/index.html"><span class="identifier">MutableMap</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">,</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-pair/index.html"><span class="identifier">Pair</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-list/index.html"><span class="identifier">MutableList</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">&gt;</span><span class="symbol">,</span>&nbsp;<a href="../../org.bradfordmiller.deduper.persistors/-dupe/index.html"><span class="identifier">Dupe</span></a><span class="symbol">&gt;</span><span class="symbol">&gt;</span></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="hash-columns.html">hashColumns</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">hashColumns</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-set/index.html"><span class="identifier">Set</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">&gt;</span></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="hash-count.html">hashCount</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">hashCount</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="record-count.html">recordCount</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">recordCount</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="to-string.html">toString</a></h4>
+</td>
+<td>
+<code><span class="keyword">fun </span><span class="identifier">toString</span><span class="symbol">(</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

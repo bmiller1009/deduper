@@ -1,0 +1,88 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>CsvConfigParser - deduper</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">deduper</a>&nbsp;/&nbsp;<a href="../index.html">org.bradfordmiller.deduper.csv</a>&nbsp;/&nbsp;<a href="./index.html">CsvConfigParser</a><br/>
+<br/>
+<h1>CsvConfigParser</h1>
+<code><span class="keyword">class </span><span class="identifier">CsvConfigParser</span></code>
+<p>Parses <a href="#">config</a> settings which define the format for outputting csv data.  Note that the default file extension for
+a csv output is 'txt' and the default delimiter is a comma</p>
+<h3>Constructors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="-init-.html">&lt;init&gt;</a></h4>
+</td>
+<td>
+<p>Parses <a href="#">config</a> settings which define the format for outputting csv data.  Note that the default file extension for
+a csv output is 'txt' and the default delimiter is a comma</p>
+<code><span class="identifier">CsvConfigParser</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.csv.CsvConfigParser$<init>(kotlin.collections.Map((kotlin.String, )))/config">config</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html"><span class="identifier">Map</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">,</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">&gt;</span><span class="symbol">)</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Properties</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="delimiter.html">delimiter</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">delimiter</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="extension.html">extension</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">extension</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="target-name.html">targetName</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">targetName</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Companion Object Properties</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="logger.html">logger</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">logger</span><span class="symbol">: </span><span class="identifier">Logger</span><span class="symbol">!</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Companion Object Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="get-csv-map.html">getCsvMap</a></h4>
+</td>
+<td>
+<p>returns a configuration map of csv formatting values based on the lookup of the <a href="get-csv-map.html#org.bradfordmiller.deduper.csv.CsvConfigParser.Companion$getCsvMap(kotlin.String, kotlin.String)/jndi">jndi</a> in the jndi <a href="get-csv-map.html#org.bradfordmiller.deduper.csv.CsvConfigParser.Companion$getCsvMap(kotlin.String, kotlin.String)/context">context</a></p>
+<code><span class="keyword">fun </span><span class="identifier">getCsvMap</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.csv.CsvConfigParser.Companion$getCsvMap(kotlin.String, kotlin.String)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.csv.CsvConfigParser.Companion$getCsvMap(kotlin.String, kotlin.String)/jndi">jndi</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html"><span class="identifier">Map</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">,</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">&gt;</span></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="set-default.html">setDefault</a></h4>
+</td>
+<td>
+<p>sets default values in the csv <a href="set-default.html#org.bradfordmiller.deduper.csv.CsvConfigParser.Companion$setDefault(kotlin.collections.Map((kotlin.String, )), kotlin.String, kotlin.String)/config">config</a> map if parameters are not provided</p>
+<code><span class="keyword">fun </span><span class="identifier">setDefault</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.csv.CsvConfigParser.Companion$setDefault(kotlin.collections.Map((kotlin.String, )), kotlin.String, kotlin.String)/config">config</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html"><span class="identifier">Map</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">,</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">&gt;</span><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.csv.CsvConfigParser.Companion$setDefault(kotlin.collections.Map((kotlin.String, )), kotlin.String, kotlin.String)/key">key</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.csv.CsvConfigParser.Companion$setDefault(kotlin.collections.Map((kotlin.String, )), kotlin.String, kotlin.String)/default">default</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

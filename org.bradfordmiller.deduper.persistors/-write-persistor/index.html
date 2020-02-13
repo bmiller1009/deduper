@@ -1,0 +1,59 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>WritePersistor - deduper</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">deduper</a>&nbsp;/&nbsp;<a href="../index.html">org.bradfordmiller.deduper.persistors</a>&nbsp;/&nbsp;<a href="./index.html">WritePersistor</a><br/>
+<br/>
+<h1>WritePersistor</h1>
+<code><span class="keyword">interface </span><span class="identifier">WritePersistor</span><span class="symbol">&lt;</span><span class="identifier">T</span><span class="symbol">&gt;</span></code>
+<p>base definition for writing out output data</p>
+<h3>Parameters</h3>
+<p><a name="T"></a>
+<code>T</code> - type of row list persisting output data</p>
+<h3>Functions</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="write-rows.html">writeRows</a></h4>
+</td>
+<td>
+<p>writes list of data contained in <a href="write-rows.html#org.bradfordmiller.deduper.persistors.WritePersistor$writeRows(kotlin.collections.MutableList((org.bradfordmiller.deduper.persistors.WritePersistor.T)))/rows">rows</a> to output and returns the number of rows written</p>
+<code><span class="keyword">abstract</span> <span class="keyword">fun </span><span class="identifier">writeRows</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.persistors.WritePersistor$writeRows(kotlin.collections.MutableList((org.bradfordmiller.deduper.persistors.WritePersistor.T)))/rows">rows</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-list/index.html"><span class="identifier">MutableList</span></a><span class="symbol">&lt;</span><span class="identifier">T</span><span class="symbol">&gt;</span><span class="symbol">)</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Inheritors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="../-dupe-persistor/index.html">DupePersistor</a></h4>
+</td>
+<td>
+<p>definition for writing out duplicate data to a target flat file or sql table</p>
+<code><span class="keyword">interface </span><span class="identifier">DupePersistor</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="./index.html"><span class="identifier">WritePersistor</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-pair/index.html"><span class="identifier">Pair</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">,</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-pair/index.html"><span class="identifier">Pair</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-mutable-list/index.html"><span class="identifier">MutableList</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-long/index.html"><span class="identifier">Long</span></a><span class="symbol">&gt;</span><span class="symbol">,</span>&nbsp;<a href="../-dupe/index.html"><span class="identifier">Dupe</span></a><span class="symbol">&gt;</span><span class="symbol">&gt;</span><span class="symbol">&gt;</span></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="../-hash-persistor/index.html">HashPersistor</a></h4>
+</td>
+<td>
+<p>definition for writing out hash values of rows found in source data</p>
+<code><span class="keyword">interface </span><span class="identifier">HashPersistor</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="./index.html"><span class="identifier">WritePersistor</span></a><span class="symbol">&lt;</span><a href="../-hash-row/index.html"><span class="identifier">HashRow</span></a><span class="symbol">&gt;</span></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="../-target-persistor/index.html">TargetPersistor</a></h4>
+</td>
+<td>
+<p>definition for writing out deduped data to a target flat file or sql table</p>
+<code><span class="keyword">interface </span><span class="identifier">TargetPersistor</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="./index.html"><span class="identifier">WritePersistor</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin.collections/-map/index.html"><span class="identifier">Map</span></a><span class="symbol">&lt;</span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">,</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-any/index.html"><span class="identifier">Any</span></a><span class="symbol">&gt;</span><span class="symbol">&gt;</span></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

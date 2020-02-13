@@ -1,0 +1,17 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>SqlTargetPersistor.<init> - deduper</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">deduper</a>&nbsp;/&nbsp;<a href="../index.html">org.bradfordmiller.deduper.persistors</a>&nbsp;/&nbsp;<a href="index.html">SqlTargetPersistor</a>&nbsp;/&nbsp;<a href="./-init-.html">&lt;init&gt;</a><br/>
+<br/>
+<h1>&lt;init&gt;</h1>
+<a name="org.bradfordmiller.deduper.persistors.SqlTargetPersistor$&lt;init&gt;(kotlin.String, kotlin.String, kotlin.String, kotlin.Int)"></a>
+<code><span class="identifier">SqlTargetPersistor</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.persistors.SqlTargetPersistor$<init>(kotlin.String, kotlin.String, kotlin.String, kotlin.Int)/targetName">targetName</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.persistors.SqlTargetPersistor$<init>(kotlin.String, kotlin.String, kotlin.String, kotlin.Int)/targetJndi">targetJndi</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.persistors.SqlTargetPersistor$<init>(kotlin.String, kotlin.String, kotlin.String, kotlin.Int)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.persistors.SqlTargetPersistor$<init>(kotlin.String, kotlin.String, kotlin.String, kotlin.Int)/varcharPadding">varcharPadding</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a><span class="symbol">)</span></code>
+<p>create and writes out "deduped" data to a sql table. <a href="#">targetName</a> is the table name in the <a href="https://docs.oracle.com/javase/6/docs/api/javax/sql/DataSource.html">javax.sql.DataSource</a>
+configured in the <a href="#">targetJndi</a> for the associated <a href="#">context</a>.  <a href="#">varcharPadding</a> is a number of extra bytes which can
+be configured if the target needs larger varchar fields than were extracted by the source.</p>
+</BODY>
+</HTML>

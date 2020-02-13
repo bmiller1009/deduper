@@ -1,0 +1,79 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>QueryMetadata - deduper</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">deduper</a>&nbsp;/&nbsp;<a href="../index.html">org.bradfordmiller.deduper.sql</a>&nbsp;/&nbsp;<a href="./index.html">QueryMetadata</a><br/>
+<br/>
+<h1>QueryMetadata</h1>
+<code><span class="keyword">data</span> <span class="keyword">class </span><span class="identifier">QueryMetadata</span></code>
+<p>represents the metadata found in a particular SQL query</p>
+<h3>Constructors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="-init-.html">&lt;init&gt;</a></h4>
+</td>
+<td>
+<p>represents the metadata found in a particular SQL query</p>
+<code><span class="identifier">QueryMetadata</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.sql.QueryMetadata$<init>(kotlin.Int, kotlin.String, kotlin.Int, kotlin.String, kotlin.Int, kotlin.Boolean)/columnIndex">columnIndex</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.sql.QueryMetadata$<init>(kotlin.Int, kotlin.String, kotlin.Int, kotlin.String, kotlin.Int, kotlin.Boolean)/columnName">columnName</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.sql.QueryMetadata$<init>(kotlin.Int, kotlin.String, kotlin.Int, kotlin.String, kotlin.Int, kotlin.Boolean)/columnType">columnType</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.sql.QueryMetadata$<init>(kotlin.Int, kotlin.String, kotlin.Int, kotlin.String, kotlin.Int, kotlin.Boolean)/columnTypeName">columnTypeName</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.sql.QueryMetadata$<init>(kotlin.Int, kotlin.String, kotlin.Int, kotlin.String, kotlin.Int, kotlin.Boolean)/columnDisplaySize">columnDisplaySize</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.sql.QueryMetadata$<init>(kotlin.Int, kotlin.String, kotlin.Int, kotlin.String, kotlin.Int, kotlin.Boolean)/isColumnNull">isColumnNull</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a><span class="symbol">)</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Properties</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="column-display-size.html">columnDisplaySize</a></h4>
+</td>
+<td>
+<p>the size of the column</p>
+<code><span class="keyword">val </span><span class="identifier">columnDisplaySize</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="column-index.html">columnIndex</a></h4>
+</td>
+<td>
+<p>the positional index of a column within the SQL query</p>
+<code><span class="keyword">val </span><span class="identifier">columnIndex</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="column-name.html">columnName</a></h4>
+</td>
+<td>
+<p>the name of the column</p>
+<code><span class="keyword">val </span><span class="identifier">columnName</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="column-type.html">columnType</a></h4>
+</td>
+<td>
+<p>the integer representation of the data type of the column</p>
+<code><span class="keyword">val </span><span class="identifier">columnType</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-int/index.html"><span class="identifier">Int</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="column-type-name.html">columnTypeName</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">columnTypeName</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="is-column-null.html">isColumnNull</a></h4>
+</td>
+<td>
+<p>the nullability of a column</p>
+<code><span class="keyword">val </span><span class="identifier">isColumnNull</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

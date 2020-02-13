@@ -1,0 +1,91 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>JNDITargetType - deduper</title>
+<link rel="stylesheet" href="../../../style.css">
+</HEAD>
+<BODY>
+<a href="../../index.html">deduper</a>&nbsp;/&nbsp;<a href="../index.html">org.bradfordmiller.deduper.jndi</a>&nbsp;/&nbsp;<a href="./index.html">JNDITargetType</a><br/>
+<br/>
+<h1>JNDITargetType</h1>
+<code><span class="keyword">abstract</span> <span class="keyword">class </span><span class="identifier">JNDITargetType</span></code>
+<p>Defines output information for target data based on the <a href="jndi.html">jndi</a> name and jndi <a href="context.html">context</a></p>
+<h3>Constructors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="-init-.html">&lt;init&gt;</a></h4>
+</td>
+<td>
+<p>Defines output information for target data based on the <a href="jndi.html">jndi</a> name and jndi <a href="context.html">context</a></p>
+<code><span class="identifier">JNDITargetType</span><span class="symbol">(</span><span class="identifier" id="org.bradfordmiller.deduper.jndi.JNDITargetType$<init>(kotlin.String, kotlin.String, kotlin.Boolean)/jndi">jndi</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.jndi.JNDITargetType$<init>(kotlin.String, kotlin.String, kotlin.Boolean)/context">context</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a><span class="symbol">, </span><span class="identifier" id="org.bradfordmiller.deduper.jndi.JNDITargetType$<init>(kotlin.String, kotlin.String, kotlin.Boolean)/deleteIfExists">deleteIfExists</span><span class="symbol">:</span>&nbsp;<a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a><span class="symbol">)</span></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Properties</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="context.html">context</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">context</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="delete-if-exists.html">deleteIfExists</a></h4>
+</td>
+<td>
+<p>specifies whether to delete the existing target data before spooling out new data</p>
+<code><span class="keyword">val </span><span class="identifier">deleteIfExists</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-boolean/index.html"><span class="identifier">Boolean</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="jndi.html">jndi</a></h4>
+</td>
+<td>
+<code><span class="keyword">val </span><span class="identifier">jndi</span><span class="symbol">: </span><a href="https://kotlinlang.org/api/latest/jvm/stdlib/kotlin/-string/index.html"><span class="identifier">String</span></a></code></td>
+</tr>
+</tbody>
+</table>
+<h3>Inheritors</h3>
+<table>
+<tbody>
+<tr>
+<td>
+<h4><a href="../-csv-j-n-d-i-target-type/index.html">CsvJNDITargetType</a></h4>
+</td>
+<td>
+<p>Defines output information for csv target data based on the <a href="jndi.html">jndi</a> name and jndi <a href="context.html">context</a></p>
+<code><span class="keyword">class </span><span class="identifier">CsvJNDITargetType</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="./index.html"><span class="identifier">JNDITargetType</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="../-sql-j-n-d-i-dupe-type/index.html">SqlJNDIDupeType</a></h4>
+</td>
+<td>
+<p>Defines output information for sql duplicate data based on the <a href="jndi.html">jndi</a> name and jndi <a href="context.html">context</a></p>
+<code><span class="keyword">class </span><span class="identifier">SqlJNDIDupeType</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="./index.html"><span class="identifier">JNDITargetType</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="../-sql-j-n-d-i-hash-type/index.html">SqlJNDIHashType</a></h4>
+</td>
+<td>
+<p>Defines output information for sql hash data based on the <a href="jndi.html">jndi</a> name and jndi <a href="context.html">context</a></p>
+<code><span class="keyword">class </span><span class="identifier">SqlJNDIHashType</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="./index.html"><span class="identifier">JNDITargetType</span></a></code></td>
+</tr>
+<tr>
+<td>
+<h4><a href="../-sql-j-n-d-i-target-type/index.html">SqlJNDITargetType</a></h4>
+</td>
+<td>
+<p>Defines output information for sql target data based on the <a href="jndi.html">jndi</a> name and jndi <a href="context.html">context</a></p>
+<code><span class="keyword">class </span><span class="identifier">SqlJNDITargetType</span>&nbsp;<span class="symbol">:</span>&nbsp;<a href="./index.html"><span class="identifier">JNDITargetType</span></a></code></td>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>

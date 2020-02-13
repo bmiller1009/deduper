@@ -1,0 +1,184 @@
+<HTML>
+<HEAD>
+<meta charset="UTF-8">
+<title>alltypes - deduper</title>
+<link rel="stylesheet" href="../../style.css">
+</HEAD>
+<BODY>
+<h3>All Types</h3>
+<table>
+<tbody>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.consumers/-base-consumer/index.html">org.bradfordmiller.deduper.consumers.BaseConsumer</a></h5>
+<p>Base definition of a runnable Consumer. Consumers are responsible for persisting data to disk</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.config/-config/index.html">org.bradfordmiller.deduper.config.Config</a></h5>
+<p>Configuration for a deduper process</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.csv/-csv-config-parser/index.html">org.bradfordmiller.deduper.csv.CsvConfigParser</a></h5>
+<p>Parses <a href="#">config</a> settings which define the format for outputting csv data.  Note that the default file extension for
+a csv output is 'txt' and the default delimiter is a comma</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.persistors/-csv-dupe-persistor/index.html">org.bradfordmiller.deduper.persistors.CsvDupePersistor</a></h5>
+<p>creates and writes out duplicate data to csv target. duplicate target is configured in <a href="#">config</a></p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.persistors/-csv-hash-persistor/index.html">org.bradfordmiller.deduper.persistors.CsvHashPersistor</a></h5>
+<p>creates and writes out hash values found in a deduper process to a csv defined in <a href="#">config</a></p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.jndi/-csv-j-n-d-i-target-type/index.html">org.bradfordmiller.deduper.jndi.CsvJNDITargetType</a></h5>
+<p>Defines output information for csv target data based on the <a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/jndi.html">jndi</a> name and jndi <a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/context.html">context</a></p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.persistors/-csv-persistor/index.html">org.bradfordmiller.deduper.persistors.CsvPersistor</a></h5>
+<p>parser for jndi entries which are configured for csv output. Parses the values found in <a href="#">config</a></p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.persistors/-csv-target-persistor/index.html">org.bradfordmiller.deduper.persistors.CsvTargetPersistor</a></h5>
+<p>create and writes out "deduped" data to csv target. target is configured in <a href="#">config</a></p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper/-deduper/index.html">org.bradfordmiller.deduper.Deduper</a></h5>
+<p>dedupes data based on <a href="#">config</a> settings</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.consumers/-deduper-data-consumer/index.html">org.bradfordmiller.deduper.consumers.DeduperDataConsumer</a></h5>
+<p>Consumer for processing and persisting target data, IE "deduped" data</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.consumers/-deduper-dupe-consumer/index.html">org.bradfordmiller.deduper.consumers.DeduperDupeConsumer</a></h5>
+<p>Consumer for processing and persisting duplicate data</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper/-dedupe-report/index.html">org.bradfordmiller.deduper.DedupeReport</a></h5>
+<p>summary of a dedupe operation, with total <a href="../org.bradfordmiller.deduper/-dedupe-report/record-count.html">recordCount</a>, <a href="../org.bradfordmiller.deduper/-dedupe-report/hash-columns.html">hashColumns</a> used, <a href="../org.bradfordmiller.deduper/-dedupe-report/columns-found.html">columnsFound</a> in the actual source
+query, <a href="../org.bradfordmiller.deduper/-dedupe-report/dupe-count.html">dupeCount</a>, <a href="../org.bradfordmiller.deduper/-dedupe-report/distinct-dupe-count.html">distinctDupeCount</a>, and <a href="../org.bradfordmiller.deduper/-dedupe-report/dupes.html">dupes</a> found in the dedupe process.</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.consumers/-deduper-hash-consumer/index.html">org.bradfordmiller.deduper.consumers.DeduperHashConsumer</a></h5>
+<p>Consumer for processing and persisting MD-5 hashes data</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper/-deduper-producer/index.html">org.bradfordmiller.deduper.DeduperProducer</a></h5>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.persistors/-dupe/index.html">org.bradfordmiller.deduper.persistors.Dupe</a></h5>
+<p>represents a simple duplicate value found by deduper.</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.persistors/-dupe-persistor/index.html">org.bradfordmiller.deduper.persistors.DupePersistor</a></h5>
+<p>definition for writing out duplicate data to a target flat file or sql table</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.utils/-either.html">org.bradfordmiller.deduper.utils.Either</a></h5>
+<p>represents Either construct with <a href="../org.bradfordmiller.deduper.utils/-left/index.html">Left</a> and <a href="../org.bradfordmiller.deduper.utils/-right/index.html">Right</a> values</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.config/-execution-service-timeout/index.html">org.bradfordmiller.deduper.config.ExecutionServiceTimeout</a></h5>
+<p>Settings for the Execution Service timeout. Once a deduper has published all data to the blocking queues of all
+consumers, consumers will have a dynamic timeout set (defaults to 60 seconds) for all consumers to finish persisting
+data</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.utils/-file-utils/index.html">org.bradfordmiller.deduper.utils.FileUtils</a></h5>
+<p>A utility library for file operations</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.hashing/-hasher/index.html">org.bradfordmiller.deduper.hashing.Hasher</a></h5>
+<p>Utility class for hashing methods</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.persistors/-hash-persistor/index.html">org.bradfordmiller.deduper.persistors.HashPersistor</a></h5>
+<p>definition for writing out hash values of rows found in source data</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.persistors/-hash-row/index.html">org.bradfordmiller.deduper.persistors.HashRow</a></h5>
+<p>represents hashed data created by deduper</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.config/-hash-source-jndi/index.html">org.bradfordmiller.deduper.config.HashSourceJndi</a></h5>
+<p>A hash source jndi entity. This is used when configuring a specific set of existing hashes to "dedupe" against</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/index.html">org.bradfordmiller.deduper.jndi.JNDITargetType</a></h5>
+<p>Defines output information for target data based on the <a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/jndi.html">jndi</a> name and jndi <a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/context.html">context</a></p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-utils/index.html">org.bradfordmiller.deduper.jndi.JNDIUtils</a></h5>
+<p>Utility class for Jndi based operations on the simple-jndi API</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.utils/-left/index.html">org.bradfordmiller.deduper.utils.Left</a></h5>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.sql/-query-info/index.html">org.bradfordmiller.deduper.sql.QueryInfo</a></h5>
+<p>the metadata about a particular SQL query comprised of the <a href="../org.bradfordmiller.deduper.sql/-query-info/column-count.html">columnCount</a> and the <a href="../org.bradfordmiller.deduper.sql/-query-info/column-set.html">columnSet</a> of <a href="../org.bradfordmiller.deduper.sql/-query-info/index.html">QueryInfo</a></p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.sql/-query-metadata/index.html">org.bradfordmiller.deduper.sql.QueryMetadata</a></h5>
+<p>represents the metadata found in a particular SQL query</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.utils/-right/index.html">org.bradfordmiller.deduper.utils.Right</a></h5>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper/-sample-row/index.html">org.bradfordmiller.deduper.SampleRow</a></h5>
+<p>reprsentation of a sample of data showing the comma-delimited <a href="../org.bradfordmiller.deduper/-sample-row/sample-string.html">sampleString</a> and the associated <a href="../org.bradfordmiller.deduper/-sample-row/sample-hash.html">sampleHash</a> for that
+sample string</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.config/-source-jndi/index.html">org.bradfordmiller.deduper.config.SourceJndi</a></h5>
+<p>A source jndi entity</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.persistors/-sql-dupe-persistor/index.html">org.bradfordmiller.deduper.persistors.SqlDupePersistor</a></h5>
+<p>creates a sql table for persisting duplicate data. This is configured using the <a href="https://docs.oracle.com/javase/6/docs/api/javax/sql/DataSource.html">dupesJndi</a>
+contained in the associated <a href="#">context</a></p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.persistors/-sql-hash-persistor/index.html">org.bradfordmiller.deduper.persistors.SqlHashPersistor</a></h5>
+<p>creates a sql table for persisting hashed data rows. This is configured using the <a href="https://docs.oracle.com/javase/6/docs/api/javax/sql/DataSource.html">hashJndi</a>
+contained in the associated <a href="#">context</a></p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.jndi/-sql-j-n-d-i-dupe-type/index.html">org.bradfordmiller.deduper.jndi.SqlJNDIDupeType</a></h5>
+<p>Defines output information for sql duplicate data based on the <a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/jndi.html">jndi</a> name and jndi <a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/context.html">context</a></p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.jndi/-sql-j-n-d-i-hash-type/index.html">org.bradfordmiller.deduper.jndi.SqlJNDIHashType</a></h5>
+<p>Defines output information for sql hash data based on the <a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/jndi.html">jndi</a> name and jndi <a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/context.html">context</a></p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.jndi/-sql-j-n-d-i-target-type/index.html">org.bradfordmiller.deduper.jndi.SqlJNDITargetType</a></h5>
+<p>Defines output information for sql target data based on the <a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/jndi.html">jndi</a> name and jndi <a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/context.html">context</a></p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.persistors/-sql-target-persistor/index.html">org.bradfordmiller.deduper.persistors.SqlTargetPersistor</a></h5>
+<p>create and writes out "deduped" data to a sql table. <a href="#">targetName</a> is the table name in the <a href="https://docs.oracle.com/javase/6/docs/api/javax/sql/DataSource.html">javax.sql.DataSource</a>
+configured in the <a href="#">targetJndi</a> for the associated <a href="#">context</a>.  <a href="#">varcharPadding</a> is a number of extra bytes which can
+be configured if the target needs larger varchar fields than were extracted by the source.</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.sql/-sql-utils/index.html">org.bradfordmiller.deduper.sql.SqlUtils</a></h5>
+<p>Sql operations utility class</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.sql/-sql-vendor-types/index.html">org.bradfordmiller.deduper.sql.SqlVendorTypes</a></h5>
+<p>class for returning correctly formatted types based on a specific database <a href="#">vendor</a></p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.persistors/-target-persistor/index.html">org.bradfordmiller.deduper.persistors.TargetPersistor</a></h5>
+<p>definition for writing out deduped data to a target flat file or sql table</p>
+</tr>
+<tr>
+<h5><a href="../org.bradfordmiller.deduper.persistors/-write-persistor/index.html">org.bradfordmiller.deduper.persistors.WritePersistor</a></h5>
+<p>base definition for writing out output data</p>
+</tr>
+</tbody>
+</table>
+</BODY>
+</HTML>
