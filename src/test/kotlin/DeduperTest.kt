@@ -7,13 +7,14 @@ import org.bradfordmiller.deduper.config.HashSourceJndi
 import org.bradfordmiller.deduper.config.SourceJndi
 import org.bradfordmiller.deduper.jndi.*
 import org.bradfordmiller.deduper.persistors.Dupe
-import org.bradfordmiller.deduper.sql.SqlUtils
+import org.bradfordmiller.sqlutils.SqlUtils
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
+import org.bradfordmiller.simplejndiutils.JNDIUtils
 
 class DeduperTest {
 
@@ -80,7 +81,7 @@ class DeduperTest {
         )
     }
     private fun getSourceCount(sourceJndi: SourceJndi): Long {
-        return JNDIUtils.getJndiConnection(sourceJndi).use {conn ->
+        return JNDIUtils.getJndiConnection(sourceJndi.jndiName, sourceJndi.context).use {conn ->
             val sql = "SELECT COUNT(1) FROM ${sourceJndi.tableQuery}"
             conn.prepareStatement(sql).use {stmt ->
                 stmt.executeQuery().use {rs ->
@@ -91,7 +92,7 @@ class DeduperTest {
         }
     }
     private fun getColumnsFromSource(sourceJndi: SourceJndi): Map<Int, String> {
-        return JNDIUtils.getJndiConnection(sourceJndi).use {conn ->
+        return JNDIUtils.getJndiConnection(sourceJndi.jndiName, sourceJndi.context).use {conn ->
             val sql = "SELECT * FROM ${sourceJndi.tableQuery}"
             conn.prepareStatement(sql).use {stmt ->
                 stmt.executeQuery().use {rs ->
@@ -101,7 +102,7 @@ class DeduperTest {
         }
     }
     private fun getFirstRowFromSource(sourceJndi: SourceJndi): Array<String> {
-        JNDIUtils.getJndiConnection(sourceJndi).use {conn ->
+        JNDIUtils.getJndiConnection(sourceJndi.jndiName, sourceJndi.context).use {conn ->
             val sql = "SELECT * FROM ${sourceJndi.tableQuery} LIMIT 1"
             conn.prepareStatement(sql).use {stmt ->
                 stmt.executeQuery().use {rs ->

@@ -1,10 +1,10 @@
 package org.bradfordmiller.deduper.persistors
 
 import org.bradfordmiller.deduper.csv.CsvConfigParser
-import org.bradfordmiller.deduper.jndi.JNDIUtils
-import org.bradfordmiller.deduper.sql.QueryInfo
-import org.bradfordmiller.deduper.sql.SqlUtils
-import org.bradfordmiller.deduper.sql.SqlVendorTypes
+import org.bradfordmiller.simplejndiutils.JNDIUtils
+import org.bradfordmiller.sqlutils.QueryInfo
+import org.bradfordmiller.sqlutils.SqlUtils
+import org.bradfordmiller.sqlutils.SqlVendorTypes
 import org.bradfordmiller.deduper.utils.FileUtils
 import org.json.JSONArray
 import org.slf4j.LoggerFactory

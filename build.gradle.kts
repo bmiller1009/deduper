@@ -83,6 +83,9 @@ dependencies {
     implementation("commons-io", "commons-io", "2.6")
     implementation("net.sf.trove4j", "core", "3.1.0")
     implementation("com.opencsv", "opencsv", "4.6")
+    implementation("org.bradfordmiller", "simplejndiutils", "0.0.2")
+    implementation("org.bradfordmiller:kotlinutils:0.0.1")
+    implementation("org.bradfordmiller:sqlutils:0.0.1")
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 

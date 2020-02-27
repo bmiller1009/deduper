@@ -6,12 +6,12 @@ import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.csv.CsvConfigParser
 import org.bradfordmiller.deduper.hashing.Hasher
 import org.bradfordmiller.deduper.jndi.CsvJNDITargetType
-import org.bradfordmiller.deduper.jndi.JNDIUtils
+import org.bradfordmiller.simplejndiutils.JNDIUtils
 import org.bradfordmiller.deduper.jndi.SqlJNDIHashType
 import org.bradfordmiller.deduper.jndi.SqlJNDITargetType
 import org.bradfordmiller.deduper.persistors.*
-import org.bradfordmiller.deduper.sql.SqlUtils
-import org.bradfordmiller.deduper.utils.Left
+import org.bradfordmiller.sqlutils.SqlUtils
+import org.bradfordmiller.kotlinutils.Left
 
 import org.json.JSONObject
 import org.slf4j.LoggerFactory

@@ -1,10 +1,10 @@
 package org.bradfordmiller.deduper.consumers
 
 import org.bradfordmiller.deduper.DedupeReport
-import org.bradfordmiller.deduper.jndi.JNDIUtils
+import org.bradfordmiller.simplejndiutils.JNDIUtils
 import org.bradfordmiller.deduper.persistors.TargetPersistor
 import org.bradfordmiller.deduper.persistors.WritePersistor
-import org.bradfordmiller.deduper.sql.SqlUtils
+import org.bradfordmiller.sqlutils.SqlUtils
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 import javax.sql.DataSource
