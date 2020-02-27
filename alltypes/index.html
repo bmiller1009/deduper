@@ -74,10 +74,6 @@ query, <a href="../org.bradfordmiller.deduper/-dedupe-report/dupe-count.html">du
 <p>definition for writing out duplicate data to a target flat file or sql table</p>
 </tr>
 <tr>
-<h5><a href="../org.bradfordmiller.deduper.utils/-either.html">org.bradfordmiller.deduper.utils.Either</a></h5>
-<p>represents Either construct with <a href="../org.bradfordmiller.deduper.utils/-left/index.html">Left</a> and <a href="../org.bradfordmiller.deduper.utils/-right/index.html">Right</a> values</p>
-</tr>
-<tr>
 <h5><a href="../org.bradfordmiller.deduper.config/-execution-service-timeout/index.html">org.bradfordmiller.deduper.config.ExecutionServiceTimeout</a></h5>
 <p>Settings for the Execution Service timeout. Once a deduper has published all data to the blocking queues of all
 consumers, consumers will have a dynamic timeout set (defaults to 60 seconds) for all consumers to finish persisting
@@ -106,24 +102,6 @@ data</p>
 <tr>
 <h5><a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/index.html">org.bradfordmiller.deduper.jndi.JNDITargetType</a></h5>
 <p>Defines output information for target data based on the <a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/jndi.html">jndi</a> name and jndi <a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-target-type/context.html">context</a></p>
-</tr>
-<tr>
-<h5><a href="../org.bradfordmiller.deduper.jndi/-j-n-d-i-utils/index.html">org.bradfordmiller.deduper.jndi.JNDIUtils</a></h5>
-<p>Utility class for Jndi based operations on the simple-jndi API</p>
-</tr>
-<tr>
-<h5><a href="../org.bradfordmiller.deduper.utils/-left/index.html">org.bradfordmiller.deduper.utils.Left</a></h5>
-</tr>
-<tr>
-<h5><a href="../org.bradfordmiller.deduper.sql/-query-info/index.html">org.bradfordmiller.deduper.sql.QueryInfo</a></h5>
-<p>the metadata about a particular SQL query comprised of the <a href="../org.bradfordmiller.deduper.sql/-query-info/column-count.html">columnCount</a> and the <a href="../org.bradfordmiller.deduper.sql/-query-info/column-set.html">columnSet</a> of <a href="../org.bradfordmiller.deduper.sql/-query-info/index.html">QueryInfo</a></p>
-</tr>
-<tr>
-<h5><a href="../org.bradfordmiller.deduper.sql/-query-metadata/index.html">org.bradfordmiller.deduper.sql.QueryMetadata</a></h5>
-<p>represents the metadata found in a particular SQL query</p>
-</tr>
-<tr>
-<h5><a href="../org.bradfordmiller.deduper.utils/-right/index.html">org.bradfordmiller.deduper.utils.Right</a></h5>
 </tr>
 <tr>
 <h5><a href="../org.bradfordmiller.deduper/-sample-row/index.html">org.bradfordmiller.deduper.SampleRow</a></h5>
@@ -161,14 +139,6 @@ contained in the associated <a href="#">context</a></p>
 <p>create and writes out "deduped" data to a sql table. <a href="#">targetName</a> is the table name in the <a href="https://docs.oracle.com/javase/6/docs/api/javax/sql/DataSource.html">javax.sql.DataSource</a>
 configured in the <a href="#">targetJndi</a> for the associated <a href="#">context</a>.  <a href="#">varcharPadding</a> is a number of extra bytes which can
 be configured if the target needs larger varchar fields than were extracted by the source.</p>
-</tr>
-<tr>
-<h5><a href="../org.bradfordmiller.deduper.sql/-sql-utils/index.html">org.bradfordmiller.deduper.sql.SqlUtils</a></h5>
-<p>Sql operations utility class</p>
-</tr>
-<tr>
-<h5><a href="../org.bradfordmiller.deduper.sql/-sql-vendor-types/index.html">org.bradfordmiller.deduper.sql.SqlVendorTypes</a></h5>
-<p>class for returning correctly formatted types based on a specific database <a href="#">vendor</a></p>
 </tr>
 <tr>
 <h5><a href="../org.bradfordmiller.deduper.persistors/-target-persistor/index.html">org.bradfordmiller.deduper.persistors.TargetPersistor</a></h5>

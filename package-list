@@ -8,5 +8,4 @@ org.bradfordmiller.deduper.csv
 org.bradfordmiller.deduper.hashing
 org.bradfordmiller.deduper.jndi
 org.bradfordmiller.deduper.persistors
-org.bradfordmiller.deduper.sql
 org.bradfordmiller.deduper.utils
