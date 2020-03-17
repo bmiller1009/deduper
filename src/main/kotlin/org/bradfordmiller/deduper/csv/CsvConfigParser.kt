@@ -1,7 +1,7 @@
 package org.bradfordmiller.deduper.csv
 
+import io.vavr.control.Either
 import org.bradfordmiller.simplejndiutils.JNDIUtils
-import org.bradfordmiller.kotlinutils.Right
 import org.slf4j.LoggerFactory
 
 /**
@@ -21,8 +21,9 @@ class CsvConfigParser(private val config: Map<String, String>) {
          * returns a configuration map of csv formatting values based on the lookup of the [jndi] in the jndi [context]
          */
         fun getCsvMap(context: String, jndi: String): Map<String, String> {
-            val ds = JNDIUtils.getDataSource(jndi, context) as Right
-            return ds.right as Map<String, String>
+            val right = JNDIUtils.getDataSource(jndi, context) as Either.Right
+            val ds = right.get().toMap()
+            return ds
         }
         /**
          * sets default values in the csv [config] map if parameters are not provided

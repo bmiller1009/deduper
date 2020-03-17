@@ -12,7 +12,7 @@ import java.time.Duration
 
 plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
-    id("org.jetbrains.kotlin.jvm").version("1.3.61")
+    id("org.jetbrains.kotlin.jvm").version("1.3.70")
     id("org.jetbrains.dokka").version("0.10.0")
     id("net.researchgate.release").version("2.6.0")
     id("java-library")
@@ -83,9 +83,12 @@ dependencies {
     implementation("commons-io", "commons-io", "2.6")
     implementation("net.sf.trove4j", "core", "3.1.0")
     implementation("com.opencsv", "opencsv", "4.6")
-    implementation("org.bradfordmiller", "simplejndiutils", "0.0.2")
-    implementation("org.bradfordmiller:kotlinutils:0.0.1")
+    implementation("org.bradfordmiller", "simplejndiutils", "0.0.6") {
+        isTransitive = true
+    }
     implementation("org.bradfordmiller:sqlutils:0.0.1")
+    //implementation("io.vavr:vavr:0.9.0")
+
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
 

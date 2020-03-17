@@ -1,6 +1,7 @@
 package org.bradfordmiller.deduper
 
 import gnu.trove.map.hash.THashMap
+import io.vavr.control.Either
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.csv.CsvConfigParser
@@ -11,7 +12,6 @@ import org.bradfordmiller.deduper.jndi.SqlJNDIHashType
 import org.bradfordmiller.deduper.jndi.SqlJNDITargetType
 import org.bradfordmiller.deduper.persistors.*
 import org.bradfordmiller.sqlutils.SqlUtils
-import org.bradfordmiller.kotlinutils.Left
 
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
@@ -111,10 +111,8 @@ class DeduperProducer(
 
             logger.info("Seen hashes JNDI is populated. Attempting to load hashes...")
 
-            val hashSourceDataSource =
-                (JNDIUtils.getDataSource(
-                    config.seenHashesJndi.jndiName, config.seenHashesJndi.context
-                ) as Left<DataSource?, String>).left!!
+            val ds = JNDIUtils.getDataSource(config.seenHashesJndi.jndiName, config.seenHashesJndi.context)
+            val hashSourceDataSource = ds.left
 
             val sqlStatement =
                 "SELECT ${config.seenHashesJndi.hashColumnName} FROM ${config.seenHashesJndi.hashTableName}"
@@ -351,8 +349,8 @@ class Deduper(private val config: Config) {
 
     private val sourceDataSource: DataSource
         by lazy {
-            (JNDIUtils.getDataSource(config.sourceJndi.jndiName, config.sourceJndi.context
-            ) as Left<DataSource?, String>).left!!
+            val ds = JNDIUtils.getDataSource(config.sourceJndi.jndiName, config.sourceJndi.context)
+            ds.left
         }
 
     private val sqlStatement by lazy {
@@ -392,7 +390,7 @@ class Deduper(private val config: Config) {
      *  @param commitSize - the number of rows to write in a single transation
      *  @param outputReportCommitSize - the number of total rows committed before logging the result
      */
-    fun dedupe(commitSize: Long = 500, outputReportCommitSize: Long = 1000000): DedupeReport {
+    fun dedupe(commitSize: Long = 500L, reportCommitSize: Long = 1000000L): DedupeReport {
 
         var threadCount = 1
 
@@ -406,20 +404,23 @@ class Deduper(private val config: Config) {
 
         if (config.targetJndi != null) {
             threadCount += 1
-            dataQueue = ArrayBlockingQueue<MutableList<Map<String, Any>>>(100)
-            controlQueues += ControlQueue.Target to ArrayBlockingQueue(1)
+            dataQueue = ArrayBlockingQueue(100)
+            val targetControlQueue = ArrayBlockingQueue<DedupeReport>(1)
+            controlQueues += ControlQueue.Target to targetControlQueue
         }
 
         if (config.dupesJndi != null) {
             threadCount += 1
-            dupeQueue = ArrayBlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>(100)
-            controlQueues += ControlQueue.Dupes to ArrayBlockingQueue(1)
+            dupeQueue = ArrayBlockingQueue(100)
+            val dupeControlQueue = ArrayBlockingQueue<DedupeReport>(1)
+            controlQueues += ControlQueue.Dupes to dupeControlQueue
         }
 
         if (config.hashJndi != null) {
             threadCount += 1
-            hashQueue = ArrayBlockingQueue<MutableList<HashRow>>(100)
-            controlQueues += ControlQueue.Hashes to ArrayBlockingQueue(1)
+            hashQueue = ArrayBlockingQueue(100)
+            val hashControlQueue = ArrayBlockingQueue<DedupeReport>(1)
+            controlQueues += ControlQueue.Hashes to hashControlQueue
         }
 
         val executorService = Executors.newFixedThreadPool(threadCount)
@@ -431,7 +432,7 @@ class Deduper(private val config: Config) {
                 hashQueue,
                 controlQueues,
                 commitSize,
-                outputReportCommitSize,
+                reportCommitSize,
                 config,
                 persistors,
                 sourceDataSource,
