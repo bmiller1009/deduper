@@ -74,7 +74,6 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-core:2.9.4")
     implementation("org.apache.logging.log4j",  "log4j-core",  "2.12.0")
     implementation("org.apache.logging.log4j",  "log4j-api",  "2.12.0")
-    implementation("com.github.h-thurow", "simple-jndi","0.18.1")
     implementation("commons-codec", "commons-codec","1.12")
     implementation("org.apache.logging.log4j", "log4j-slf4j-impl", "2.12.0")
     implementation("org.xerial", "sqlite-jdbc", "3.28.0")
@@ -83,10 +82,10 @@ dependencies {
     implementation("commons-io", "commons-io", "2.6")
     implementation("net.sf.trove4j", "core", "3.1.0")
     implementation("com.opencsv", "opencsv", "4.6")
-    implementation("org.bradfordmiller", "simplejndiutils", "0.0.6") {
+    api("org.bradfordmiller", "simplejndiutils", "0.0.6") {
         isTransitive = true
     }
-    implementation("org.bradfordmiller:sqlutils:0.0.1")
+    api("org.bradfordmiller:sqlutils:0.0.1")
     //implementation("io.vavr:vavr:0.9.0")
 
     // Use the Kotlin test library.
