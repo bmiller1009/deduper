@@ -74,7 +74,7 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-core:2.9.4")
     implementation("org.apache.logging.log4j",  "log4j-core",  "2.12.0")
     implementation("org.apache.logging.log4j",  "log4j-api",  "2.12.0")
-    implementation("commons-codec", "commons-codec","1.12")
+    api("commons-codec", "commons-codec","1.12")
     implementation("org.apache.logging.log4j", "log4j-slf4j-impl", "2.12.0")
     implementation("org.xerial", "sqlite-jdbc", "3.28.0")
     implementation("org.json", "json", "20190722")
