@@ -82,7 +82,7 @@ dependencies {
     implementation("commons-io", "commons-io", "2.6")
     implementation("net.sf.trove4j", "core", "3.1.0")
     implementation("com.opencsv", "opencsv", "4.6")
-    api("org.bradfordmiller", "simplejndiutils", "0.0.7") {
+    api("org.bradfordmiller", "simplejndiutils", "0.0.10") {
         isTransitive = true
     }
     api("org.bradfordmiller:sqlutils:0.0.1")
