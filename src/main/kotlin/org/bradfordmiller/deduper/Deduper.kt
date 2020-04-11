@@ -23,6 +23,7 @@ import java.util.concurrent.Executors
 import javax.sql.DataSource
 
 import org.bradfordmiller.deduper.consumers.*
+import org.bradfordmiller.deduper.jndi.CsvJNDIHashType
 
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
@@ -175,7 +176,12 @@ class DeduperProducer(
                     var includeJson: Boolean = false
                     if(persistors.hashPersistor != null) {
                         hashIsNotNull = true
-                        includeJson = (config.hashJndi as SqlJNDIHashType).includeJson
+                        includeJson =
+                            if(config.hashJndi is SqlJNDIHashType) {
+                                config.hashJndi.includeJson
+                            } else {
+                                (config.hashJndi as CsvJNDIHashType).includeJson
+                            }
                     }
 
                     while (rs.next()) {

@@ -11,11 +11,18 @@ abstract class JNDITargetType(val jndi: String, val context: String, val deleteI
  *
  * @parameter deleteIfExists specifies whether to delete the existing target data before spooling out new data
  */
-class CsvJNDITargetType(
+open class CsvJNDITargetType(
     jndi: String,
     context: String,
     deleteIfExists: Boolean
 ): JNDITargetType(jndi, context, deleteIfExists)
+
+class CsvJNDIHashType(
+    jndi: String,
+    context: String,
+    deleteIfExists: Boolean,
+    val includeJson: Boolean
+): CsvJNDITargetType(jndi, context, deleteIfExists)
 /**
  * Defines output information for sql target data based on the [jndi] name and jndi [context]
  *
