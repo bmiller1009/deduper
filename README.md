@@ -27,7 +27,7 @@ If you're using [Maven](maven.apache.org) simply specify the GAV coordinate belo
 <dependency>
   <groupId>org.bradfordmiller</groupId>
   <artifactId>deduper</artifactId>
-  <version>0.0.34</version>
+  <version>0.0.35</version>
 </dependency>
 ```
 
@@ -36,7 +36,7 @@ If you're using [Maven](maven.apache.org) simply specify the GAV coordinate belo
 Add this GAV coordinate to your SBT dependency list
 
 ```sbt
-libraryDependencies += "org.bradfordmiller" %% "deduper" % "0.0.34"
+libraryDependencies += "org.bradfordmiller" %% "deduper" % "0.0.35"
 ```
 
 #### Running with Gradle
@@ -47,7 +47,7 @@ Add this GAV coordinate to your Gradle dependencies section
 dependencies {
     ...
     ...
-    implementation 'org.bradfordmiller:deduper:0.0.34'
+    implementation 'org.bradfordmiller:deduper:0.0.35'
 }
 ```
 
