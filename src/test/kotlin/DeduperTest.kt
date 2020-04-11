@@ -444,4 +444,22 @@ class DeduperTest {
 
         assert(report == expectedReport)
     }
+    @Test fun targetCsvHashTable() {
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds", "Sacramentorealestatetransactions", hashColumns)
+        val csvHashJndi = CsvJNDIHashType("RealEstateOut", "default_ds",true, true)
+
+        val config = Config.ConfigBuilder()
+            .sourceJndi(csvSourceJndi)
+            .hashJndi(csvHashJndi)
+            .build()
+
+        val deduper = Deduper(config)
+
+        val report = deduper.dedupe()
+
+        val expectedReport = getExpectedReport()
+
+        assert(report == expectedReport)
+    }
 }
