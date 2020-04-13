@@ -108,6 +108,8 @@ class DeduperProducer(
         var recordCount = 0L
         var dupeCount = 0L
 
+        
+
         if(config.seenHashesJndi != null) {
 
             logger.info("Seen hashes JNDI is populated. Attempting to load hashes...")
