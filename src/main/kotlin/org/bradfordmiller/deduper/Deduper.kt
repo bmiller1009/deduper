@@ -41,7 +41,8 @@ data class DedupeReport(
     val dupeCount: Long,
     val distinctDupeCount: Long,
     val hashCount: Long,
-    var dupes: MutableMap<String, Pair<MutableList<Long>, Dupe>>
+    var dupes: MutableMap<String, Pair<MutableList<Long>, Dupe>>,
+    var success: Boolean
 ) {
     override fun toString(): String {
         return "recordCount=$recordCount, " +
@@ -108,171 +109,201 @@ class DeduperProducer(
         var recordCount = 0L
         var dupeCount = 0L
 
-        
+        var targetIsNotNull: Boolean = false
+        var dupeIsNotNull: Boolean = false
+        var hashIsNotNull: Boolean = false
 
-        if(config.seenHashesJndi != null) {
+        try {
 
-            logger.info("Seen hashes JNDI is populated. Attempting to load hashes...")
+            if (config.seenHashesJndi != null) {
 
-            val ds = JNDIUtils.getDataSource(config.seenHashesJndi.jndiName, config.seenHashesJndi.context)
-            val hashSourceDataSource = ds.left
+                logger.info("Seen hashes JNDI is populated. Attempting to load hashes...")
 
-            val sqlStatement =
-                "SELECT ${config.seenHashesJndi.hashColumnName} FROM ${config.seenHashesJndi.hashTableName}"
+                val ds = JNDIUtils.getDataSource(config.seenHashesJndi.jndiName, config.seenHashesJndi.context)
+                val hashSourceDataSource = ds.left
 
-            logger.info("Executing the following SQL against the seen hashes jndi: $sqlStatement")
+                val sqlStatement =
+                        "SELECT ${config.seenHashesJndi.hashColumnName} FROM ${config.seenHashesJndi.hashTableName}"
 
-            JNDIUtils.getConnection(hashSourceDataSource)!!.use { conn ->
-                conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
-                    .use { stmt ->
-                        stmt.executeQuery().use { rs ->
-                            while (rs.next()) {
-                                seenHashes.put(rs.getString(1), 0)
-                            }
-                        }
-                    }
-            }
-            logger.info("Seen hashes loaded. ${seenHashes.size} hashes loaded into memory.")
-        }
+                logger.info("Executing the following SQL against the seen hashes jndi: $sqlStatement")
 
-        JNDIUtils.getConnection(sourceDataSource)!!.use { conn ->
-
-            logger.trace("The following sql statement will be run: $sqlStatement")
-
-            conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
-                stmt.executeQuery().use { rs ->
-
-                    val rsmd = rs.metaData
-                    val colCount = rsmd.columnCount
-
-                    logger.trace("$colCount columns have been found in the result set.")
-
-                    var data: MutableList<Map<String, Any>> = mutableListOf()
-                    var hashes: MutableList<HashRow> = mutableListOf()
-
-                    rsColumns = SqlUtils.getColumnsFromRs(rsmd)
-
-                    require(rsColumns.values.containsAll(hashColumns)) {
-                        "One or more provided keys $hashColumns not contained in resultset: $rsColumns"
-                    }
-
-                    val columns =
-                        if(hashColumns.isEmpty())
-                            rsColumns.values.joinToString(",")
-                        else
-                            hashColumns.joinToString(",")
-
-                    logger.info("Using $columns to calculate hashes")
-
-                    var targetIsNotNull: Boolean = false
-                    if(persistors.targetPersistor != null) {
-                        targetIsNotNull = true
-                    }
-
-                    var dupeIsNotNull: Boolean = false
-                    if(persistors.dupePersistor != null) {
-                        dupeIsNotNull = true
-                    }
-
-                    var hashIsNotNull: Boolean = false
-                    var includeJson: Boolean = false
-                    if(persistors.hashPersistor != null) {
-                        hashIsNotNull = true
-                        includeJson =
-                            if(config.hashJndi is SqlJNDIHashType) {
-                                config.hashJndi.includeJson
-                            } else {
-                                (config.hashJndi as CsvJNDIHashType).includeJson
-                            }
-                    }
-
-                    while (rs.next()) {
-
-                        val md5Values = SqlUtils.stringifyRow(rs, hashColumns)
-                        //Hold data in map of columns/values
-                        val rsMap = SqlUtils.getMapFromRs(rs, rsColumns)
-
-                        logger.trace("Using the following value(s): $md5Values to calculate unique hash.")
-
-                        val hash = DigestUtils.md5Hex(md5Values).toUpperCase()
-                        val longHash = Hasher.hashString(hash)
-
-                        logger.trace("MD-5 hash $hash generated for MD-5 values.")
-                        logger.trace("Converted hash value to long value: $longHash")
-
-                        if (!seenHashes.containsKey(hash)) {
-                            seenHashes.put(hash, recordCount)
-
-                            if(targetIsNotNull) {
-                                data.add(rsMap)
-                                writeData(recordCount, data, dataQueue)
-                            }
-                            if(hashIsNotNull) {
-                                val json =
-                                    if(includeJson) {
-                                        JSONObject(rsMap).toString()
-                                    } else {
-                                        null
+                JNDIUtils.getConnection(hashSourceDataSource)!!.use { conn ->
+                    conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+                            .use { stmt ->
+                                stmt.executeQuery().use { rs ->
+                                    while (rs.next()) {
+                                        seenHashes.put(rs.getString(1), 0)
                                     }
-                                hashes.add(HashRow(hash, json))
-
-                                writeData(recordCount, hashes, hashQueue)
+                                }
                             }
-                        } else {
-                            if(dupeMap.containsKey(hash)) {
-                                dupeMap[hash]?.first?.add(recordCount)
-                            } else {
-                                val firstSeenRow = seenHashes[hash]!!
-                                val dupeJson = JSONObject(rsMap).toString()
-                                val dupe = Dupe(firstSeenRow, dupeJson)
-                                dupeMap[hash] = Pair(mutableListOf(recordCount), dupe)
+                }
+                logger.info("Seen hashes loaded. ${seenHashes.size} hashes loaded into memory.")
+            }
 
-                                distinctDupeCount += 1
-                            }
+            JNDIUtils.getConnection(sourceDataSource)!!.use { conn ->
 
-                            dupeCount += 1
-                            if(dupeIsNotNull) {
-                                writeData(dupeCount, dupeMap.toList().toMutableList(), dupeQueue)
-                            }
+                logger.trace("The following sql statement will be run: $sqlStatement")
+
+                conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
+                    stmt.executeQuery().use { rs ->
+
+                        val rsmd = rs.metaData
+                        val colCount = rsmd.columnCount
+
+                        logger.trace("$colCount columns have been found in the result set.")
+
+                        var data: MutableList<Map<String, Any>> = mutableListOf()
+                        var hashes: MutableList<HashRow> = mutableListOf()
+
+                        rsColumns = SqlUtils.getColumnsFromRs(rsmd)
+
+                        require(rsColumns.values.containsAll(hashColumns)) {
+                            "One or more provided keys $hashColumns not contained in resultset: $rsColumns"
                         }
-                        recordCount += 1
-                        if(recordCount % outputReportCommitSize == 0L)
-                            logger.info("$recordCount records have been processed so far.")
-                    }
-                    //Flush target/dupe/hash data that's in the buffer
-                    if(targetIsNotNull) {
-                        writeData(data, dataQueue)
-                        //Write empty list value to indicate the data stream is complete
-                        writeData(mutableListOf(), dataQueue)
-                    }
-                    if(dupeIsNotNull) {
-                        writeData(dupeMap.toList().toMutableList(), dupeQueue)
-                        //Write empty list value to indicate the data stream is complete
-                        writeData(mutableListOf(), dupeQueue)
-                    }
-                    if(hashIsNotNull) {
-                        writeData(hashes, hashQueue)
-                        //Write empty list value to indicate the data stream is complete
-                        writeData(mutableListOf(), hashQueue)
+
+                        val columns =
+                                if (hashColumns.isEmpty())
+                                    rsColumns.values.joinToString(",")
+                                else
+                                    hashColumns.joinToString(",")
+
+                        logger.info("Using $columns to calculate hashes")
+
+                        if (persistors.targetPersistor != null) {
+                            targetIsNotNull = true
+                        }
+                        if (persistors.dupePersistor != null) {
+                            dupeIsNotNull = true
+                        }
+
+                        var includeJson: Boolean = false
+                        if (persistors.hashPersistor != null) {
+                            hashIsNotNull = true
+                            includeJson =
+                                    if (config.hashJndi is SqlJNDIHashType) {
+                                        config.hashJndi.includeJson
+                                    } else {
+                                        (config.hashJndi as CsvJNDIHashType).includeJson
+                                    }
+                        }
+
+                        while (rs.next()) {
+
+                            val md5Values = SqlUtils.stringifyRow(rs, hashColumns)
+                            //Hold data in map of columns/values
+                            val rsMap = SqlUtils.getMapFromRs(rs, rsColumns)
+
+                            logger.trace("Using the following value(s): $md5Values to calculate unique hash.")
+
+                            val hash = DigestUtils.md5Hex(md5Values).toUpperCase()
+                            val longHash = Hasher.hashString(hash)
+
+                            logger.trace("MD-5 hash $hash generated for MD-5 values.")
+                            logger.trace("Converted hash value to long value: $longHash")
+
+                            if (!seenHashes.containsKey(hash)) {
+                                seenHashes.put(hash, recordCount)
+
+                                if (targetIsNotNull) {
+                                    data.add(rsMap)
+                                    writeData(recordCount, data, dataQueue)
+                                }
+                                if (hashIsNotNull) {
+                                    val json =
+                                            if (includeJson) {
+                                                JSONObject(rsMap).toString()
+                                            } else {
+                                                null
+                                            }
+                                    hashes.add(HashRow(hash, json))
+
+                                    writeData(recordCount, hashes, hashQueue)
+                                }
+                            } else {
+                                if (dupeMap.containsKey(hash)) {
+                                    dupeMap[hash]?.first?.add(recordCount)
+                                } else {
+                                    val firstSeenRow = seenHashes[hash]!!
+                                    val dupeJson = JSONObject(rsMap).toString()
+                                    val dupe = Dupe(firstSeenRow, dupeJson)
+                                    dupeMap[hash] = Pair(mutableListOf(recordCount), dupe)
+
+                                    distinctDupeCount += 1
+                                }
+
+                                dupeCount += 1
+                                if (dupeIsNotNull) {
+                                    writeData(dupeCount, dupeMap.toList().toMutableList(), dupeQueue)
+                                }
+                            }
+                            recordCount += 1
+                            if (recordCount % outputReportCommitSize == 0L)
+                                logger.info("$recordCount records have been processed so far.")
+                        }
+                        //Flush target/dupe/hash data that's in the buffer
+                        if (targetIsNotNull) {
+                            writeData(data, dataQueue)
+                            //Write empty list value to indicate the data stream is complete
+                            writeData(mutableListOf(), dataQueue)
+                        }
+                        if (dupeIsNotNull) {
+                            writeData(dupeMap.toList().toMutableList(), dupeQueue)
+                            //Write empty list value to indicate the data stream is complete
+                            writeData(mutableListOf(), dupeQueue)
+                        }
+                        if (hashIsNotNull) {
+                            writeData(hashes, hashQueue)
+                            //Write empty list value to indicate the data stream is complete
+                            writeData(mutableListOf(), hashQueue)
+                        }
                     }
                 }
             }
+
+            val ddReport =
+                    DedupeReport(
+                            recordCount,
+                            hashColumns,
+                            rsColumns.values.toSet(),
+                            dupeCount,
+                            distinctDupeCount,
+                            seenHashes.size.toLong(),
+                            dupeMap,
+                            true
+                    )
+
+            logger.info("Dedupe report: $ddReport")
+            controlQueues.values.forEach { cq -> cq.put(ddReport) }
+            logger.info("Deduping process complete.")
+        } catch(ex: Exception) {
+            logger.error("Error during dedupe process while publishing data: ${ex.message}")
+            val ddReport = DedupeReport(
+                    recordCount,
+                    hashColumns,
+                    rsColumns.values.toSet(),
+                    dupeCount,
+                    distinctDupeCount,
+                    seenHashes.size.toLong(),
+                    dupeMap,
+                    false
+            )
+            //First write empty rows to each queue which indicates the stream of data is complete
+            if(persistors.targetPersistor != null) {
+                logger.error("Notifying data subscriber that data stream is over")
+                writeData(mutableListOf(), dataQueue)
+            }
+            if(persistors.dupePersistor != null) {
+                logger.error("Notifying data subscriber that dupe stream is over")
+                writeData(mutableListOf(), dupeQueue)
+            }
+            if(persistors.hashPersistor != null) {
+                logger.error("Notifying data subscriber that hash stream is over")
+                writeData(mutableListOf(), hashQueue)
+            }
+            //Notify consumers and main thread that the process failed
+            controlQueues.values.forEach {cq -> cq.put(ddReport)}
+            logger.error("Notifying all consuming services that process failed")
         }
-
-        val ddReport =
-          DedupeReport(
-              recordCount,
-              hashColumns,
-              rsColumns.values.toSet(),
-              dupeCount,
-              distinctDupeCount,
-              seenHashes.size.toLong(),
-              dupeMap
-          )
-
-        logger.info("Dedupe report: $ddReport")
-        controlQueues.values.forEach{cq -> cq.put(ddReport)}
-        logger.info("Deduping process complete.")
     }
 }
 

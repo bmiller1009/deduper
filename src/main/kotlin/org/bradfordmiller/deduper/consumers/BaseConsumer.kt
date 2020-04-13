@@ -52,7 +52,7 @@ abstract class BaseConsumer<T, P: WritePersistor<T>>(
         val firstMsg = dataQueue.take()
         return if(firstMsg.isEmpty()) {
             //This should never happen
-            logger.info("First message is empty, stream complete.")
+            logger.warn("First message is empty, an error has occurred in the dedupe process. Check the log for details.")
             true
         } else {
             logger.info("${this.javaClass.canonicalName}:: Initializing target consumer")

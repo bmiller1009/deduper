@@ -77,7 +77,8 @@ class DeduperTest {
                         """{"zip":"95648","baths":"0","city":"LINCOLN","sale_date":"Mon May 19 00:00:00 EDT 2008","street":"7 CRYSTALWOOD CIR","price":"4897","latitude":"38.885962","state":"CA","beds":"0","type":"Residential","sq__ft":"0","longitude":"-121.289436"}"""
                     )
                 )
-            )
+            ),
+                true
         )
     }
     private fun getSourceCount(sourceJndi: SourceJndi): Long {
@@ -461,5 +462,39 @@ class DeduperTest {
         val expectedReport = getExpectedReport()
 
         assert(report == expectedReport)
+    }
+    @Test fun dedupeProcessWithIncorrectPublisher() {
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","foo", hashColumns)
+        val csvTargetJndi = CsvJNDITargetType("RealEstateOut", "default_ds",false)
+
+        val config = Config.ConfigBuilder()
+                .sourceJndi(csvSourceJndi)
+                .targetJndi(csvTargetJndi)
+                .build()
+
+        val deduper = Deduper(config)
+
+        val report = deduper.dedupe()
+
+        assert(report.success == false)
+    }
+    @Test fun dedupeProcessWithIncorrectSubscriber() {
+        val hashColumns = mutableSetOf("street","city", "state", "zip", "price")
+        val csvSourceJndi = SourceJndi("RealEstateIn", "default_ds","Sacramentorealestatetransactions", hashColumns)
+        val csvTargetJndi = CsvJNDITargetType("RealEstateOutBad", "default_ds",false)
+
+        val config = Config.ConfigBuilder()
+                .sourceJndi(csvSourceJndi)
+                .targetJndi(csvTargetJndi)
+                .build()
+
+        val deduper = Deduper(config)
+
+        val report = deduper.dedupe()
+
+        println(report)
+
+        //assert(report.success == false)
     }
 }
