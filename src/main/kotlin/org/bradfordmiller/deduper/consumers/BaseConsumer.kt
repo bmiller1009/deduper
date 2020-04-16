@@ -4,8 +4,11 @@ import org.bradfordmiller.deduper.DedupeReport
 import org.bradfordmiller.deduper.persistors.CsvTargetPersistor
 import org.bradfordmiller.deduper.persistors.WritePersistor
 import org.slf4j.LoggerFactory
+import java.lang.Exception
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.ArrayBlockingQueue
+
+data class ConsumerError(val consumerId: String, val ex: Exception)
 
 /**
  * Base definition of a runnable Consumer. Consumers are responsible for persisting data to disk

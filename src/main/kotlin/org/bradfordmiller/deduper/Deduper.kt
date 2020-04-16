@@ -6,10 +6,7 @@ import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
 import org.bradfordmiller.deduper.csv.CsvConfigParser
 import org.bradfordmiller.deduper.hashing.Hasher
-import org.bradfordmiller.deduper.jndi.CsvJNDITargetType
 import org.bradfordmiller.simplejndiutils.JNDIUtils
-import org.bradfordmiller.deduper.jndi.SqlJNDIHashType
-import org.bradfordmiller.deduper.jndi.SqlJNDITargetType
 import org.bradfordmiller.deduper.persistors.*
 import org.bradfordmiller.sqlutils.SqlUtils
 
@@ -23,7 +20,7 @@ import java.util.concurrent.Executors
 import javax.sql.DataSource
 
 import org.bradfordmiller.deduper.consumers.*
-import org.bradfordmiller.deduper.jndi.CsvJNDIHashType
+import org.bradfordmiller.deduper.jndi.*
 
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
@@ -323,7 +320,26 @@ class Deduper(private val config: Config) {
         val deleteHashIfExists: Boolean
     )
 
+    /*private fun <T> buildPersistor(jt: JNDITargetType?, sqlPersistorBuilder: () -> WritePersistor<T>): Pair<WritePersistor<T>?, Boolean> {
+        if(jt != null) {
+           val deleteTarget = jt.deleteIfExists
+           if(jt is CsvJNDITargetType) {
+               val tgtConfigMap = CsvConfigParser.getCsvMap(jt.context, jt.jndi)
+               logger.trace("tgtConfigMap = $tgtConfigMap")
+               return Pair(CsvTargetPersistor(tgtConfigMap) as WritePersistor<T>, deleteTarget)
+           } else {
+               val sqlPersistor = sqlPersistorBuilder()
+               return Pair(sqlPersistor, deleteTarget)
+           }
+        } else {
+            return Pair(null, false)
+        }
+    }*/
     private val persistors: Persistors by lazy {
+
+        //val targetPersistorNew = buildPersistor(config.targetJndi, )
+
+
 
         val targetPersistor: Pair<TargetPersistor?, Boolean> =
             if (config.targetJndi != null) {
