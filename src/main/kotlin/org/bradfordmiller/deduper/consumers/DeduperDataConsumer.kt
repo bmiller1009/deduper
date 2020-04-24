@@ -24,17 +24,16 @@ class DeduperDataConsumer(
     targetPersistor: TargetPersistor,
     dataQueue: BlockingQueue<MutableList<Map<String, Any>>>,
     controlQueue: ArrayBlockingQueue<DedupeReport>,
-    deleteIfExists: Boolean,
     val sourceDataSource: DataSource,
     val sqlStatement: String
-): BaseConsumer<Map<String, Any>, TargetPersistor>(targetPersistor, dataQueue, controlQueue, deleteIfExists) {
+): BaseConsumer<Map<String, Any>, TargetPersistor>(targetPersistor, dataQueue, controlQueue) {
 
     /**
      *  create/prep target persistence - can be database table or flat file
      *
      *  [deleteIfExists] indicates whether to delete the [targetPersistor] table/flat file if it already exists
      */
-    override fun createTarget(deleteIfExists: Boolean, persistor: TargetPersistor) {
+    override fun createTarget(persistor: TargetPersistor) {
         val finalSqlStatement =
             if(sqlStatement.contains("WHERE")) {
                 sqlStatement + " AND 1 = 2 "
@@ -47,7 +46,7 @@ class DeduperDataConsumer(
                 SqlUtils.getQueryInfo(finalSqlStatement, conn)
             }
 
-        persistor.createTarget(qi, deleteIfExists)
+        persistor.createTarget(qi)
     }
 
     /**

@@ -23,8 +23,7 @@ data class ConsumerError(val consumerId: String, val ex: Exception)
 abstract class BaseConsumer<T, P: WritePersistor<T>>(
   val persistor: P,
   val dataQueue: BlockingQueue<MutableList<T>>,
-  val controlQueue: ArrayBlockingQueue<DedupeReport>,
-  val deleteIfExists: Boolean
+  val controlQueue: ArrayBlockingQueue<DedupeReport>
 ): Runnable {
 
     companion object {
@@ -39,7 +38,7 @@ abstract class BaseConsumer<T, P: WritePersistor<T>>(
      * [deleteIfExists] determines whether persistent object (table or file) is dropped before being recreated
      * the [persistor] writing the data
      */
-    abstract fun createTarget(deleteIfExists: Boolean, persistor: P)
+    abstract fun createTarget(persistor: P)
 
     /**
      * the report metric in the [dedupeReport] to check
@@ -59,7 +58,7 @@ abstract class BaseConsumer<T, P: WritePersistor<T>>(
             true
         } else {
             logger.info("${this.javaClass.canonicalName}:: Initializing target consumer")
-            createTarget(deleteIfExists, persistor)
+            createTarget(persistor)
             totalRowsWritten += persistor.writeRows(firstMsg)
             logger.info("${this.javaClass.canonicalName}:: First data packet written to target.  $totalRowsWritten " +
                     "rows written" +
@@ -90,6 +89,7 @@ abstract class BaseConsumer<T, P: WritePersistor<T>>(
 
     /**
      * removes the lock file from a flat file once persistence to file is complete
+     * TODO: This is a csv specific operation, this shouldn't be in the base class
      */
     fun unlockCsvFile() {
         if(persistor is CsvTargetPersistor) {

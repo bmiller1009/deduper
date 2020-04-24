@@ -26,11 +26,15 @@ data class Dupe(val firstFoundRowNumber: Long, val dupes: String)
  */
 data class HashRow(val hash: String, val hash_json: String?)
 
+interface BasePersistor {
+    val deleteIfExists: Boolean
+}
+
 /**
  * base definition for writing out output data
  * @param T type of row list persisting output data
  */
-interface WritePersistor<T> {
+interface WritePersistor<T>: BasePersistor {
     /**
      *  writes list of data contained in [rows] to output and returns the number of rows written
      */
@@ -49,7 +53,7 @@ interface TargetPersistor: WritePersistor<Map<String, Any>> {
      *  writes out target file or sql table based on [qi]. [deleteIfTargetExists] determines if the target is deleted
      *  before populating it with data
      */
-    fun createTarget(qi: QueryInfo, deleteIfTargetExists: Boolean)
+    fun createTarget(qi: QueryInfo)
 }
 /**
  *  definition for writing out duplicate data to a target flat file or sql table
@@ -63,7 +67,7 @@ interface DupePersistor: WritePersistor<Pair<String, Pair<MutableList<Long>, Dup
      * creates the duplicate file or sql table. [deleteIfDupeExists] determines if the duplicate file/table is
      * deleted/dropped before creation.
      */
-    fun createDupe(deleteIfDupeExists: Boolean)
+    fun createDupe()
 }
 /**
  *  definition for writing out hash values of rows found in source data
@@ -77,7 +81,7 @@ interface HashPersistor: WritePersistor<HashRow> {
      * creates the hash file or sql table. [deleteIfDupeExists] determines if the hash file/table is deleted/dropped
      * before creation.
      */
-    fun createHashTable(deleteIfHashTableExists: Boolean)
+    fun createHashTable()
 }
 /**
  *  parser for jndi entries which are configured for csv output. Parses the values found in [config]
@@ -140,15 +144,17 @@ open class CsvPersistor(config: Map<String, String>) {
 /**
  *  create and writes out "deduped" data to csv target. target is configured in [config]
  */
-class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), TargetPersistor {
+class CsvTargetPersistor(config: Map<String, String>, val deleteIfTargetExists: Boolean): CsvPersistor(config), TargetPersistor {
     /**
      * creates the target csv file based on the metadata found in [qi]. [deleteIfTargetExists] determines whether the
      * target csv file is deleted if it already exists before creating.
      */
-    override fun createTarget(qi: QueryInfo, deleteIfTargetExists: Boolean) {
+    override val deleteIfExists = deleteIfTargetExists
+
+    override fun createTarget(qi: QueryInfo) {
         lockFile()
         val columns = SqlUtils.getColumnsFromRs(qi)
-        FileUtils.prepFile(ccp.targetName, columns.values.toSet(), ccp.extension, ccp.delimiter, deleteIfTargetExists)
+        FileUtils.prepFile(ccp.targetName, columns.values.toSet(), ccp.extension, ccp.delimiter, deleteIfExists)
     }
     /**
      * writes out a list of key/value pairs contained in [rows] to a csv. The key is the column name, and the value is
@@ -174,15 +180,17 @@ class CsvTargetPersistor(config: Map<String, String>): CsvPersistor(config), Tar
 /**
  *  creates and writes out duplicate data to csv target. duplicate target is configured in [config]
  */
-class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupePersistor {
+class CsvDupePersistor(config: Map<String, String>, deleteIfDupeExists: Boolean): CsvPersistor(config), DupePersistor {
+
+    override val deleteIfExists = deleteIfDupeExists
     /**
      * creates duplicate output csv file. [deleteIfDupeExists] determines whether the file is deleted if it already
      * exists
      */
-    override fun createDupe(deleteIfDupeExists: Boolean) {
+    override fun createDupe() {
         lockFile()
         val columns = setOf("hash", "row_ids", "first_found_row_number", "dupe_values")
-        FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter, deleteIfDupeExists)
+        FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter, deleteIfExists)
     }
     /**
      * writes out a list of duplicate data [rows] to a csv and returns the number of rows written
@@ -201,14 +209,16 @@ class CsvDupePersistor(config: Map<String, String>): CsvPersistor(config), DupeP
 /**
  * creates and writes out hash values found in a deduper process to a csv defined in [config]
  */
-class CsvHashPersistor(config: Map<String, String>): CsvPersistor(config), HashPersistor {
+class CsvHashPersistor(config: Map<String, String>, deleteIfHashExists: Boolean): CsvPersistor(config), HashPersistor {
+
+    override val deleteIfExists = deleteIfHashExists
     /**
      * creates a hash output csv file. [deleteIfDupeExists] determines whether the file is deleted if it already
      */
-    override fun createHashTable(deleteIfHashTableExists: Boolean) {
+    override fun createHashTable() {
         lockFile()
         val columns = setOf("hash", "json_row")
-        FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter, deleteIfHashTableExists)
+        FileUtils.prepFile(ccp.targetName, columns, ccp.extension, ccp.delimiter, deleteIfExists)
     }
     /**
      * writes out a list of hash data [rows] to a csv and returns the number of rows written
@@ -231,12 +241,16 @@ class SqlTargetPersistor(
     private val targetName: String,
     private val targetJndi: String,
     private val context: String,
-    private val varcharPadding: Int
+    private val varcharPadding: Int,
+    deleteIfTargetExists: Boolean
 ): TargetPersistor {
 
     companion object {
         val logger = LoggerFactory.getLogger(SqlTargetPersistor::class.java)
     }
+
+    override val deleteIfExists = deleteIfTargetExists
+
     private val dbInfo by lazy {
         val sql = "SELECT * FROM $targetName"
         JNDIUtils.getJndiConnection(targetJndi, context).use { conn ->
@@ -251,9 +265,9 @@ class SqlTargetPersistor(
      * creates a target sql table based on the [qi] found in the source. [deleteIfTargetExists] will drop the table if
      * it already exists before attempting to create it
      */
-    override fun createTarget(qi: QueryInfo, deleteIfTargetExists: Boolean) {
+    override fun createTarget(qi: QueryInfo) {
         JNDIUtils.getJndiConnection(targetJndi, context).use { conn ->
-            if (deleteIfTargetExists) {
+            if (deleteIfExists) {
                 logger.info(
                     "deleteIfTargetExists is set to true.  Checking database to see if target $targetName exists."
                 )
@@ -302,11 +316,13 @@ class SqlTargetPersistor(
  * creates a sql table for persisting duplicate data. This is configured using the [dupesJndi] [javax.sql.DataSource]
  * contained in the associated [context]
  */
-class SqlDupePersistor(private val dupesJndi: String, private val context: String): DupePersistor {
+class SqlDupePersistor(private val dupesJndi: String, private val context: String, deleteIfDupeExists: Boolean): DupePersistor {
 
     companion object {
         val logger = LoggerFactory.getLogger(SqlDupePersistor::class.java)
     }
+    override val deleteIfExists = deleteIfDupeExists
+
     //TODO: Make a list of dupe columns and then pass it to both the INSERT and CREATE statements
     private val insertStatement =
         "INSERT INTO dupes(hash, row_ids, first_found_row_number, dupe_values) VALUES (?,?,?,?)"
@@ -314,10 +330,10 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
      * creates a sql table for persisting duplicates found in a deduper process. [deleteIfDupeExists] will drop the
      * table if it already exists before attempting to create it
      */
-    override fun createDupe(deleteIfDupeExists: Boolean) {
+    override fun createDupe() {
         JNDIUtils.getJndiConnection(dupesJndi, context).use { conn ->
 
-            if(deleteIfDupeExists) {
+            if(deleteIfExists) {
                 logger.info("deleteIfDupeExists is set to true. Checking to see if table 'dupes' exists.")
                 SqlUtils.deleteTableIfExists(conn, "dupes")
             }
@@ -372,21 +388,23 @@ class SqlDupePersistor(private val dupesJndi: String, private val context: Strin
  * creates a sql table for persisting hashed data rows. This is configured using the [hashJndi] [javax.sql.DataSource]
  * contained in the associated [context]
  */
-class SqlHashPersistor(private val hashJndi: String, private val context: String): HashPersistor {
+class SqlHashPersistor(private val hashJndi: String, private val context: String, deleteIfHashTableExists: Boolean): HashPersistor {
 
     companion object {
         val logger = LoggerFactory.getLogger(SqlHashPersistor::class.java)
     }
+
+    override val deleteIfExists = deleteIfHashTableExists
 
     private val insertStatement = "INSERT INTO hashes(hash, json_row) VALUES (?,?)"
     /**
      * creates a sql table for persisting hash rows found in a deduper process. [deleteIfHashTableExists] will drop the
      * table if it already exists before attempting to create it
      */
-    override fun createHashTable(deleteIfHashTableExists: Boolean) {
+    override fun createHashTable() {
         JNDIUtils.getJndiConnection(hashJndi, context).use { conn ->
 
-            if (deleteIfHashTableExists) {
+            if (deleteIfExists) {
                 logger.info("deleteIfHashTableExists is set to true. Checking to see if table 'hashes' exists.")
                 SqlUtils.deleteTableIfExists(conn, "hashes")
             }

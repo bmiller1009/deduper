@@ -1,26 +1,29 @@
 package org.bradfordmiller.deduper
 
+import com.google.common.collect.MutableClassToInstanceMap
 import gnu.trove.map.hash.THashMap
 import io.vavr.control.Either
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
+import org.bradfordmiller.deduper.consumers.DeduperDataConsumer
+import org.bradfordmiller.deduper.consumers.DeduperDupeConsumer
+import org.bradfordmiller.deduper.consumers.DeduperHashConsumer
 import org.bradfordmiller.deduper.csv.CsvConfigParser
 import org.bradfordmiller.deduper.hashing.Hasher
-import org.bradfordmiller.simplejndiutils.JNDIUtils
+import org.bradfordmiller.deduper.jndi.*
 import org.bradfordmiller.deduper.persistors.*
+import org.bradfordmiller.simplejndiutils.JNDIUtils
 import org.bradfordmiller.sqlutils.SqlUtils
-
+import org.jetbrains.annotations.Nullable
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
-
+import java.lang.IllegalArgumentException
 import java.sql.ResultSet
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Executors
+import javax.naming.ldap.Control
 import javax.sql.DataSource
-
-import org.bradfordmiller.deduper.consumers.*
-import org.bradfordmiller.deduper.jndi.*
 
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
@@ -52,16 +55,13 @@ data class DedupeReport(
 }
 
 class DeduperProducer(
-    val dataQueue: BlockingQueue<MutableList<Map<String, Any>>>?,
-    val dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>?,
-    val hashQueue: BlockingQueue<MutableList<HashRow>>?,
-    val controlQueues: Map<Deduper.ControlQueue, ArrayBlockingQueue<DedupeReport>>,
-    val commitSize: Long = 500,
-    val outputReportCommitSize: Long = 1000000,
-    val config: Config,
-    val persistors: Deduper.Persistors,
-    val sourceDataSource: DataSource,
-    val sqlStatement: String
+        val queueMap: MutableMap<Deduper.ControlQueue, ArrayBlockingQueue<out MutableList<*>>>,
+        val controlQueues: Map<Deduper.ControlQueue, ArrayBlockingQueue<DedupeReport>>,
+        val commitSize: Long = 500,
+        val outputReportCommitSize: Long = 1000000,
+        val config: Config,
+        val sourceDataSource: DataSource,
+        val sqlStatement: String
 ): Runnable {
 
     companion object {
@@ -98,17 +98,18 @@ class DeduperProducer(
         }
 
         val seenHashes = THashMap<String, Long>()
-        val hashColumns = config.sourceJndi.hashKeys
         val dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
+
+        val hashColumns = config.sourceJndi.hashKeys
+        val targetIsNotNull = persistors.targetPersistor != null
+        val dupeIsNotNull = persistors.dupePersistor != null
+        val hashIsNotNull = persistors.hashPersistor != null
 
         var distinctDupeCount = 0L
         var rsColumns = mapOf<Int, String>()
         var recordCount = 0L
         var dupeCount = 0L
-
-        var targetIsNotNull: Boolean = false
-        var dupeIsNotNull: Boolean = false
-        var hashIsNotNull: Boolean = false
+        var includeJson = false
 
         try {
 
@@ -166,16 +167,7 @@ class DeduperProducer(
 
                         logger.info("Using $columns to calculate hashes")
 
-                        if (persistors.targetPersistor != null) {
-                            targetIsNotNull = true
-                        }
-                        if (persistors.dupePersistor != null) {
-                            dupeIsNotNull = true
-                        }
-
-                        var includeJson: Boolean = false
-                        if (persistors.hashPersistor != null) {
-                            hashIsNotNull = true
+                        if (hashIsNotNull) {
                             includeJson =
                                     if (config.hashJndi is SqlJNDIHashType) {
                                         config.hashJndi.includeJson
@@ -311,95 +303,70 @@ class Deduper(private val config: Config) {
 
     enum class ControlQueue { Producer, Target, Dupes, Hashes }
 
-    data class Persistors(
-        val targetPersistor: TargetPersistor?,
-        val deleteTargetIfExists: Boolean,
-        val dupePersistor: DupePersistor?,
-        val deleteDupeIfExists: Boolean,
-        val hashPersistor: HashPersistor?,
-        val deleteHashIfExists: Boolean
-    )
+    private val mapToClass = MutableClassToInstanceMap.create<BasePersistor>()
 
-    /*private fun <T> buildPersistor(jt: JNDITargetType?, sqlPersistorBuilder: () -> WritePersistor<T>): Pair<WritePersistor<T>?, Boolean> {
-        if(jt != null) {
-           val deleteTarget = jt.deleteIfExists
-           if(jt is CsvJNDITargetType) {
-               val tgtConfigMap = CsvConfigParser.getCsvMap(jt.context, jt.jndi)
-               logger.trace("tgtConfigMap = $tgtConfigMap")
-               return Pair(CsvTargetPersistor(tgtConfigMap) as WritePersistor<T>, deleteTarget)
-           } else {
-               val sqlPersistor = sqlPersistorBuilder()
-               return Pair(sqlPersistor, deleteTarget)
-           }
-        } else {
-            return Pair(null, false)
+    private fun <T: BasePersistor> addPersistorToMap(c: Class<T>, persistorBuilder: (() -> BasePersistor)?) {
+        mapToClass[c] = persistorBuilder?.let { it() }
+    }
+
+    val targetPersistorBuilder: (() -> BasePersistor)? by lazy {
+        when (val tj = config.targetJndi) {
+            null -> null
+            is CsvJNDITargetType -> {
+                val csvPersistor = {
+                    val tgtConfigMap = CsvConfigParser.getCsvMap(tj.context, tj.jndi)
+                    CsvTargetPersistor(tgtConfigMap, tj.deleteIfExists)
+                }
+                csvPersistor
+            }
+            is SqlJNDITargetType -> {
+                val sqlPersistor = { SqlTargetPersistor(tj.targetTable, tj.jndi, tj.context, tj.varcharPadding, tj.deleteIfExists) }
+                sqlPersistor
+            }
+            else -> {
+                throw IllegalArgumentException("Unrecognized Target type")
+            }
         }
-    }*/
-    private val persistors: Persistors by lazy {
+    }
 
-        //val targetPersistorNew = buildPersistor(config.targetJndi, )
-
-
-
-        val targetPersistor: Pair<TargetPersistor?, Boolean> =
-            if (config.targetJndi != null) {
-                val deleteTarget = config.targetJndi.deleteIfExists
-                if (config.targetJndi is CsvJNDITargetType) {
-                    val csvJndi = config.targetJndi
-                    val tgtConfigMap = CsvConfigParser.getCsvMap(csvJndi.context, csvJndi.jndi)
-                    logger.trace("tgtConfigMap = $tgtConfigMap")
-                    Pair(CsvTargetPersistor(tgtConfigMap), deleteTarget)
-                } else {
-                    val sqlJndi = config.targetJndi as SqlJNDITargetType
-                    Pair(
-                        SqlTargetPersistor(
-                            sqlJndi.targetTable, sqlJndi.jndi, sqlJndi.context, sqlJndi.varcharPadding
-                        ),
-                        deleteTarget
-                    )
+    val dupePersistorBuilder: (() -> BasePersistor)? by lazy {
+        when (val tj = config.dupesJndi) {
+            null -> null
+            is CsvJNDITargetType -> {
+                val csvPersistor = {
+                    val tgtConfigMap = CsvConfigParser.getCsvMap(tj.context, tj.jndi)
+                    CsvDupePersistor(tgtConfigMap, tj.deleteIfExists)
                 }
-            } else {
-                Pair(null, false)
+                csvPersistor
             }
+            is SqlJNDITargetType -> {
+                val sqlPersistor = { SqlDupePersistor(tj.jndi, tj.context, tj.deleteIfExists) }
+                sqlPersistor
+            }
+            else -> {
+                throw IllegalArgumentException("Unrecognized Target type")
+            }
+        }
+    }
 
-        val dupePersistor: Pair<DupePersistor?, Boolean> =
-            if (config.dupesJndi != null) {
-                val deleteDupe = config.dupesJndi.deleteIfExists
-                if (config.dupesJndi is CsvJNDITargetType) {
-                    val csvJndi = config.dupesJndi
-                    val dupesConfigMap = CsvConfigParser.getCsvMap(csvJndi.context, csvJndi.jndi)
-                    logger.trace("dupesConfigMap = $dupesConfigMap")
-                    Pair(CsvDupePersistor(dupesConfigMap), deleteDupe)
-                } else {
-                    Pair(SqlDupePersistor(config.dupesJndi.jndi, config.dupesJndi.context), deleteDupe)
+    val hashPersistorBuilder: (() -> BasePersistor)? by lazy {
+        when (val tj = config.hashJndi) {
+            null -> null
+            is CsvJNDITargetType -> {
+                val csvPersistor = {
+                    val tgtConfigMap = CsvConfigParser.getCsvMap(tj.context, tj.jndi)
+                    CsvHashPersistor(tgtConfigMap, tj.deleteIfExists)
                 }
-            } else {
-                Pair(null, false)
+                csvPersistor
             }
-
-        val hashPersistor: Pair<HashPersistor?, Boolean> =
-            if (config.hashJndi != null) {
-                val deleteHash = config.hashJndi.deleteIfExists
-                if (config.hashJndi is CsvJNDITargetType) {
-                    val csvJndi = config.hashJndi
-                    val hashConfigMap = CsvConfigParser.getCsvMap(csvJndi.context, csvJndi.jndi)
-                    logger.trace("hashConfigMap = $hashConfigMap")
-                    Pair(CsvHashPersistor(hashConfigMap), deleteHash)
-                } else {
-                    Pair(SqlHashPersistor(config.hashJndi.jndi, config.hashJndi.context), deleteHash)
-                }
-            } else {
-                Pair(null, false)
+            is SqlJNDITargetType -> {
+                val sqlPersistor = { SqlHashPersistor(tj.jndi, tj.context, tj.deleteIfExists) }
+                sqlPersistor
             }
-
-        Persistors(
-            targetPersistor.first,
-            targetPersistor.second,
-            dupePersistor.first,
-            dupePersistor.second,
-            hashPersistor.first,
-            hashPersistor.second
-        )
+            else -> {
+                throw IllegalArgumentException("Unrecognized Target type")
+            }
+        }
     }
 
     private val sourceDataSource: DataSource
@@ -447,49 +414,41 @@ class Deduper(private val config: Config) {
      */
     fun dedupe(commitSize: Long = 500L, reportCommitSize: Long = 1000000L): DedupeReport {
 
-        var threadCount = 1
+        addPersistorToMap(TargetPersistor::class.java, targetPersistorBuilder)
+        addPersistorToMap(DupePersistor::class.java, dupePersistorBuilder)
+        addPersistorToMap(HashPersistor::class.java, hashPersistorBuilder)
 
-        var dataQueue: BlockingQueue<MutableList<Map<String, Any>>>? = null
-        var dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>? = null
-        var hashQueue: BlockingQueue<MutableList<HashRow>>? = null
+        //val queueMap = MutableClassToInstanceMap.create<ArrayBlockingQueue<out MutableList<*>>>()
+        val queueMap: MutableMap<ControlQueue, ArrayBlockingQueue<out MutableList<*>>> = mutableMapOf()
 
         var controlQueues = emptyMap<ControlQueue, ArrayBlockingQueue<DedupeReport>>()
-        val controlQueue = ArrayBlockingQueue<DedupeReport>(1)
-        controlQueues += ControlQueue.Producer to controlQueue
+        var threadCount = 1
 
-        if (config.targetJndi != null) {
-            threadCount += 1
-            dataQueue = ArrayBlockingQueue(100)
-            val targetControlQueue = ArrayBlockingQueue<DedupeReport>(1)
-            controlQueues += ControlQueue.Target to targetControlQueue
+        controlQueues += ControlQueue.Producer to ArrayBlockingQueue<DedupeReport>(1)
+
+        fun <T> addReportQueue(tj: JNDITargetType?, cq: ControlQueue) {
+            if(tj != null) {
+                threadCount += 1
+                val arrayBlockingQueue = ArrayBlockingQueue<MutableList<T>>(100)
+                //queueMap[arrayBlockingQueue::class.java] = arrayBlockingQueue
+                queueMap += cq to arrayBlockingQueue
+                controlQueues += cq to ArrayBlockingQueue<DedupeReport>(1)
+            }
         }
 
-        if (config.dupesJndi != null) {
-            threadCount += 1
-            dupeQueue = ArrayBlockingQueue(100)
-            val dupeControlQueue = ArrayBlockingQueue<DedupeReport>(1)
-            controlQueues += ControlQueue.Dupes to dupeControlQueue
-        }
-
-        if (config.hashJndi != null) {
-            threadCount += 1
-            hashQueue = ArrayBlockingQueue(100)
-            val hashControlQueue = ArrayBlockingQueue<DedupeReport>(1)
-            controlQueues += ControlQueue.Hashes to hashControlQueue
-        }
+        addReportQueue<Map<String, Any>>(config.targetJndi, ControlQueue.Target)
+        addReportQueue<Pair<String, Pair<MutableList<Long>, Dupe>>>(config.dupesJndi, ControlQueue.Dupes)
+        addReportQueue<HashRow>(config.hashJndi, ControlQueue.Dupes)
 
         val executorService = Executors.newFixedThreadPool(threadCount)
 
         val producer =
             DeduperProducer(
-                dataQueue,
-                dupeQueue,
-                hashQueue,
+                queueMap,
                 controlQueues,
                 commitSize,
                 reportCommitSize,
                 config,
-                persistors,
                 sourceDataSource,
                 sqlStatement
             )
@@ -504,7 +463,6 @@ class Deduper(private val config: Config) {
                     persistors.targetPersistor!!,
                     dataQueue!!,
                     controlQueues[ControlQueue.Target] ?: error(""),
-                    persistors.deleteTargetIfExists,
                     sourceDataSource,
                     sqlStatement
                 )
@@ -517,8 +475,7 @@ class Deduper(private val config: Config) {
                 DeduperDupeConsumer(
                     persistors.dupePersistor!!,
                     dupeQueue!!,
-                    controlQueues[ControlQueue.Dupes] ?: error(""),
-                    persistors.deleteDupeIfExists
+                    controlQueues[ControlQueue.Dupes] ?: error("")
                 )
             executorService.execute(dupeConsumer)
             logger.info("Duplicates consumer thread started")
@@ -529,8 +486,7 @@ class Deduper(private val config: Config) {
                 DeduperHashConsumer(
                     persistors.hashPersistor!!,
                     hashQueue!!,
-                    controlQueues[ControlQueue.Hashes] ?: error(""),
-                    persistors.deleteHashIfExists
+                    controlQueues[ControlQueue.Hashes] ?: error("")
                 )
             executorService.execute(hashConsumer)
             logger.info("Hash consumer thread started")

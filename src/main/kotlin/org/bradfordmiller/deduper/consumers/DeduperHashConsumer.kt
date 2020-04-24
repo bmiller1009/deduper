@@ -16,17 +16,16 @@ import java.util.concurrent.BlockingQueue
 class DeduperHashConsumer(
     hashPersistor: HashPersistor,
     hashQueue: BlockingQueue<MutableList<HashRow>>,
-    controlQueue: ArrayBlockingQueue<DedupeReport>,
-    deleteIfExists: Boolean
-): BaseConsumer<HashRow, HashPersistor>(hashPersistor, hashQueue, controlQueue, deleteIfExists) {
+    controlQueue: ArrayBlockingQueue<DedupeReport>
+): BaseConsumer<HashRow, HashPersistor>(hashPersistor, hashQueue, controlQueue) {
 
     /**
      *  create/prep MD-5 hash persistence - can be database table or flat file
      *
      *  [deleteIfExists] indicates whether to delete the [hashPersistor] table/flat file if it already exists
      */
-    override fun createTarget(deleteIfExists: Boolean, persistor: HashPersistor) {
-        persistor.createHashTable(deleteIfExists)
+    override fun createTarget(persistor: HashPersistor) {
+        persistor.createHashTable()
     }
 
     /**

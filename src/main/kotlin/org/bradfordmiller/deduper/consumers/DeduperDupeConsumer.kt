@@ -16,18 +16,16 @@ import java.util.concurrent.BlockingQueue
 class DeduperDupeConsumer(
     dupePersistor: DupePersistor,
     dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>,
-    controlQueue: ArrayBlockingQueue<DedupeReport>,
-    deleteDupeIfExists: Boolean
-): BaseConsumer<Pair<String, Pair<MutableList<Long>, Dupe>>, DupePersistor>(dupePersistor, dupeQueue, controlQueue,
-    deleteDupeIfExists) {
+    controlQueue: ArrayBlockingQueue<DedupeReport>
+): BaseConsumer<Pair<String, Pair<MutableList<Long>, Dupe>>, DupePersistor>(dupePersistor, dupeQueue, controlQueue) {
 
     /**
      *  create/prep duplicate persistence - can be database table or flat file
      *
      *  [deleteIfExists] indicates whether to delete the [dupePersistor] table/flat file if it already exists
      */
-    override fun createTarget(deleteIfExists: Boolean, persistor: DupePersistor) {
-        persistor.createDupe(deleteIfExists)
+    override fun createTarget(persistor: DupePersistor) {
+        persistor.createDupe()
     }
     /**
      * gets the duplicate count from [dedupeReport]

@@ -86,7 +86,7 @@ dependencies {
         isTransitive = true
     }
     api("org.bradfordmiller:sqlutils:0.0.1")
-    //implementation("io.vavr:vavr:0.9.0")
+    implementation("com.google.guava", "guava", "29.0-jre")
 
     // Use the Kotlin test library.
     testImplementation("org.jetbrains.kotlin:kotlin-test")
