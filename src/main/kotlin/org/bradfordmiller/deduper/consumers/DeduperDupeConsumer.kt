@@ -15,7 +15,7 @@ import java.util.concurrent.BlockingQueue
  */
 class DeduperDupeConsumer(
     dupePersistor: DupePersistor,
-    dupeQueue: BlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>,
+    dupeQueue: ArrayBlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>,
     controlQueue: ArrayBlockingQueue<DedupeReport>
 ): BaseConsumer<Pair<String, Pair<MutableList<Long>, Dupe>>, DupePersistor>(dupePersistor, dupeQueue, controlQueue) {
 

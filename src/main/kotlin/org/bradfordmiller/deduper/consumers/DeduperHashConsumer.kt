@@ -15,7 +15,7 @@ import java.util.concurrent.BlockingQueue
  */
 class DeduperHashConsumer(
     hashPersistor: HashPersistor,
-    hashQueue: BlockingQueue<MutableList<HashRow>>,
+    hashQueue: ArrayBlockingQueue<MutableList<HashRow>>,
     controlQueue: ArrayBlockingQueue<DedupeReport>
 ): BaseConsumer<HashRow, HashPersistor>(hashPersistor, hashQueue, controlQueue) {
 

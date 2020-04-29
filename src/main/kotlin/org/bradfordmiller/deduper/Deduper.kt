@@ -5,6 +5,7 @@ import gnu.trove.map.hash.THashMap
 import io.vavr.control.Either
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
+import org.bradfordmiller.deduper.consumers.BaseConsumer
 import org.bradfordmiller.deduper.consumers.DeduperDataConsumer
 import org.bradfordmiller.deduper.consumers.DeduperDupeConsumer
 import org.bradfordmiller.deduper.consumers.DeduperHashConsumer
@@ -24,6 +25,11 @@ import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Executors
 import javax.naming.ldap.Control
 import javax.sql.DataSource
+
+typealias DeduperQueue<T> = ArrayBlockingQueue<MutableList<T>>
+typealias DeduperQueueTarget = ArrayBlockingQueue<MutableList<Map<String, Any>>>
+typealias DeduperQueueDupes = ArrayBlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>
+typealias DeduperQueueHash = ArrayBlockingQueue<MutableList<HashRow>>
 
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
@@ -55,7 +61,7 @@ data class DedupeReport(
 }
 
 class DeduperProducer(
-        val queueMap: MutableMap<Deduper.ControlQueue, ArrayBlockingQueue<out MutableList<*>>>,
+        val queueMap: MutableClassToInstanceMap<ArrayBlockingQueue<out MutableList<*>>>,
         val controlQueues: Map<Deduper.ControlQueue, ArrayBlockingQueue<DedupeReport>>,
         val commitSize: Long = 500,
         val outputReportCommitSize: Long = 1000000,
@@ -303,10 +309,10 @@ class Deduper(private val config: Config) {
 
     enum class ControlQueue { Producer, Target, Dupes, Hashes }
 
-    private val mapToClass = MutableClassToInstanceMap.create<BasePersistor>()
+    private val persistorMap = MutableClassToInstanceMap.create<BasePersistor>()
 
     private fun <T: BasePersistor> addPersistorToMap(c: Class<T>, persistorBuilder: (() -> BasePersistor)?) {
-        mapToClass[c] = persistorBuilder?.let { it() }
+        persistorMap[c] = persistorBuilder?.let { it() }
     }
 
     val targetPersistorBuilder: (() -> BasePersistor)? by lazy {
@@ -409,7 +415,7 @@ class Deduper(private val config: Config) {
     /**
      *  runs a dedupe process and returns a dedupe report
      *
-     *  @param commitSize - the number of rows to write in a single transation
+     *  @param commitSize - the number of rows to write in a single transaction
      *  @param outputReportCommitSize - the number of total rows committed before logging the result
      */
     fun dedupe(commitSize: Long = 500L, reportCommitSize: Long = 1000000L): DedupeReport {
@@ -418,9 +424,8 @@ class Deduper(private val config: Config) {
         addPersistorToMap(DupePersistor::class.java, dupePersistorBuilder)
         addPersistorToMap(HashPersistor::class.java, hashPersistorBuilder)
 
-        //val queueMap = MutableClassToInstanceMap.create<ArrayBlockingQueue<out MutableList<*>>>()
-        val queueMap: MutableMap<ControlQueue, ArrayBlockingQueue<out MutableList<*>>> = mutableMapOf()
-
+        //val queueMap: MutableMap<ControlQueue, ArrayBlockingQueue<out MutableList<*>>> = mutableMapOf()
+        val queueMap = MutableClassToInstanceMap.create<ArrayBlockingQueue<out MutableList<*>>>()
         var controlQueues = emptyMap<ControlQueue, ArrayBlockingQueue<DedupeReport>>()
         var threadCount = 1
 
@@ -429,10 +434,20 @@ class Deduper(private val config: Config) {
         fun <T> addReportQueue(tj: JNDITargetType?, cq: ControlQueue) {
             if(tj != null) {
                 threadCount += 1
-                val arrayBlockingQueue = ArrayBlockingQueue<MutableList<T>>(100)
-                //queueMap[arrayBlockingQueue::class.java] = arrayBlockingQueue
-                queueMap += cq to arrayBlockingQueue
+                val arrayBlockingQueue = DeduperQueue<T>(100)
+                queueMap.put(arrayBlockingQueue::class.java, arrayBlockingQueue)
                 controlQueues += cq to ArrayBlockingQueue<DedupeReport>(1)
+            }
+        }
+
+        fun <T,P: WritePersistor<T>> consumerBuilder (cq: ControlQueue): (() -> BaseConsumer<T, P>) {
+            when(cq) {
+                ControlQueue.Target -> {
+                    DeduperDataConsumer(
+                        persistorMap.getInstance(TargetPersistor::class.java),
+                        queueMap.getInstance(DeduperQueueTarget::class.java)
+                    )
+                }
             }
         }
 

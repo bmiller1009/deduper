@@ -22,7 +22,7 @@ import javax.sql.DataSource
  */
 class DeduperDataConsumer(
     targetPersistor: TargetPersistor,
-    dataQueue: BlockingQueue<MutableList<Map<String, Any>>>,
+    dataQueue: ArrayBlockingQueue<MutableList<Map<String, Any>>>,
     controlQueue: ArrayBlockingQueue<DedupeReport>,
     val sourceDataSource: DataSource,
     val sqlStatement: String

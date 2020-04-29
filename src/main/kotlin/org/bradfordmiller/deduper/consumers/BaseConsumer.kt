@@ -22,7 +22,7 @@ data class ConsumerError(val consumerId: String, val ex: Exception)
  */
 abstract class BaseConsumer<T, P: WritePersistor<T>>(
   val persistor: P,
-  val dataQueue: BlockingQueue<MutableList<T>>,
+  val dataQueue: ArrayBlockingQueue<MutableList<T>>,
   val controlQueue: ArrayBlockingQueue<DedupeReport>
 ): Runnable {
 
