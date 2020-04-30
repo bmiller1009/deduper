@@ -27,9 +27,6 @@ import javax.naming.ldap.Control
 import javax.sql.DataSource
 
 typealias DeduperQueue<T> = ArrayBlockingQueue<MutableList<T>>
-typealias DeduperQueueTarget = ArrayBlockingQueue<MutableList<Map<String, Any>>>
-typealias DeduperQueueDupes = ArrayBlockingQueue<MutableList<Pair<String, Pair<MutableList<Long>, Dupe>>>>
-typealias DeduperQueueHash = ArrayBlockingQueue<MutableList<HashRow>>
 
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
@@ -61,7 +58,7 @@ data class DedupeReport(
 }
 
 class DeduperProducer(
-        val queueMap: MutableClassToInstanceMap<ArrayBlockingQueue<out MutableList<*>>>,
+        val queueMap: MutableMap<Deduper.ControlQueue, ArrayBlockingQueue<out MutableList<*>>>,
         val controlQueues: Map<Deduper.ControlQueue, ArrayBlockingQueue<DedupeReport>>,
         val commitSize: Long = 500,
         val outputReportCommitSize: Long = 1000000,
@@ -424,8 +421,7 @@ class Deduper(private val config: Config) {
         addPersistorToMap(DupePersistor::class.java, dupePersistorBuilder)
         addPersistorToMap(HashPersistor::class.java, hashPersistorBuilder)
 
-        //val queueMap: MutableMap<ControlQueue, ArrayBlockingQueue<out MutableList<*>>> = mutableMapOf()
-        val queueMap = MutableClassToInstanceMap.create<ArrayBlockingQueue<out MutableList<*>>>()
+        val queueMap: MutableMap<ControlQueue, ArrayBlockingQueue<out MutableList<*>>> = mutableMapOf()
         var controlQueues = emptyMap<ControlQueue, ArrayBlockingQueue<DedupeReport>>()
         var threadCount = 1
 
@@ -435,20 +431,41 @@ class Deduper(private val config: Config) {
             if(tj != null) {
                 threadCount += 1
                 val arrayBlockingQueue = DeduperQueue<T>(100)
-                queueMap.put(arrayBlockingQueue::class.java, arrayBlockingQueue)
+                queueMap.put(cq, arrayBlockingQueue)
                 controlQueues += cq to ArrayBlockingQueue<DedupeReport>(1)
             }
         }
 
-        fun <T,P: WritePersistor<T>> consumerBuilder (cq: ControlQueue): (() -> BaseConsumer<T, P>) {
-            when(cq) {
-                ControlQueue.Target -> {
-                    DeduperDataConsumer(
-                        persistorMap.getInstance(TargetPersistor::class.java),
-                        queueMap.getInstance(DeduperQueueTarget::class.java)
-                    )
-                }
-            }
+        @SuppressWarnings("unchecked")
+        fun consumerBuilder (cq: ControlQueue): Runnable {
+            val runnable =
+               when(cq) {
+                   ControlQueue.Target ->
+                       DeduperDataConsumer(
+                               persistorMap.getInstance(TargetPersistor::class.java),
+                               queueMap[cq] as DeduperQueue<Map<String, Any>>,
+                               controlQueues[cq]!!,
+                               sourceDataSource,
+                               sqlStatement
+                       )
+                   ControlQueue.Dupes ->
+                       DeduperDupeConsumer(
+                               persistorMap.getInstance(DupePersistor::class.java),
+                               queueMap[cq] as DeduperQueue<Pair<String, Pair<MutableList<Long>, Dupe>>>,
+                               controlQueues[cq]!!
+                       )
+                   ControlQueue.Hashes ->
+                       DeduperHashConsumer(
+                               persistorMap.getInstance(HashPersistor::class.java),
+                               queueMap[cq] as DeduperQueue<HashRow>,
+                               controlQueues[cq]!!
+                       )
+                   else -> {
+                        logger.error("Unknown ControlQueue value: ${cq.name}")
+                        throw IllegalArgumentException(cq.name)
+                   }
+               }
+            return runnable
         }
 
         addReportQueue<Map<String, Any>>(config.targetJndi, ControlQueue.Target)
@@ -472,44 +489,15 @@ class Deduper(private val config: Config) {
 
         logger.info("Producer thread started")
 
-        if (persistors.targetPersistor != null) {
-            val targetConsumer =
-                DeduperDataConsumer(
-                    persistors.targetPersistor!!,
-                    dataQueue!!,
-                    controlQueues[ControlQueue.Target] ?: error(""),
-                    sourceDataSource,
-                    sqlStatement
-                )
-            executorService.execute(targetConsumer)
-            logger.info("Data consumer thread started")
-        }
-
-        if(persistors.dupePersistor != null) {
-            val dupeConsumer =
-                DeduperDupeConsumer(
-                    persistors.dupePersistor!!,
-                    dupeQueue!!,
-                    controlQueues[ControlQueue.Dupes] ?: error("")
-                )
-            executorService.execute(dupeConsumer)
-            logger.info("Duplicates consumer thread started")
-        }
-
-        if(persistors.hashPersistor != null) {
-            val hashConsumer =
-                DeduperHashConsumer(
-                    persistors.hashPersistor!!,
-                    hashQueue!!,
-                    controlQueues[ControlQueue.Hashes] ?: error("")
-                )
-            executorService.execute(hashConsumer)
-            logger.info("Hash consumer thread started")
+        queueMap.forEach {(cq,_) ->
+            val consumer = consumerBuilder(cq)
+            executorService.execute(consumer)
+            logger.info("${cq.name} consumer thread started.")
         }
 
         var streamComplete = false
         lateinit var dedupeReport: DedupeReport
-
+        
         while (!streamComplete) {
             dedupeReport = controlQueue.take()
             streamComplete = true
