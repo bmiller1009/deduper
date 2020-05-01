@@ -25,8 +25,10 @@ import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Executors
 import javax.naming.ldap.Control
 import javax.sql.DataSource
+import org.bradfordmiller.deduper.ext.CollectionExtensions
 
 typealias DeduperQueue<T> = ArrayBlockingQueue<MutableList<T>>
+typealias DeduperQueueStar = ArrayBlockingQueue<MutableList<*>>
 
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
@@ -80,7 +82,7 @@ class DeduperProducer(
          * @param writePersistor - the target persistor being leveraged for the write
          * @param data - the data being written
          */
-        fun <T> writeData(data: MutableList<T>, queue: BlockingQueue<MutableList<T>>?) {
+        fun <T> writeData(data: MutableList<T>, queue: DeduperQueue<T>?) {
             val dataCopy = mutableListOf<T>()
             dataCopy.addAll(data)
             queue?.put(dataCopy)
@@ -94,7 +96,7 @@ class DeduperProducer(
          * @param writePersistor - the target persistor being leveraged for the write
          * @param data - the data being written
          */
-        fun <T> writeData(count: Long, data: MutableList<T>, queue: BlockingQueue<MutableList<T>>?) {
+        fun <T> writeData(count: Long, data: MutableList<T>, queue: DeduperQueue<T>?) {
             if(count > 0 && data.size % commitSize == 0L) {
                 writeData(data, queue)
             }
@@ -102,17 +104,15 @@ class DeduperProducer(
 
         val seenHashes = THashMap<String, Long>()
         val dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
-
         val hashColumns = config.sourceJndi.hashKeys
-        val targetIsNotNull = persistors.targetPersistor != null
-        val dupeIsNotNull = persistors.dupePersistor != null
-        val hashIsNotNull = persistors.hashPersistor != null
+        val dataQueue = queueMap[Deduper.ControlQueue.Target]
+        val dupeQueue = queueMap[Deduper.ControlQueue.Dupes]
+        val hashQueue = queueMap[Deduper.ControlQueue.Hashes]
 
         var distinctDupeCount = 0L
         var rsColumns = mapOf<Int, String>()
         var recordCount = 0L
         var dupeCount = 0L
-        var includeJson = false
 
         try {
 
@@ -150,11 +150,10 @@ class DeduperProducer(
 
                         val rsmd = rs.metaData
                         val colCount = rsmd.columnCount
+                        val data: MutableList<Map<String, Any>> = mutableListOf()
+                        val hashes: MutableList<HashRow> = mutableListOf()
 
                         logger.trace("$colCount columns have been found in the result set.")
-
-                        var data: MutableList<Map<String, Any>> = mutableListOf()
-                        var hashes: MutableList<HashRow> = mutableListOf()
 
                         rsColumns = SqlUtils.getColumnsFromRs(rsmd)
 
@@ -170,13 +169,8 @@ class DeduperProducer(
 
                         logger.info("Using $columns to calculate hashes")
 
-                        if (hashIsNotNull) {
-                            includeJson =
-                                    if (config.hashJndi is SqlJNDIHashType) {
-                                        config.hashJndi.includeJson
-                                    } else {
-                                        (config.hashJndi as CsvJNDIHashType).includeJson
-                                    }
+                        val includeJson = config.hashJndi.let {
+                            (it as HashTargetType).includeJson
                         }
 
                         while (rs.next()) {
@@ -196,20 +190,20 @@ class DeduperProducer(
                             if (!seenHashes.containsKey(hash)) {
                                 seenHashes.put(hash, recordCount)
 
-                                if (targetIsNotNull) {
+                                dataQueue.let {dq ->
                                     data.add(rsMap)
-                                    writeData(recordCount, data, dataQueue)
+                                    writeData(recordCount, data, dq)
                                 }
-                                if (hashIsNotNull) {
+                                hashQueue.let {hq ->
                                     val json =
-                                            if (includeJson) {
-                                                JSONObject(rsMap).toString()
-                                            } else {
-                                                null
-                                            }
+                                        if (includeJson) {
+                                            JSONObject(rsMap).toString()
+                                        } else {
+                                            null
+                                        }
                                     hashes.add(HashRow(hash, json))
 
-                                    writeData(recordCount, hashes, hashQueue)
+                                    writeData(recordCount, hashes, hq)
                                 }
                             } else {
                                 if (dupeMap.containsKey(hash)) {
@@ -222,10 +216,9 @@ class DeduperProducer(
 
                                     distinctDupeCount += 1
                                 }
-
                                 dupeCount += 1
-                                if (dupeIsNotNull) {
-                                    writeData(dupeCount, dupeMap.toList().toMutableList(), dupeQueue)
+                                dupeQueue.let {dq ->
+                                    writeData(dupeCount, dupeMap.toList().toMutableList(), dq)
                                 }
                             }
                             recordCount += 1
@@ -440,14 +433,19 @@ class Deduper(private val config: Config) {
         fun consumerBuilder (cq: ControlQueue): Runnable {
             val runnable =
                when(cq) {
-                   ControlQueue.Target ->
+                   ControlQueue.Target -> {
+
+                       val a = queueMap[cq]
+                       a
+
                        DeduperDataConsumer(
-                               persistorMap.getInstance(TargetPersistor::class.java),
-                               queueMap[cq] as DeduperQueue<Map<String, Any>>,
-                               controlQueues[cq]!!,
-                               sourceDataSource,
-                               sqlStatement
+                           persistorMap.getInstance(TargetPersistor::class.java),
+                           queueMap[cq] as DeduperQueue<Map<String, Any>>,
+                           controlQueues[cq]!!,
+                           sourceDataSource,
+                           sqlStatement
                        )
+                   }
                    ControlQueue.Dupes ->
                        DeduperDupeConsumer(
                                persistorMap.getInstance(DupePersistor::class.java),
@@ -497,7 +495,7 @@ class Deduper(private val config: Config) {
 
         var streamComplete = false
         lateinit var dedupeReport: DedupeReport
-        
+        val controlQueue = controlQueues[ControlQueue.Producer]!!
         while (!streamComplete) {
             dedupeReport = controlQueue.take()
             streamComplete = true

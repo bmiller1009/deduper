@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory
  */
 class CsvConfigParser(private val config: Map<String, String>) {
 
-    val extension = setDefault(config, "ext", "txt")
+    val extension = setDefault(config, "org/bradfordmiller/deduper/ext", "txt")
     val delimiter = setDefault(config, "delimiter", ",")
     val targetName = config["targetName"] ?: error("Target csv file (targetName) setting is missing")
 

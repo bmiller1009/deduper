@@ -1,5 +1,8 @@
 package org.bradfordmiller.deduper.jndi
 
+interface HashTargetType {
+    val includeJson: Boolean
+}
 /**
  * Defines output information for target data based on the [jndi] name and jndi [context]
  *
@@ -21,8 +24,10 @@ class CsvJNDIHashType(
     jndi: String,
     context: String,
     deleteIfExists: Boolean,
-    val includeJson: Boolean
-): CsvJNDITargetType(jndi, context, deleteIfExists)
+    addJson: Boolean
+): CsvJNDITargetType(jndi, context, deleteIfExists), HashTargetType {
+    override val includeJson = addJson
+}
 /**
  * Defines output information for sql target data based on the [jndi] name and jndi [context]
  *
@@ -57,6 +62,8 @@ class SqlJNDIDupeType(
 class SqlJNDIHashType(
     jndi: String,
     context: String,
-    val includeJson: Boolean,
+    addJson: Boolean,
     deleteIfExists: Boolean
-): JNDITargetType(jndi, context, deleteIfExists)
+): JNDITargetType(jndi, context, deleteIfExists), HashTargetType {
+    override val includeJson = addJson
+}
