@@ -120,9 +120,14 @@ abstract class BaseConsumer<T, P: WritePersistor<T>>(
      * launches consumer as a runnable
      */
     override fun run() {
-        val complete = processFirstMessage()
-        processQueueData(complete)
-        unlockCsvFile()
-        processDeduperReport()
+        try {
+            val complete = processFirstMessage()
+            processQueueData(complete)
+            unlockCsvFile()
+            processDeduperReport()
+        } catch(ex: Exception) {
+            logger.error("An error occurred while running consumer. See logs for details.")
+            throw ex
+        }
     }
 }

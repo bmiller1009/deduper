@@ -2,10 +2,8 @@ package org.bradfordmiller.deduper
 
 import com.google.common.collect.MutableClassToInstanceMap
 import gnu.trove.map.hash.THashMap
-import io.vavr.control.Either
 import org.apache.commons.codec.digest.DigestUtils
 import org.bradfordmiller.deduper.config.Config
-import org.bradfordmiller.deduper.consumers.BaseConsumer
 import org.bradfordmiller.deduper.consumers.DeduperDataConsumer
 import org.bradfordmiller.deduper.consumers.DeduperDupeConsumer
 import org.bradfordmiller.deduper.consumers.DeduperHashConsumer
@@ -15,20 +13,22 @@ import org.bradfordmiller.deduper.jndi.*
 import org.bradfordmiller.deduper.persistors.*
 import org.bradfordmiller.simplejndiutils.JNDIUtils
 import org.bradfordmiller.sqlutils.SqlUtils
-import org.jetbrains.annotations.Nullable
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
 import java.lang.IllegalArgumentException
 import java.sql.ResultSet
 import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.BlockingQueue
 import java.util.concurrent.Executors
-import javax.naming.ldap.Control
 import javax.sql.DataSource
-import org.bradfordmiller.deduper.ext.CollectionExtensions
 
 typealias DeduperQueue<T> = ArrayBlockingQueue<MutableList<T>>
-typealias DeduperQueueStar = ArrayBlockingQueue<MutableList<*>>
+
+interface QueueContainer {
+    val queue: Any
+}
+data class TargetQueueContainer(override val queue: DeduperQueue<Map<String, Any>>): QueueContainer
+data class DupeQueueContainer(override val  queue: DeduperQueue<Pair<String, Pair<MutableList<Long>, Dupe>>>): QueueContainer
+data class HashQueueContaner(override val  queue: DeduperQueue<HashRow>): QueueContainer
 
 /**
  * reprsentation of a sample of data showing the comma-delimited [sampleString] and the associated [sampleHash] for that
@@ -60,7 +60,7 @@ data class DedupeReport(
 }
 
 class DeduperProducer(
-        val queueMap: MutableMap<Deduper.ControlQueue, ArrayBlockingQueue<out MutableList<*>>>,
+        val queueMap: MutableClassToInstanceMap<QueueContainer>,
         val controlQueues: Map<Deduper.ControlQueue, ArrayBlockingQueue<DedupeReport>>,
         val commitSize: Long = 500,
         val outputReportCommitSize: Long = 1000000,
@@ -88,6 +88,7 @@ class DeduperProducer(
             queue?.put(dataCopy)
             data.clear()
         }
+
         /**
          * writes data to a persistor
          *
@@ -97,7 +98,7 @@ class DeduperProducer(
          * @param data - the data being written
          */
         fun <T> writeData(count: Long, data: MutableList<T>, queue: DeduperQueue<T>?) {
-            if(count > 0 && data.size % commitSize == 0L) {
+            if (count > 0 && data.size % commitSize == 0L) {
                 writeData(data, queue)
             }
         }
@@ -105,9 +106,25 @@ class DeduperProducer(
         val seenHashes = THashMap<String, Long>()
         val dupeMap: MutableMap<String, Pair<MutableList<Long>, Dupe>> = mutableMapOf()
         val hashColumns = config.sourceJndi.hashKeys
-        val dataQueue = queueMap[Deduper.ControlQueue.Target]
-        val dupeQueue = queueMap[Deduper.ControlQueue.Dupes]
-        val hashQueue = queueMap[Deduper.ControlQueue.Hashes]
+
+        val dataQueue =
+            if (queueMap.containsKey(TargetQueueContainer::class.java)) {
+                queueMap.getInstance(TargetQueueContainer::class.java).queue
+            } else {
+                null
+            }
+        val dupeQueue =
+            if (queueMap.containsKey(DupeQueueContainer::class.java)) {
+                queueMap.getInstance(DupeQueueContainer::class.java).queue
+            } else {
+                null
+            }
+        val hashQueue =
+            if (queueMap.containsKey(HashQueueContaner::class.java)) {
+                queueMap.getInstance(HashQueueContaner::class.java).queue
+            } else {
+                null
+            }
 
         var distinctDupeCount = 0L
         var rsColumns = mapOf<Int, String>()
@@ -115,28 +132,27 @@ class DeduperProducer(
         var dupeCount = 0L
 
         try {
-
-            if (config.seenHashesJndi != null) {
+            config.seenHashesJndi?.let { sh ->
 
                 logger.info("Seen hashes JNDI is populated. Attempting to load hashes...")
 
-                val ds = JNDIUtils.getDataSource(config.seenHashesJndi.jndiName, config.seenHashesJndi.context)
+                val ds = JNDIUtils.getDataSource(sh.jndiName, sh.context)
                 val hashSourceDataSource = ds.left
 
                 val sqlStatement =
-                        "SELECT ${config.seenHashesJndi.hashColumnName} FROM ${config.seenHashesJndi.hashTableName}"
+                    "SELECT ${sh.hashColumnName} FROM ${sh.hashTableName}"
 
                 logger.info("Executing the following SQL against the seen hashes jndi: $sqlStatement")
 
                 JNDIUtils.getConnection(hashSourceDataSource)!!.use { conn ->
                     conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
-                            .use { stmt ->
-                                stmt.executeQuery().use { rs ->
-                                    while (rs.next()) {
-                                        seenHashes.put(rs.getString(1), 0)
-                                    }
+                        .use { stmt ->
+                            stmt.executeQuery().use { rs ->
+                                while (rs.next()) {
+                                    seenHashes.put(rs.getString(1), 0)
                                 }
                             }
+                        }
                 }
                 logger.info("Seen hashes loaded. ${seenHashes.size} hashes loaded into memory.")
             }
@@ -145,124 +161,109 @@ class DeduperProducer(
 
                 logger.trace("The following sql statement will be run: $sqlStatement")
 
-                conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY).use { stmt ->
-                    stmt.executeQuery().use { rs ->
+                conn.prepareStatement(sqlStatement, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
+                    .use { stmt ->
+                        stmt.executeQuery().use { rs ->
 
-                        val rsmd = rs.metaData
-                        val colCount = rsmd.columnCount
-                        val data: MutableList<Map<String, Any>> = mutableListOf()
-                        val hashes: MutableList<HashRow> = mutableListOf()
+                            val rsmd = rs.metaData
+                            val colCount = rsmd.columnCount
+                            val data: MutableList<Map<String, Any>> = mutableListOf()
+                            val hashes: MutableList<HashRow> = mutableListOf()
 
-                        logger.trace("$colCount columns have been found in the result set.")
+                            logger.trace("$colCount columns have been found in the result set.")
 
-                        rsColumns = SqlUtils.getColumnsFromRs(rsmd)
+                            rsColumns = SqlUtils.getColumnsFromRs(rsmd)
 
-                        require(rsColumns.values.containsAll(hashColumns)) {
-                            "One or more provided keys $hashColumns not contained in resultset: $rsColumns"
-                        }
+                            require(rsColumns.values.containsAll(hashColumns)) {
+                                "One or more provided keys $hashColumns not contained in resultset: $rsColumns"
+                            }
 
-                        val columns =
+                            val columns =
                                 if (hashColumns.isEmpty())
                                     rsColumns.values.joinToString(",")
                                 else
                                     hashColumns.joinToString(",")
 
-                        logger.info("Using $columns to calculate hashes")
+                            logger.info("Using $columns to calculate hashes")
 
-                        val includeJson = config.hashJndi.let {
-                            (it as HashTargetType).includeJson
-                        }
+                            val includeJson = config.hashJndi?.let {
+                                (it as HashTargetType).includeJson
+                            } ?: false
 
-                        while (rs.next()) {
+                            while (rs.next()) {
 
-                            val md5Values = SqlUtils.stringifyRow(rs, hashColumns)
-                            //Hold data in map of columns/values
-                            val rsMap = SqlUtils.getMapFromRs(rs, rsColumns)
+                                val md5Values = SqlUtils.stringifyRow(rs, hashColumns)
+                                //Hold data in map of columns/values
+                                val rsMap = SqlUtils.getMapFromRs(rs, rsColumns)
 
-                            logger.trace("Using the following value(s): $md5Values to calculate unique hash.")
+                                logger.trace("Using the following value(s): $md5Values to calculate unique hash.")
 
-                            val hash = DigestUtils.md5Hex(md5Values).toUpperCase()
-                            val longHash = Hasher.hashString(hash)
+                                val hash = DigestUtils.md5Hex(md5Values).toUpperCase()
+                                val longHash = Hasher.hashString(hash)
 
-                            logger.trace("MD-5 hash $hash generated for MD-5 values.")
-                            logger.trace("Converted hash value to long value: $longHash")
+                                logger.trace("MD-5 hash $hash generated for MD-5 values.")
+                                logger.trace("Converted hash value to long value: $longHash")
 
-                            if (!seenHashes.containsKey(hash)) {
-                                seenHashes.put(hash, recordCount)
+                                if (!seenHashes.containsKey(hash)) {
+                                    seenHashes.put(hash, recordCount)
 
-                                dataQueue.let {dq ->
-                                    data.add(rsMap)
-                                    writeData(recordCount, data, dq)
-                                }
-                                hashQueue.let {hq ->
-                                    val json =
-                                        if (includeJson) {
-                                            JSONObject(rsMap).toString()
-                                        } else {
-                                            null
-                                        }
-                                    hashes.add(HashRow(hash, json))
+                                    dataQueue.let { dq ->
+                                        data.add(rsMap)
+                                        writeData(recordCount, data, dq)
+                                    }
+                                    hashQueue.let { hq ->
+                                        val json =
+                                            if (includeJson) {
+                                                JSONObject(rsMap).toString()
+                                            } else {
+                                                null
+                                            }
+                                        hashes.add(HashRow(hash, json))
 
-                                    writeData(recordCount, hashes, hq)
-                                }
-                            } else {
-                                if (dupeMap.containsKey(hash)) {
-                                    dupeMap[hash]?.first?.add(recordCount)
+                                        writeData(recordCount, hashes, hq)
+                                    }
                                 } else {
-                                    val firstSeenRow = seenHashes[hash]!!
-                                    val dupeJson = JSONObject(rsMap).toString()
-                                    val dupe = Dupe(firstSeenRow, dupeJson)
-                                    dupeMap[hash] = Pair(mutableListOf(recordCount), dupe)
+                                    if (dupeMap.containsKey(hash)) {
+                                        dupeMap[hash]?.first?.add(recordCount)
+                                    } else {
+                                        val firstSeenRow = seenHashes[hash]!!
+                                        val dupeJson = JSONObject(rsMap).toString()
+                                        val dupe = Dupe(firstSeenRow, dupeJson)
+                                        dupeMap[hash] = Pair(mutableListOf(recordCount), dupe)
 
-                                    distinctDupeCount += 1
+                                        distinctDupeCount += 1
+                                    }
+                                    dupeCount += 1
+                                    dupeQueue.let { dq ->
+                                        writeData(dupeCount, dupeMap.toList().toMutableList(), dq)
+                                    }
                                 }
-                                dupeCount += 1
-                                dupeQueue.let {dq ->
-                                    writeData(dupeCount, dupeMap.toList().toMutableList(), dq)
-                                }
+                                recordCount += 1
+                                if (recordCount % outputReportCommitSize == 0L)
+                                    logger.info("$recordCount records have been processed so far.")
                             }
-                            recordCount += 1
-                            if (recordCount % outputReportCommitSize == 0L)
-                                logger.info("$recordCount records have been processed so far.")
-                        }
-                        //Flush target/dupe/hash data that's in the buffer
-                        if (targetIsNotNull) {
-                            writeData(data, dataQueue)
-                            //Write empty list value to indicate the data stream is complete
-                            writeData(mutableListOf(), dataQueue)
-                        }
-                        if (dupeIsNotNull) {
-                            writeData(dupeMap.toList().toMutableList(), dupeQueue)
-                            //Write empty list value to indicate the data stream is complete
-                            writeData(mutableListOf(), dupeQueue)
-                        }
-                        if (hashIsNotNull) {
-                            writeData(hashes, hashQueue)
-                            //Write empty list value to indicate the data stream is complete
-                            writeData(mutableListOf(), hashQueue)
+                            //Flush target/dupe/hash data that's in the buffer
+                            dataQueue.let { q ->
+                                writeData(data, q)
+                                //Write empty list value to indicate the data stream is complete
+                                writeData(mutableListOf(), q)
+                            }
+                            dupeQueue.let { dq ->
+                                writeData(dupeMap.toList().toMutableList(), dq)
+                                //Write empty list value to indicate the data stream is complete
+                                writeData(mutableListOf(), dupeQueue)
+                            }
+                            hashQueue.let { hq ->
+                                writeData(hashes, hq)
+                                //Write empty list value to indicate the data stream is complete
+                                writeData(mutableListOf(), hq)
+                            }
                         }
                     }
-                }
             }
 
             val ddReport =
-                    DedupeReport(
-                            recordCount,
-                            hashColumns,
-                            rsColumns.values.toSet(),
-                            dupeCount,
-                            distinctDupeCount,
-                            seenHashes.size.toLong(),
-                            dupeMap,
-                            true
-                    )
-
-            logger.info("Dedupe report: $ddReport")
-            controlQueues.values.forEach { cq -> cq.put(ddReport) }
-            logger.info("Deduping process complete.")
-        } catch(ex: Exception) {
-            logger.error("Error during dedupe process while publishing data: ${ex.message}")
-            val ddReport = DedupeReport(
+                DedupeReport(
                     recordCount,
                     hashColumns,
                     rsColumns.values.toSet(),
@@ -270,23 +271,40 @@ class DeduperProducer(
                     distinctDupeCount,
                     seenHashes.size.toLong(),
                     dupeMap,
-                    false
+                    true
+                )
+
+            logger.info("Dedupe report: $ddReport")
+            controlQueues.values.forEach { cq -> cq.put(ddReport) }
+            logger.info("Deduping process complete.")
+        } catch (ex: Exception) {
+            logger.error("Error during dedupe process while publishing data: ${ex.message}")
+            logger.error(ex.printStackTrace().toString())
+            val ddReport = DedupeReport(
+                recordCount,
+                hashColumns,
+                rsColumns.values.toSet(),
+                dupeCount,
+                distinctDupeCount,
+                seenHashes.size.toLong(),
+                dupeMap,
+                false
             )
             //First write empty rows to each queue which indicates the stream of data is complete
-            if(persistors.targetPersistor != null) {
+            dataQueue.let { q ->
                 logger.error("Notifying data subscriber that data stream is over")
-                writeData(mutableListOf(), dataQueue)
+                writeData(mutableListOf(), q)
             }
-            if(persistors.dupePersistor != null) {
+            dupeQueue.let { dq ->
                 logger.error("Notifying data subscriber that dupe stream is over")
-                writeData(mutableListOf(), dupeQueue)
+                writeData(mutableListOf(), dq)
             }
-            if(persistors.hashPersistor != null) {
+            hashQueue.let { hq ->
                 logger.error("Notifying data subscriber that hash stream is over")
-                writeData(mutableListOf(), hashQueue)
+                writeData(mutableListOf(), hq)
             }
             //Notify consumers and main thread that the process failed
-            controlQueues.values.forEach {cq -> cq.put(ddReport)}
+            controlQueues.values.forEach { cq -> cq.put(ddReport) }
             logger.error("Notifying all consuming services that process failed")
         }
     }
@@ -335,7 +353,7 @@ class Deduper(private val config: Config) {
                 }
                 csvPersistor
             }
-            is SqlJNDITargetType -> {
+            is SqlJNDIDupeType -> {
                 val sqlPersistor = { SqlDupePersistor(tj.jndi, tj.context, tj.deleteIfExists) }
                 sqlPersistor
             }
@@ -355,7 +373,7 @@ class Deduper(private val config: Config) {
                 }
                 csvPersistor
             }
-            is SqlJNDITargetType -> {
+            is SqlJNDIHashType -> {
                 val sqlPersistor = { SqlHashPersistor(tj.jndi, tj.context, tj.deleteIfExists) }
                 sqlPersistor
             }
@@ -414,17 +432,33 @@ class Deduper(private val config: Config) {
         addPersistorToMap(DupePersistor::class.java, dupePersistorBuilder)
         addPersistorToMap(HashPersistor::class.java, hashPersistorBuilder)
 
-        val queueMap: MutableMap<ControlQueue, ArrayBlockingQueue<out MutableList<*>>> = mutableMapOf()
+        val queueMap = MutableClassToInstanceMap.create<QueueContainer>()
         var controlQueues = emptyMap<ControlQueue, ArrayBlockingQueue<DedupeReport>>()
         var threadCount = 1
 
         controlQueues += ControlQueue.Producer to ArrayBlockingQueue<DedupeReport>(1)
 
-        fun <T> addReportQueue(tj: JNDITargetType?, cq: ControlQueue) {
+        fun addReportQueue(tj: JNDITargetType?, cq: ControlQueue) {
             if(tj != null) {
+                when(cq) {
+                    ControlQueue.Target -> {
+                        val targetQueue = DeduperQueue<Map<String, Any>>(100)
+                        queueMap.put(TargetQueueContainer::class.java, TargetQueueContainer(targetQueue))
+                    }
+                    ControlQueue.Dupes -> {
+                        val dupesQueue = DeduperQueue<Pair<String, Pair<MutableList<Long>, Dupe>>>(100)
+                        queueMap.put(DupeQueueContainer::class.java, DupeQueueContainer(dupesQueue))
+                    }
+                    ControlQueue.Hashes -> {
+                        val hashQueue = DeduperQueue<HashRow>(100)
+                        queueMap.put(HashQueueContaner::class.java, HashQueueContaner(hashQueue))
+                    }
+                    else -> {
+                        logger.error("Unknown ControlQueue value: ${cq.name}")
+                        throw IllegalArgumentException(cq.name)
+                    }
+                }
                 threadCount += 1
-                val arrayBlockingQueue = DeduperQueue<T>(100)
-                queueMap.put(cq, arrayBlockingQueue)
                 controlQueues += cq to ArrayBlockingQueue<DedupeReport>(1)
             }
         }
@@ -434,13 +468,9 @@ class Deduper(private val config: Config) {
             val runnable =
                when(cq) {
                    ControlQueue.Target -> {
-
-                       val a = queueMap[cq]
-                       a
-
                        DeduperDataConsumer(
                            persistorMap.getInstance(TargetPersistor::class.java),
-                           queueMap[cq] as DeduperQueue<Map<String, Any>>,
+                           queueMap.getInstance(TargetQueueContainer::class.java).queue,
                            controlQueues[cq]!!,
                            sourceDataSource,
                            sqlStatement
@@ -449,13 +479,13 @@ class Deduper(private val config: Config) {
                    ControlQueue.Dupes ->
                        DeduperDupeConsumer(
                                persistorMap.getInstance(DupePersistor::class.java),
-                               queueMap[cq] as DeduperQueue<Pair<String, Pair<MutableList<Long>, Dupe>>>,
+                               queueMap.getInstance(DupeQueueContainer::class.java).queue,
                                controlQueues[cq]!!
                        )
                    ControlQueue.Hashes ->
                        DeduperHashConsumer(
                                persistorMap.getInstance(HashPersistor::class.java),
-                               queueMap[cq] as DeduperQueue<HashRow>,
+                               queueMap.getInstance(HashQueueContaner::class.java).queue,
                                controlQueues[cq]!!
                        )
                    else -> {
@@ -466,9 +496,9 @@ class Deduper(private val config: Config) {
             return runnable
         }
 
-        addReportQueue<Map<String, Any>>(config.targetJndi, ControlQueue.Target)
-        addReportQueue<Pair<String, Pair<MutableList<Long>, Dupe>>>(config.dupesJndi, ControlQueue.Dupes)
-        addReportQueue<HashRow>(config.hashJndi, ControlQueue.Dupes)
+        addReportQueue(config.targetJndi, ControlQueue.Target)
+        addReportQueue(config.dupesJndi, ControlQueue.Dupes)
+        addReportQueue(config.hashJndi, ControlQueue.Hashes)
 
         val executorService = Executors.newFixedThreadPool(threadCount)
 
@@ -487,7 +517,7 @@ class Deduper(private val config: Config) {
 
         logger.info("Producer thread started")
 
-        queueMap.forEach {(cq,_) ->
+        controlQueues.filterKeys{ it != ControlQueue.Producer }.forEach { (cq,_) ->
             val consumer = consumerBuilder(cq)
             executorService.execute(consumer)
             logger.info("${cq.name} consumer thread started.")
