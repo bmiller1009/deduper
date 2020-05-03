@@ -493,8 +493,6 @@ class DeduperTest {
 
         val report = deduper.dedupe()
 
-        println(report)
-
-        //assert(report.success == false)
+        assert(report.success == true)
     }
 }
