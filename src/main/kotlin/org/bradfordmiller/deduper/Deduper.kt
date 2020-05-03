@@ -291,15 +291,15 @@ class DeduperProducer(
                 false
             )
             //First write empty rows to each queue which indicates the stream of data is complete
-            dataQueue.let { q ->
+            dataQueue?.let { q ->
                 logger.error("Notifying data subscriber that data stream is over")
                 writeData(mutableListOf(), q)
             }
-            dupeQueue.let { dq ->
+            dupeQueue?.let { dq ->
                 logger.error("Notifying data subscriber that dupe stream is over")
                 writeData(mutableListOf(), dq)
             }
-            hashQueue.let { hq ->
+            hashQueue?.let { hq ->
                 logger.error("Notifying data subscriber that hash stream is over")
                 writeData(mutableListOf(), hq)
             }
