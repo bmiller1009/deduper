@@ -2,6 +2,11 @@ language: java
 jdk:
   - openjdk13
 before_install:
+  - wget https\://services.gradle.org/distributions/gradle-6.6.1-all.zip
+  - unzip -qq gradle-6.6.1-all.zip
+  - export GRADLE_HOME=$PWD/gradle-6.6.1
+  - export PATH=$GRADLE_HOME/bin:$PATH
+  - gradle -v
   - gradle wrapper
   - chmod +x gradlew
   - chmod +x gradle/wrapper/gradle-wrapper.jar
