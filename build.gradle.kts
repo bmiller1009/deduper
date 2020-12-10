@@ -12,8 +12,8 @@ import java.time.Duration
 
 plugins {
     // Apply the Kotlin JVM plugin to add support for Kotlin on the JVM.
-    id("org.jetbrains.kotlin.jvm").version("1.3.72")
-    id("org.jetbrains.dokka").version("0.10.0")
+    kotlin("jvm") version "1.4.20"
+    id("org.jetbrains.dokka") version "1.4.20"
     id("net.researchgate.release").version("2.6.0")
     id("java-library")
     id("com.bmuschko.nexus").version("2.3.1")
@@ -82,10 +82,10 @@ dependencies {
     implementation("commons-io", "commons-io", "2.6")
     implementation("net.sf.trove4j", "core", "3.1.0")
     implementation("com.opencsv", "opencsv", "4.6")
-    api("org.bradfordmiller", "simplejndiutils", "0.0.10") {
+    api("org.bradfordmiller", "simplejndiutils", "0.0.12") {
         isTransitive = true
     }
-    api("org.bradfordmiller:sqlutils:0.0.1")
+    api("org.bradfordmiller:sqlutils:0.0.3")
     implementation("com.google.guava", "guava", "29.0-jre")
 
     // Use the Kotlin test library.
@@ -109,11 +109,6 @@ tasks {
         doFirst {
             println("Defaults are set. Current software version is $version")
         }
-    }
-
-    val dokka by getting(DokkaTask::class) {
-        outputFormat = "html"
-        outputDirectory = "$buildDir/dokka"
     }
 }
 
