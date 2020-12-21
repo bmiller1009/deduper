@@ -82,10 +82,10 @@ dependencies {
     implementation("commons-io", "commons-io", "2.6")
     implementation("net.sf.trove4j", "core", "3.1.0")
     implementation("com.opencsv", "opencsv", "4.6")
-    api("org.bradfordmiller", "simplejndiutils", "0.0.12") {
+    api("org.bradfordmiller", "simplejndiutils", "0.0.13") {
         isTransitive = true
     }
-    api("org.bradfordmiller:sqlutils:0.0.3")
+    api("org.bradfordmiller:sqlutils:0.0.4")
     implementation("com.google.guava", "guava", "29.0-jre")
 
     // Use the Kotlin test library.
@@ -94,6 +94,11 @@ dependencies {
     // Use the Kotlin JUnit integration.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.5.1")
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 tasks.matching{it.name != "set-defaults"}.forEach {t ->
